@@ -1,0 +1,8 @@
+{
+  "name": "Papaléguas Delivery - Entregador - V1",
+  "description": "Aplicativo nativo de alto desempenho para entregadores Papaléguas, focado em geolocalização, ganhos em tempo real e interface otimizada para uso em trânsito.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}

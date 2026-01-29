@@ -1,0 +1,25 @@
+# Configuração do Git para Windows
+# Este arquivo garante que o Git gerencie quebras de linha automaticamente
+
+# Arquivos de texto terão quebras de linha normalizadas
+* text=auto
+
+# Arquivos específicos que devem sempre usar LF (Linux/Mac)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Arquivos que devem sempre usar CRLF (Windows)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Arquivos binários (não converter)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
