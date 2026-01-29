@@ -2,6 +2,13 @@
 
 Sistema completo de gestão de entregas para entregadores autônomos, desenvolvido com React, TypeScript e Supabase.
 
+[![TypeScript](https://img.shields.io/badge/TypeScript-90.6%25-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.2.0-61dafb)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0.8-646cff)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-Latest-3ecf8e)](https://supabase.com/)
+
+---
+
 ## 📋 Sobre o Projeto
 
 O **Guepardo Entregador** é uma plataforma moderna que permite aos entregadores gerenciar suas entregas, acompanhar ganhos, visualizar histórico e muito mais. O sistema inclui:
@@ -11,42 +18,55 @@ O **Guepardo Entregador** é uma plataforma moderna que permite aos entregadores
 - 📊 **Dashboard Analítico**: Estatísticas e métricas de desempenho
 - 👤 **Onboarding Completo**: Processo de cadastro guiado para novos entregadores
 - 🔐 **Autenticação Segura**: Sistema de login integrado com Supabase
+- 🗺️ **Mapas Interativos**: Visualização de rotas com Leaflet
 - 📱 **Interface Responsiva**: Design moderno e intuitivo
+
+---
 
 ## 🚀 Tecnologias Utilizadas
 
-- **React** + **TypeScript** - Framework e tipagem
-- **Vite** - Build tool e dev server
+- **React** 18.2.0 + **TypeScript** - Framework e tipagem
+- **Vite** 5.0.8 - Build tool e dev server ultrarrápido
 - **Supabase** - Backend as a Service (autenticação e banco de dados)
-- **Lucide React** - Ícones modernos
+- **Leaflet** - Mapas interativos
 - **CSS Modules** - Estilização componentizada
+
+---
 
 ## 📦 Pré-requisitos
 
-- **Node.js** (versão 16 ou superior)
+Antes de começar, certifique-se de ter instalado:
+
+- **Node.js** (versão 16 ou superior) - [Download](https://nodejs.org/)
 - **npm** ou **yarn**
-- Conta no [Supabase](https://supabase.com)
+- Conta no [Supabase](https://supabase.com) (gratuita)
 
-## ⚙️ Configuração do Projeto
+---
 
-### 1. Clone o repositório
+## ⚙️ Instalação e Configuração
+
+### 1️⃣ Clone o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/guepardo-entregador.git
-cd guepardo-entregador
+git clone https://github.com/marcioafsadv/GUEPARDO-ENTREGADOR.git
+cd GUEPARDO-ENTREGADOR
 ```
 
-### 2. Instale as dependências
+### 2️⃣ Instale as Dependências
 
 ```bash
 npm install
 ```
 
-### 3. Configure as variáveis de ambiente
+### 3️⃣ Configure as Variáveis de Ambiente
 
 Copie o arquivo `.env.example` para `.env.local`:
 
 ```bash
+# Windows
+copy .env.example .env.local
+
+# Linux/Mac
 cp .env.example .env.local
 ```
 
@@ -59,17 +79,93 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anonima_aqui
 
 > **⚠️ IMPORTANTE**: Nunca commite o arquivo `.env.local` no Git! Ele contém informações sensíveis.
 
-### 4. Configure o banco de dados Supabase
+### 4️⃣ Configure o Banco de Dados Supabase
 
-Execute a migration SQL localizada em `migrations/` no seu projeto Supabase para criar as tabelas necessárias.
+1. Acesse seu projeto no [Supabase Dashboard](https://app.supabase.com/)
+2. Vá em **SQL Editor**
+3. Execute o script SQL localizado em `migrations/` para criar as tabelas necessárias
 
-### 5. Execute o projeto
+### 5️⃣ Execute o Projeto Localmente
 
 ```bash
 npm run dev
 ```
 
 O aplicativo estará disponível em `http://localhost:5173`
+
+---
+
+## 🌐 Deploy na Hostinger
+
+### Preparação do Build
+
+1. **Configure as variáveis de produção**:
+
+   Copie `.env.production.example` para `.env.production`:
+   ```bash
+   copy .env.production.example .env.production
+   ```
+
+   Edite `.env.production` e adicione suas credenciais do Supabase.
+
+2. **Crie o build de produção**:
+
+   ```bash
+   npm run build
+   ```
+
+   Isso criará uma pasta `dist/` com os arquivos otimizados.
+
+### Upload para Hostinger
+
+1. **Acesse o hPanel da Hostinger**: https://hpanel.hostinger.com/
+
+2. **Abra o File Manager** (Gerenciador de Arquivos)
+
+3. **Navegue até `public_html`**
+
+4. **Delete todos os arquivos antigos** em `public_html`
+
+5. **Faça upload dos arquivos**:
+   - Abra a pasta `dist` no seu computador
+   - Selecione **TODOS** os arquivos e pastas **DENTRO** de `dist`
+   - Arraste para `public_html` no File Manager
+   - **Importante**: Envie o **conteúdo** de `dist`, não a pasta em si
+
+6. **Copie o arquivo `.htaccess`**:
+   - Faça upload do arquivo `.htaccess` (da raiz do projeto) para `public_html`
+   - Este arquivo é essencial para que as rotas funcionem corretamente
+
+### Estrutura Final em `public_html`
+
+```
+public_html/
+├── index.html
+├── .htaccess
+├── assets/
+│   ├── index-[hash].js
+│   ├── index-[hash].css
+│   ├── react-vendor-[hash].js
+│   ├── supabase-[hash].js
+│   └── leaflet-[hash].js
+└── [outros arquivos estáticos]
+```
+
+### Verificação
+
+1. Aguarde 2-3 minutos após o upload
+2. Limpe o cache do navegador (Ctrl + Shift + R)
+3. Acesse seu domínio
+
+---
+
+## 🛠️ Scripts Disponíveis
+
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Cria build de produção otimizado
+- `npm run preview` - Preview do build de produção localmente
+
+---
 
 ## 📁 Estrutura do Projeto
 
@@ -79,11 +175,16 @@ guepardo-entregador/
 ├── utils/              # Funções utilitárias
 ├── migrations/         # Scripts SQL do banco de dados
 ├── public/             # Arquivos estáticos
-├── App.tsx             # Componente principal
-├── supabase.ts         # Configuração do Supabase
+├── App.tsx             # Componente principal da aplicação
+├── supabase.ts         # Configuração e funções do Supabase
 ├── types.ts            # Definições de tipos TypeScript
-└── constants.tsx       # Constantes da aplicação
+├── constants.tsx       # Constantes da aplicação
+├── vite.config.ts      # Configuração do Vite
+├── .htaccess           # Configuração Apache para SPA
+└── package.json        # Dependências e scripts
 ```
+
+---
 
 ## 🔑 Funcionalidades Principais
 
@@ -101,22 +202,67 @@ guepardo-entregador/
 
 ### Sistema de Entregas
 - Status em tempo real
-- Navegação integrada
+- Navegação integrada com mapas
 - Confirmação de entrega
 - Avaliação de clientes
 
-## 🛠️ Scripts Disponíveis
+### Mapas Interativos
+- Visualização de rotas com Leaflet
+- Marcadores personalizados
+- Rastreamento em tempo real
 
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Cria build de produção
-- `npm run preview` - Preview do build de produção
+---
 
 ## 🔒 Segurança
 
-- Todas as credenciais sensíveis devem estar em `.env.local`
-- O arquivo `.env.local` está no `.gitignore` e **nunca** deve ser commitado
-- Use Row Level Security (RLS) no Supabase para proteger os dados
-- Autenticação via Supabase Auth
+- ✅ Todas as credenciais sensíveis em variáveis de ambiente
+- ✅ `.env.local` e `.env.production` no `.gitignore`
+- ✅ Row Level Security (RLS) no Supabase
+- ✅ Autenticação via Supabase Auth
+- ✅ Headers de segurança configurados no `.htaccess`
+
+---
+
+## 🐛 Troubleshooting
+
+### Página em branco após deploy
+
+**Causa**: Arquivos não foram enviados corretamente ou falta o `.htaccess`
+
+**Solução**:
+1. Verifique se `index.html` está em `public_html`
+2. Verifique se a pasta `assets` está em `public_html`
+3. Certifique-se de que o `.htaccess` foi copiado
+4. Limpe o cache do navegador
+
+### Erro 404 nas rotas
+
+**Causa**: Arquivo `.htaccess` ausente ou mal configurado
+
+**Solução**: Copie o arquivo `.htaccess` do projeto para `public_html`
+
+### Erro de conexão com Supabase
+
+**Causa**: Variáveis de ambiente não configuradas no build
+
+**Solução**:
+1. Verifique se `.env.production` está preenchido
+2. Refaça o build: `npm run build`
+3. Faça upload novamente
+
+### Build falha com erro de módulo
+
+**Causa**: Dependências não instaladas ou corrompidas
+
+**Solução**:
+```bash
+# Limpe e reinstale
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+---
 
 ## 🤝 Contribuindo
 
@@ -126,13 +272,37 @@ guepardo-entregador/
 4. Push para a branch (`git push origin feature/MinhaFeature`)
 5. Abra um Pull Request
 
+---
+
 ## 📝 Licença
 
 Este projeto está sob a licença MIT.
 
+---
+
 ## 👥 Autores
 
 **Torres & Silva - Papaléguas**
+
+---
+
+## 📞 Suporte
+
+Se encontrar problemas:
+
+1. Verifique a seção de [Troubleshooting](#-troubleshooting)
+2. Abra uma [Issue](https://github.com/marcioafsadv/GUEPARDO-ENTREGADOR/issues)
+3. Consulte a [documentação do Supabase](https://supabase.com/docs)
+
+---
+
+## 🎯 Roadmap
+
+- [ ] Notificações push
+- [ ] Chat em tempo real com clientes
+- [ ] Modo offline
+- [ ] App mobile nativo
+- [ ] Integração com múltiplas plataformas de delivery
 
 ---
 
