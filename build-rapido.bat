@@ -1,56 +1,38 @@
 @echo off
 chcp 65001 >nul
 echo ════════════════════════════════════════════════════════
-echo   BUILD DE PRODUÇÃO - HOSTINGER
+echo   BUILD RÁPIDO - SEM REINSTALAR DEPENDÊNCIAS
 echo ════════════════════════════════════════════════════════
 echo.
 
 REM Muda para o diretório do script
 cd /d "%~dp0"
 
-echo Diretório: %CD%
-echo.
-echo [1/3] Instalando dependências...
-echo.
-
-call npm install
-if errorlevel 1 (
-    echo.
-    echo [ERRO] Falha ao instalar dependências!
-    echo.
-    pause
-    exit /b 1
-)
-
-echo.
-echo [2/3] Criando build de produção...
+echo Criando build de produção...
 echo.
 
 call npm run build
+
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha ao criar build!
+    echo Tente executar: npm install
     echo.
     pause
     exit /b 1
 )
 
 echo.
-echo [3/3] Build concluído!
-echo.
 echo ════════════════════════════════════════════════════════
-echo   SUCESSO! Pasta 'dist' criada
+echo   BUILD CONCLUÍDO!
 echo ════════════════════════════════════════════════════════
 echo.
-echo PRÓXIMOS PASSOS:
+echo Pasta 'dist' criada com sucesso!
 echo.
-echo 1. Acesse: https://hpanel.hostinger.com/
-echo 2. Abra o File Manager
-echo 3. Vá em public_html
-echo 4. Delete tudo que está lá
-echo 5. Arraste os arquivos DE DENTRO da pasta 'dist'
-echo 6. Copie também o arquivo .htaccess
-echo.
-echo Aguarde 2-3 minutos e acesse seu site!
+echo Agora faça upload para a Hostinger:
+echo 1. Acesse hPanel
+echo 2. File Manager -^> public_html
+echo 3. Delete tudo
+echo 4. Arraste arquivos de 'dist' para lá
 echo.
 pause
