@@ -1195,57 +1195,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {status === DriverStatus.ALERTING && mission && (
-              <div className="absolute inset-0 bg-black/80 z-[2000] flex items-end p-6 backdrop-blur-md animate-in slide-in-from-bottom duration-500">
-                <div className={`w-full rounded-[40px] p-8 border-t-8 border-[#FF6B00] shadow-2xl pulse-orange relative overflow-hidden transition-all duration-300 max-h-[90%] flex flex-col ${cardBg}`}>
-                  <div className="absolute top-8 right-12 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full border-4 border-[#FF6B00] flex items-center justify-center shrink-0">
-                      <span className={`text-xl font-black ${textPrimary}`}>{alertCountdown}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-start mb-6 shrink-0">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {mission.earnings.toFixed(2)}</h2>
-                        <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
-                          {mission.totalDistance.toFixed(1)} KM TOTAL
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
-                        <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                          {mission.distanceToStore.toFixed(1)}km até loja + {mission.deliveryDistance.toFixed(1)}km entrega
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-1 space-y-4 mb-8">
-                    <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
-                        <i className="fas fa-store text-[#FF6B00]"></i>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Coleta</span>
-                        <span className="text-sm font-bold truncate">{mission.storeName}</span>
-                      </div>
-                    </div>
-                    <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
-                        <i className="fas fa-location-dot text-[#FFD700]"></i>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Entrega</span>
-                        <span className="text-sm font-bold truncate">{mission.customerAddress}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex space-x-4 shrink-0">
-                    <button onClick={() => { setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 })); setStatus(DriverStatus.ONLINE); setMission(null); }} className={`flex-1 h-16 rounded-2xl font-bold uppercase text-xs ${innerBg} ${textMuted}`}>Recusar</button>
-                    <button onClick={() => { setDailyStats(s => ({ ...s, accepted: s.accepted + 1 })); setStatus(DriverStatus.GOING_TO_STORE); }} className="flex-[2] h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs shadow-xl active:scale-95 transition-transform">ACEITAR</button>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex">
@@ -2555,6 +2505,58 @@ const App: React.FC = () => {
               <button onClick={() => setSelectedTransaction(null)} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs tracking-widest shadow-xl">Fechar Detalhes</button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {status === DriverStatus.ALERTING && mission && (
+        <div className="absolute inset-0 bg-black/80 z-[8000] flex items-end p-6 backdrop-blur-md animate-in slide-in-from-bottom duration-500">
+          <div className={`w-full rounded-[40px] p-8 border-t-8 border-[#FF6B00] shadow-2xl pulse-orange relative overflow-hidden transition-all duration-300 max-h-[90%] flex flex-col ${cardBg}`}>
+            <div className="absolute top-8 right-12 flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full border-4 border-[#FF6B00] flex items-center justify-center shrink-0">
+                <span className={`text-xl font-black ${textPrimary}`}>{alertCountdown}</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-start mb-6 shrink-0">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3">
+                  <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {mission.earnings.toFixed(2)}</h2>
+                  <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
+                    {mission.totalDistance.toFixed(1)} KM TOTAL
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
+                  <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                    {mission.distanceToStore.toFixed(1)}km até loja + {mission.deliveryDistance.toFixed(1)}km entrega
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 space-y-4 mb-8">
+              <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
+                  <i className="fas fa-store text-[#FF6B00]"></i>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Coleta</span>
+                  <span className="text-sm font-bold truncate">{mission.storeName}</span>
+                </div>
+              </div>
+              <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
+                  <i className="fas fa-location-dot text-[#FFD700]"></i>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Entrega</span>
+                  <span className="text-sm font-bold truncate">{mission.customerAddress}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-4 shrink-0">
+              <button onClick={() => { setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 })); setStatus(DriverStatus.ONLINE); setMission(null); }} className={`flex-1 h-16 rounded-2xl font-bold uppercase text-xs ${innerBg} ${textMuted}`}>Recusar</button>
+              <button onClick={() => { setDailyStats(s => ({ ...s, accepted: s.accepted + 1 })); setStatus(DriverStatus.GOING_TO_STORE); }} className="flex-[2] h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs shadow-xl active:scale-95 transition-transform">ACEITAR</button>
+            </div>
           </div>
         </div>
       )}
