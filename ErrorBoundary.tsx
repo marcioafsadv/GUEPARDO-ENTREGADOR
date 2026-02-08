@@ -1,92 +1,44 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
-    children: ReactNode;
+    children?: ReactNode;
 }
 
 interface State {
     hasError: boolean;
-    error: Error | null;
-    errorInfo: ErrorInfo | null;
+    error?: Error;
 }
 
 class ErrorBoundary extends Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {
-            hasError: false,
-            error: null,
-            errorInfo: null
-        };
+    public state: State = {
+        hasError: false
+    };
+
+    public static getDerivedStateFromError(error: Error): State {
+        return { hasError: true, error };
     }
 
-    static getDerivedStateFromError(error: Error): State {
-        return {
-            hasError: true,
-            error,
-            errorInfo: null
-        };
+    public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('Uncaught error:', error, errorInfo);
     }
 
-    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
-        this.setState({
-            error,
-            errorInfo
-        });
-    }
-
-    render() {
+    public render() {
         if (this.state.hasError) {
             return (
-                <div style={{
-                    width: '100vw',
-                    height: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#000',
-                    color: '#fff',
-                    padding: '20px'
-                }}>
-                    <div style={{ maxWidth: '800px', width: '100%' }}>
-                        <h1 style={{ color: '#FF6B00', marginBottom: '20px' }}>
-                            ⚠️ Erro na Aplicação
-                        </h1>
-                        <div style={{
-                            backgroundColor: '#1a1a1a',
-                            padding: '20px',
-                            borderRadius: '10px',
-                            marginBottom: '20px'
-                        }}>
-                            <h2 style={{ color: '#ff4444', fontSize: '18px', marginBottom: '10px' }}>
-                                {this.state.error?.toString()}
-                            </h2>
-                            <pre style={{
-                                backgroundColor: '#0a0a0a',
-                                padding: '15px',
-                                borderRadius: '5px',
-                                overflow: 'auto',
-                                fontSize: '12px',
-                                color: '#aaa'
-                            }}>
-                                {this.state.errorInfo?.componentStack}
-                            </pre>
+                <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+                    <div className="text-center max-w-md">
+                        <h1 className="text-2xl font-bold mb-4 text-red-500">Ops! Algo deu errado.</h1>
+                        <p className="mb-6 text-zinc-400">
+                            Ocorreu um erro inesperado na aplicação. Por favor, recarregue a página.
+                        </p>
+                        <div className="bg-zinc-800 p-4 rounded-lg mb-6 overflow-auto text-left max-h-40 text-xs text-red-400 font-mono">
+                            {this.state.error?.toString()}
                         </div>
                         <button
+                            className="bg-[#FF6B00] text-white px-6 py-3 rounded-full font-bold hover:brightness-110 transition-all active:scale-95"
                             onClick={() => window.location.reload()}
-                            style={{
-                                backgroundColor: '#FF6B00',
-                                color: '#fff',
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                fontSize: '14px'
-                            }}
                         >
-                            Recarregar Página
+                            Recarregar Aplicação
                         </button>
                     </div>
                 </div>

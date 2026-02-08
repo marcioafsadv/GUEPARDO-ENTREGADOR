@@ -14,7 +14,7 @@ export const COLORS = {
   danger: '#EF4444'
 };
 
-export const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=Guepardo+Entregador&background=FF6B00&color=fff&size=150';
+export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
 
 /**
  * Motor de cálculo de ganhos Guepardo baseado na distância
@@ -87,9 +87,7 @@ export const MOCK_MISSION: any = {
   earnings: 8.00,
   timeLimit: 25,
   collectionCode: MOCK_STORES[0].collectionCode,
-  items: MOCK_STORES[0].items,
-  storePhone: '(11) 4023-0000',
-  customerPhone: '5511999999999'
+  items: MOCK_STORES[0].items
 };
 
 export const MOCK_HISTORY = [

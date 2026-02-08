@@ -14,6 +14,8 @@ export const COLORS = {
   danger: '#EF4444'
 };
 
+export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+
 /**
  * Motor de cálculo de ganhos Guepardo baseado na distância
  */

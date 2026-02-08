@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
 import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapMock } from './components/MapMock';
-import { ActionSlider } from './components/ActionSlider';
+
+import { HoldToFillButton } from './components/HoldToFillButton';
 import { Logo } from './components/Logo';
 import * as supabaseClient from './supabase';
 import WizardContainer, { WizardData } from './components/onboarding/WizardContainer';
@@ -353,7 +354,11 @@ const App: React.FC = () => {
         // Carregar transações
         const transactions = await supabaseClient.getTransactions(userId);
         if (transactions) {
-          setHistory(transactions as Transaction[]);
+          // Filtrar duplicatas
+          const uniqueTransactions = new Map();
+          transactions.forEach((t: any) => uniqueTransactions.set(t.id, t));
+          const filteredTransactions = Array.from(uniqueTransactions.values());
+          setHistory(filteredTransactions as Transaction[]);
         }
 
         // Carregar saldo
@@ -561,6 +566,9 @@ const App: React.FC = () => {
   }, [status, alertCountdown]);
 
   const processDeliverySuccess = async (currentMission: DeliveryMission) => {
+    // Prevent duplicate processing
+    const missionId = `Entrega #${currentMission.id}`;
+    if (history.some(h => h.type === missionId)) return;
     const earned = currentMission.earnings;
     setBalance(prev => prev + earned);
     setDailyEarnings(prev => prev + earned);
@@ -1406,18 +1414,19 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 w-full">
-                    <ActionSlider
+                    <HoldToFillButton
                       onConfirm={handleMainAction}
                       label={
-                        status === DriverStatus.GOING_TO_STORE ? 'Deslize p/ Chegar na Loja' :
-                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Pedido Pronto / Iniciar Saída' : 'Aguardando Preparo...') :
-                            status === DriverStatus.PICKING_UP ? 'Deslize p/ Confirmar Coleta' :
-                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Deslize p/ Chegar no Cliente' :
-                                'Deslize p/ Finalizar Entrega'
+                        status === DriverStatus.GOING_TO_STORE ? 'Segure p/ Chegar na Loja' :
+                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
+                            status === DriverStatus.PICKING_UP ? 'Segure p/ Confirmar Coleta' :
+                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
+                                'Segure p/ Finalizar Entrega'
                       }
                       disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
                       color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00'}
                       icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP ? 'fa-check' : 'fa-chevron-right'}
+                      fillDuration={1500}
                     />
                   </div>
                 </div>
@@ -1574,12 +1583,17 @@ const App: React.FC = () => {
         );
       case 'WALLET':
         const filteredHistory = history.filter(item => item.weekId === activeWeekId);
-        const weeklyEarningsTotal = filteredHistory.reduce((acc, item) => acc + (item.amount > 0 ? item.amount : 0), 0) + (activeWeekId === 'current' ? dailyEarnings : 0);
+        const weeklyEarningsTotal = filteredHistory.reduce((acc, item) => acc + (item.amount > 0 ? item.amount : 0), 0);
         const activeWeekLabel = MOCK_WEEKS.find(w => w.id === activeWeekId)?.range || 'Semana Atual';
 
         return (
           <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
-            <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Meus Ganhos</h1>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className={`text-3xl font-black italic ${textPrimary}`}>Meus Ganhos</h1>
+              <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-[10px] font-black uppercase text-blue-500 tracking-wider">
+                Versão 2.1
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>

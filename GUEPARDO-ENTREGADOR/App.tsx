@@ -1,16 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
-import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS } from './constants';
+import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapMock } from './components/MapMock';
+
 import { HoldToFillButton } from './components/HoldToFillButton';
 import { Logo } from './components/Logo';
 import * as supabaseClient from './supabase';
+import WizardContainer, { WizardData } from './components/onboarding/WizardContainer';
+import CitySelection from './components/onboarding/CitySelection';
+import { processWizardRegistration } from './utils/wizardProcessor';
 
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'FACIAL_VERIFICATION';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION';
+type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
 
 const SOUND_OPTIONS = [
@@ -39,12 +44,37 @@ const SOUND_OPTIONS = [
 
 const ANTICIPATION_FEE = 5.00;
 
-// Mock de Semanas para Filtro
-const MOCK_WEEKS = [
-  { id: 'current', label: 'Semana Atual', range: '20 Out - 26 Out' },
-  { id: 'last', label: 'Semana Passada', range: '13 Out - 19 Out' },
-  { id: 'w3', label: '06 Out - 12 Out', range: '06 Out - 12 Out' },
-];
+// Helper para formatar data (dd MMM)
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+};
+
+// Gerar semanas dinâmicas
+const getWeekOptions = () => {
+  const today = new Date();
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(today.getDate() - today.getDay()); // Domingo
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // Sábado
+
+  const lastWeekStart = new Date(currentWeekStart);
+  lastWeekStart.setDate(currentWeekStart.getDate() - 7);
+  const lastWeekEnd = new Date(lastWeekStart);
+  lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+
+  const w3Start = new Date(lastWeekStart);
+  w3Start.setDate(lastWeekStart.getDate() - 7);
+  const w3End = new Date(w3Start);
+  w3End.setDate(w3Start.getDate() + 6);
+
+  return [
+    { id: 'current', label: 'Semana Atual', range: `${formatDate(currentWeekStart)} - ${formatDate(currentWeekEnd)}` },
+    { id: 'last', label: 'Semana Passada', range: `${formatDate(lastWeekStart)} - ${formatDate(lastWeekEnd)}` },
+    { id: 'w3', label: `${formatDate(w3Start)} - ${formatDate(w3End)}`, range: `${formatDate(w3Start)} - ${formatDate(w3End)}` },
+  ];
+};
+
+const MOCK_WEEKS = getWeekOptions();
 
 // Helper para gerar timeline baseada no horário final
 const generateTimeline = (endTime: string) => {
@@ -76,6 +106,10 @@ const App: React.FC = () => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Onboarding State
+  const [onboardingScreen, setOnboardingScreen] = useState<OnboardingScreen>(null);
+  const [selectedCity, setSelectedCity] = useState<string>('');
+
   // Estado Dinâmico do Usuário (Inicia Vazio/Novo)
   const [currentUser, setCurrentUser] = useState({
     name: '',
@@ -83,7 +117,7 @@ const App: React.FC = () => {
     phone: '',
     cpf: '',
     level: 'Guepardo PRO', // Nível fixo solicitado
-    avatar: 'https://i.pravatar.cc/150?u=default',
+    avatar: DEFAULT_AVATAR,
     region: 'Itu - SP',
     vehicle: 'moto',
     verified: false,
@@ -153,9 +187,6 @@ const App: React.FC = () => {
   const [isOrderReady, setIsOrderReady] = useState(false);
 
   const [showMissionMapPicker, setShowMissionMapPicker] = useState(false);
-  const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
-  const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
-  const [customerMessage, setCustomerMessage] = useState('');
   const [typedCode, setTypedCode] = useState('');
   const codeInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
@@ -180,14 +211,10 @@ const App: React.FC = () => {
   const [autoAccept, setAutoAccept] = useState(false);
 
   // Settings
-  const [emergencyContact, setEmergencyContact] = useState({ name: '', phone: '', relation: '', isBeneficiary: false });
-  const [selectedVehicle, setSelectedVehicle] = useState<'moto' | 'car' | 'bike'>('moto');
-
-  // GPS
-  const [gpsEnabled, setGpsEnabled] = useState(false);
-  const [isGpsLoading, setIsGpsLoading] = useState(false);
-
-
+  /* Delivery Help States */
+  const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
+  const [customerMessage, setCustomerMessage] = useState('');
 
   const handleSendCustomerMessage = () => {
     if (!mission) return;
@@ -203,6 +230,13 @@ const App: React.FC = () => {
     if (!mission) return;
     window.location.href = `tel:${mission.storePhone}`;
   };
+
+  const [emergencyContact, setEmergencyContact] = useState({ name: '', phone: '', relation: '', isBeneficiary: false });
+  const [selectedVehicle, setSelectedVehicle] = useState<'moto' | 'car' | 'bike'>('moto');
+
+  // GPS
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [isGpsLoading, setIsGpsLoading] = useState(false);
 
   // Tema
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -273,29 +307,58 @@ const App: React.FC = () => {
       if (!userId) return;
 
       try {
+        // Carregar dados de autenticação (Email)
+        const { data: { user: authUser } } = await supabaseClient.supabase.auth.getUser();
+
         // Carregar perfil
         const profile = await supabaseClient.getProfile(userId);
+
+        // Carregar dados bancários (se existirem)
+        let bankData = null;
+        try {
+          bankData = await supabaseClient.getBankAccount(userId);
+        } catch (e) {
+          // Conta bancária pode não existir ainda
+          console.log('Sem dados bancários ainda');
+        }
+
         if (profile) {
           setCurrentUser(prev => ({
             ...prev,
-            name: profile.name || '',
-            email: profile.email || '',
-            phone: profile.phone || '',
-            cpf: profile.cpf || '',
-            level: profile.level || 'Guepardo PRO',
-            avatar: profile.avatar || prev.avatar,
-            region: profile.region || 'Itu - SP',
-            vehicle: profile.vehicle || 'moto',
-            verified: profile.verified || false
+            // Prioriza full_name (novo schema), fallback para name (schema antigo)
+            name: profile.full_name || profile.name || '',
+            email: authUser?.email || prev.email,
+            phone: profile.phone || prev.phone,
+            cpf: profile.cpf || prev.cpf,
+            level: 'Guepardo PRO',
+            // Prioriza avatar_url
+            avatar: profile.avatar_url || profile.avatar || prev.avatar,
+            region: profile.work_city || profile.region || 'Itu - SP',
+            vehicle: 'moto',
+            verified: profile.status === 'approved' || profile.verified || false,
+            bank: {
+              ...prev.bank,
+              // Mapeia dados bancários se existirem
+              ...(bankData ? {
+                name: bankData.bank_name || prev.bank.name,
+                agency: bankData.agency || prev.bank.agency,
+                account: bankData.account_number || prev.bank.account,
+                type: bankData.account_type || prev.bank.type,
+              } : {}),
+              // Pix Key vem do perfil ou da conta bancária
+              pixKey: profile.pix_key || (bankData?.pix_key) || prev.bank.pixKey
+            }
           }));
         }
 
         // Carregar transações
         const transactions = await supabaseClient.getTransactions(userId);
         if (transactions) {
-          // Filter duplicates by ID to ensure visual consistency
-          const uniqueTransactions = Array.from(new Map(transactions.map((item: any) => [item.id, item])).values());
-          setHistory(uniqueTransactions as Transaction[]);
+          // Filtrar duplicatas
+          const uniqueTransactions = new Map();
+          transactions.forEach((t: any) => uniqueTransactions.set(t.id, t));
+          const filteredTransactions = Array.from(uniqueTransactions.values());
+          setHistory(filteredTransactions as Transaction[]);
         }
 
         // Carregar saldo
@@ -503,11 +566,9 @@ const App: React.FC = () => {
   }, [status, alertCountdown]);
 
   const processDeliverySuccess = async (currentMission: DeliveryMission) => {
-    // Check if we already have this transaction in history to prevent duplicates
-    if (history.some(t => t.type === `Entrega #${currentMission.id}`)) {
-      return;
-    }
-
+    // Prevent duplicate processing
+    const missionId = `Entrega #${currentMission.id}`;
+    if (history.some(h => h.type === missionId)) return;
     const earned = currentMission.earnings;
     setBalance(prev => prev + earned);
     setDailyEarnings(prev => prev + earned);
@@ -531,12 +592,7 @@ const App: React.FC = () => {
         timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       }
     };
-
-    // Safety check when adding to history
-    setHistory(prev => {
-      if (prev.some(t => t.type === newTransaction.type)) return prev;
-      return [newTransaction, ...prev];
-    });
+    setHistory(prev => [newTransaction, ...prev]);
 
     // Salvar no Supabase
     if (userId) {
@@ -749,30 +805,8 @@ const App: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerData.name || !registerData.cpf || !registerData.email || !registerData.password) {
-      alert("Preencha todos os campos obrigatórios.");
-      return;
-    }
-    if (registerData.password !== registerData.confirmPassword) {
-      alert("As senhas não coincidem.");
-      return;
-    }
-    setIsLoadingAuth(true);
-    try {
-      await supabaseClient.signUp(registerData.email, registerData.password, {
-        name: registerData.name,
-        cpf: registerData.cpf,
-        phone: registerData.phone
-      });
-      alert("Conta criada com sucesso! Verifique seu e-mail para confirmar.");
-      setAuthScreen('LOGIN');
-      setRegisterData({ name: '', cpf: '', email: '', phone: '', password: '', confirmPassword: '' });
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      alert(error.message || "Erro ao criar conta. Tente novamente.");
-    } finally {
-      setIsLoadingAuth(false);
-    }
+    // Instead of registering directly, start the onboarding wizard flow
+    setOnboardingScreen('CITY_SELECTION');
   };
 
   const handleVerifyCode = () => {
@@ -814,6 +848,43 @@ const App: React.FC = () => {
       setAuthScreen('LOGIN');
     }, 1500);
   };
+
+  // ---------------- ONBOARDING HANDLERS ----------------
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setOnboardingScreen('WIZARD');
+  };
+
+  const handleWizardComplete = async (wizardData: WizardData) => {
+    setIsLoadingAuth(true);
+    try {
+      // Add selected city to wizard data
+      const completeData = {
+        ...wizardData,
+        workCity: selectedCity
+      };
+
+      await processWizardRegistration(completeData);
+
+      alert("Cadastro realizado com sucesso! Aguarde a aprovação do seu perfil.");
+      setOnboardingScreen(null);
+      setAuthScreen('LOGIN');
+      setSelectedCity('');
+    } catch (error: any) {
+      console.error('Wizard registration error:', error);
+      alert(error.message || "Erro ao completar cadastro. Tente novamente.");
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  const handleWizardCancel = () => {
+    setOnboardingScreen(null);
+    setSelectedCity('');
+    setAuthScreen('LOGIN');
+  };
+
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -898,7 +969,7 @@ const App: React.FC = () => {
                 <div className="flex flex-col items-center space-y-4 pt-2">
                   <button onClick={() => setAuthScreen('RECOVERY')} className={`text-xs font-bold ${textMuted} hover:text-[#FF6B00] transition-colors`}>Esqueci minha senha</button>
                   <div className={`w-full h-px ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                  <button onClick={() => setAuthScreen('REGISTER')} className={`text-xs font-black uppercase tracking-wide ${textPrimary}`}>
+                  <button onClick={() => setOnboardingScreen('CITY_SELECTION')} className={`text-xs font-black uppercase tracking-wide ${textPrimary}`}>
                     Não tem conta? <span className="text-[#FF6B00]">Cadastre-se</span>
                   </button>
                 </div>
@@ -923,6 +994,31 @@ const App: React.FC = () => {
                   <input type="password" value={registerData.password} onChange={e => setRegisterData({ ...registerData, password: e.target.value })} placeholder="Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
                   <input type="password" value={registerData.confirmPassword} onChange={e => setRegisterData({ ...registerData, confirmPassword: e.target.value })} placeholder="Confirmar Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
                 </div>
+
+                {/* Privacy Policy Acceptance */}
+                <div className={`p-3 rounded-xl ${innerBg} border border-white/5`}>
+                  <p className={`text-[10px] ${textMuted} leading-relaxed text-center`}>
+                    Ao criar sua conta, você concorda com nossos{' '}
+                    <a
+                      href="https://guepardodelivery.com.br/termos"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6B00] font-bold hover:underline"
+                    >
+                      Termos de Uso
+                    </a>
+                    {' '}e{' '}
+                    <a
+                      href="https://guepardodelivery.com.br/privacidade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6B00] font-bold hover:underline"
+                    >
+                      Política de Privacidade
+                    </a>
+                  </p>
+                </div>
+
                 <button type="submit" disabled={isLoadingAuth} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center">
                   {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Continuar"}
                 </button>
@@ -1174,8 +1270,7 @@ const App: React.FC = () => {
                         <i className="fas fa-circle-question text-[10px]"></i>
                         <span>Ajuda</span>
                       </button>
-
-                      <button onClick={() => setShowSOSModal(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#FF6B00] ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
+                      <button onClick={() => setShowSOSModal(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
                     </div>
                   </div>
 
@@ -1322,15 +1417,16 @@ const App: React.FC = () => {
                     <HoldToFillButton
                       onConfirm={handleMainAction}
                       label={
-                        status === DriverStatus.GOING_TO_STORE ? 'Segure para ir à Loja' :
-                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure para Iniciar Saída' : 'Aguardando Preparo...') :
-                            status === DriverStatus.PICKING_UP ? 'Segure para Confirmar Coleta' :
-                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure para ir ao Cliente' :
-                                'Segure para Finalizar Entrega'
+                        status === DriverStatus.GOING_TO_STORE ? 'Segure p/ Chegar na Loja' :
+                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
+                            status === DriverStatus.PICKING_UP ? 'Segure p/ Confirmar Coleta' :
+                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
+                                'Segure p/ Finalizar Entrega'
                       }
                       disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
                       color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00'}
                       icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP ? 'fa-check' : 'fa-chevron-right'}
+                      fillDuration={1500}
                     />
                   </div>
                 </div>
@@ -1492,15 +1588,12 @@ const App: React.FC = () => {
 
         return (
           <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
-            <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Meus Ganhos</h1>
-
-            {/* VERSION CHECK BLOCK */}
-            <div className="bg-blue-900/50 p-4 rounded mb-4 text-xs font-mono text-white">
-              <p className="font-bold text-lg">VERSÃO: 2.0 (CORREÇÃO APLICADA)</p>
-              <p>Se você vê isso, o código atualizou.</p>
-              <p>Total Semana: {weeklyEarningsTotal}</p>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className={`text-3xl font-black italic ${textPrimary}`}>Meus Ganhos</h1>
+              <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-[10px] font-black uppercase text-blue-500 tracking-wider">
+                Versão 2.1
+              </div>
             </div>
-            {/* END VERSION CHECK BLOCK */}
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>
@@ -1812,7 +1905,7 @@ const App: React.FC = () => {
               <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Ajustes</h1>
               <div className={`flex items-center space-x-4 mb-10 p-6 rounded-[32px] border ${cardBg}`}>
                 <div className="w-16 h-16 rounded-3xl p-1 border-2 border-[#FF6B00]">
-                  <img src={currentUser.avatar} className="w-full h-full object-cover rounded-2xl" alt="Perfil" />
+                  <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-2xl" alt="Perfil" />
                 </div>
                 <div>
                   <h2 className={`text-xl font-black ${textPrimary}`}>{currentUser.name || 'Entregador'}</h2>
@@ -1906,7 +1999,7 @@ const App: React.FC = () => {
                       phone: '',
                       cpf: '',
                       level: 'Guepardo PRO',
-                      avatar: 'https://i.pravatar.cc/150?u=default',
+                      avatar: DEFAULT_AVATAR,
                       region: 'Itu - SP',
                       vehicle: 'moto',
                       verified: false,
@@ -2165,6 +2258,29 @@ const App: React.FC = () => {
     }
   };
 
+
+  // Show onboarding wizard if in progress
+  if (onboardingScreen === 'CITY_SELECTION') {
+    return (
+      <CitySelection
+        onCitySelect={handleCitySelect}
+        onBack={handleWizardCancel}
+        theme={theme}
+      />
+    );
+  }
+
+  if (onboardingScreen === 'WIZARD') {
+    return (
+      <WizardContainer
+        onComplete={handleWizardComplete}
+        onCancel={handleWizardCancel}
+        initialCity={selectedCity}
+        theme={theme}
+      />
+    );
+  }
+
   if (!isAuthenticated) {
     return renderAuthScreen();
   }
@@ -2176,7 +2292,7 @@ const App: React.FC = () => {
           <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
             <div className="flex items-center justify-center">
               <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
-                <img src={currentUser.avatar} alt="Perfil" className="w-full h-full rounded-full object-cover" />
+                <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
               </div>
             </div>
 
