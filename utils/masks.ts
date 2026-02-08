@@ -114,3 +114,112 @@ export const parseDateBR = (dateBR: string): string => {
     const [day, month, year] = dateBR.split('/');
     return `${year}-${month}-${day}`;
 };
+
+// ============================================
+// VALIDATION FUNCTIONS
+// ============================================
+
+/**
+ * Validate CPF (Brazilian tax ID)
+ */
+export const isValidCPF = (cpf: string): boolean => {
+    const cleanCpf = cpf.replace(/\D/g, '');
+
+    if (cleanCpf.length !== 11) return false;
+
+    // Check for known invalid CPFs (all digits the same)
+    if (/^(\d)\1{10}$/.test(cleanCpf)) return false;
+
+    // Validate first check digit
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+        sum += parseInt(cleanCpf.charAt(i)) * (10 - i);
+    }
+    let checkDigit = 11 - (sum % 11);
+    if (checkDigit >= 10) checkDigit = 0;
+    if (checkDigit !== parseInt(cleanCpf.charAt(9))) return false;
+
+    // Validate second check digit
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+        sum += parseInt(cleanCpf.charAt(i)) * (11 - i);
+    }
+    checkDigit = 11 - (sum % 11);
+    if (checkDigit >= 10) checkDigit = 0;
+    if (checkDigit !== parseInt(cleanCpf.charAt(10))) return false;
+
+    return true;
+};
+
+/**
+ * Validate email format
+ */
+export const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
+/**
+ * Validate Brazilian phone number
+ */
+export const isValidPhone = (phone: string): boolean => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Valid formats: 10 digits (landline) or 11 digits (mobile)
+    return cleanPhone.length === 10 || cleanPhone.length === 11;
+};
+
+/**
+ * Validate CEP format
+ */
+export const isValidCEP = (cep: string): boolean => {
+    const cleanCep = cep.replace(/\D/g, '');
+    return cleanCep.length === 8;
+};
+
+/**
+ * Apply Year mask: XXXX
+ */
+export const applyYearMask = (value: string): string => {
+    let v = value.replace(/\D/g, '');
+    if (v.length > 4) v = v.slice(0, 4);
+    return v;
+};
+
+// ============================================
+// ALIASES FOR BACKWARD COMPATIBILITY
+// ============================================
+
+/**
+ * Alias for applyCpfMask
+ */
+export const maskCPF = applyCpfMask;
+
+/**
+ * Alias for applyPhoneMask
+ */
+export const maskPhone = applyPhoneMask;
+
+/**
+ * Alias for applyCepMask
+ */
+export const maskCEP = applyCepMask;
+
+/**
+ * Alias for applyPlateMask
+ */
+export const maskPlate = applyPlateMask;
+
+/**
+ * Alias for applyCnhMask
+ */
+export const maskCNH = applyCnhMask;
+
+/**
+ * Alias for applyRenavamMask
+ */
+export const maskRENAVAM = applyRenavamMask;
+
+/**
+ * Alias for applyYearMask
+ */
+export const maskYear = applyYearMask;

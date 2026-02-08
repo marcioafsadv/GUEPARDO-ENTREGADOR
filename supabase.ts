@@ -1,7 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase configuration with fallback values
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+
+// Warn if using placeholder values
+if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseAnonKey === 'placeholder-key') {
+  console.warn('⚠️ Supabase não configurado! Configure as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env');
+  console.warn('📝 A aplicação funcionará em modo offline/mock até que o Supabase seja configurado.');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -522,18 +529,24 @@ export const submitCompleteRegistration = async (
   registrationData: any
 ) => {
   try {
-    // 1. Update profile
-    await updateProfile(userId, {
-      full_name: registrationData.personal.fullName,
-      birth_date: registrationData.personal.birthDate,
-      cpf: registrationData.personal.cpf,
-      phone: registrationData.personal.phone,
-      gender: registrationData.personal.gender,
-      pix_key: registrationData.personal.pixKey,
-      avatar_url: registrationData.photoUrl,
-      work_city: registrationData.workCity,
-      status: 'pending'
-    });
+    // 1. Update/Create profile (Upsert to ensure it works even without auth trigger)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        full_name: registrationData.personal.fullName,
+        birth_date: registrationData.personal.birthDate,
+        cpf: registrationData.personal.cpf,
+        phone: registrationData.personal.phone,
+        gender: registrationData.personal.gender,
+        pix_key: registrationData.personal.pixKey,
+        avatar_url: registrationData.photoUrl,
+        work_city: registrationData.workCity,
+        status: 'pending',
+        updated_at: new Date().toISOString()
+      });
+
+    if (profileError) throw profileError;
 
     // 2. Create address
     await upsertAddress(userId, {
@@ -566,8 +579,12 @@ export const submitCompleteRegistration = async (
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting registration:', error);
+    // Enhanced error for debugging
+    if (error.code || error.details || error.hint) {
+      throw new Error(`DB Error: ${error.message} (Code: ${error.code}) - ${error.details || ''} ${error.hint || ''}`);
+    }
     throw error;
   }
 };

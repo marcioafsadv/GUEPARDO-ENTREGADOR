@@ -24,6 +24,8 @@ export interface DeliveryMission {
   timeLimit: number;
   collectionCode: string;
   items: string[];
+  storePhone: string;
+  customerPhone: string;
 }
 
 export interface DailySummary {

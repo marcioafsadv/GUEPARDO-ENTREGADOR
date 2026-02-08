@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
-import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS } from './constants';
+import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapMock } from './components/MapMock';
 import { ActionSlider } from './components/ActionSlider';
 import { Logo } from './components/Logo';
 import * as supabaseClient from './supabase';
+import WizardContainer, { WizardData } from './components/onboarding/WizardContainer';
+import CitySelection from './components/onboarding/CitySelection';
+import { processWizardRegistration } from './utils/wizardProcessor';
 
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'FACIAL_VERIFICATION';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION';
+type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
 
 const SOUND_OPTIONS = [
@@ -39,12 +43,37 @@ const SOUND_OPTIONS = [
 
 const ANTICIPATION_FEE = 5.00;
 
-// Mock de Semanas para Filtro
-const MOCK_WEEKS = [
-  { id: 'current', label: 'Semana Atual', range: '20 Out - 26 Out' },
-  { id: 'last', label: 'Semana Passada', range: '13 Out - 19 Out' },
-  { id: 'w3', label: '06 Out - 12 Out', range: '06 Out - 12 Out' },
-];
+// Helper para formatar data (dd MMM)
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+};
+
+// Gerar semanas dinâmicas
+const getWeekOptions = () => {
+  const today = new Date();
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(today.getDate() - today.getDay()); // Domingo
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // Sábado
+
+  const lastWeekStart = new Date(currentWeekStart);
+  lastWeekStart.setDate(currentWeekStart.getDate() - 7);
+  const lastWeekEnd = new Date(lastWeekStart);
+  lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+
+  const w3Start = new Date(lastWeekStart);
+  w3Start.setDate(lastWeekStart.getDate() - 7);
+  const w3End = new Date(w3Start);
+  w3End.setDate(w3Start.getDate() + 6);
+
+  return [
+    { id: 'current', label: 'Semana Atual', range: `${formatDate(currentWeekStart)} - ${formatDate(currentWeekEnd)}` },
+    { id: 'last', label: 'Semana Passada', range: `${formatDate(lastWeekStart)} - ${formatDate(lastWeekEnd)}` },
+    { id: 'w3', label: `${formatDate(w3Start)} - ${formatDate(w3End)}`, range: `${formatDate(w3Start)} - ${formatDate(w3End)}` },
+  ];
+};
+
+const MOCK_WEEKS = getWeekOptions();
 
 // Helper para gerar timeline baseada no horário final
 const generateTimeline = (endTime: string) => {
@@ -76,6 +105,10 @@ const App: React.FC = () => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Onboarding State
+  const [onboardingScreen, setOnboardingScreen] = useState<OnboardingScreen>(null);
+  const [selectedCity, setSelectedCity] = useState<string>('');
+
   // Estado Dinâmico do Usuário (Inicia Vazio/Novo)
   const [currentUser, setCurrentUser] = useState({
     name: '',
@@ -83,7 +116,7 @@ const App: React.FC = () => {
     phone: '',
     cpf: '',
     level: 'Guepardo PRO', // Nível fixo solicitado
-    avatar: 'https://i.pravatar.cc/150?u=default',
+    avatar: DEFAULT_AVATAR,
     region: 'Itu - SP',
     vehicle: 'moto',
     verified: false,
@@ -177,6 +210,26 @@ const App: React.FC = () => {
   const [autoAccept, setAutoAccept] = useState(false);
 
   // Settings
+  /* Delivery Help States */
+  const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
+  const [customerMessage, setCustomerMessage] = useState('');
+
+  const handleSendCustomerMessage = () => {
+    if (!mission) return;
+    const text = encodeURIComponent(customerMessage);
+    const url = `https://wa.me/${mission.customerPhone}?text=${text}`;
+    window.open(url, '_blank');
+    setShowDeliveryHelpModal(false);
+    setActiveHelpOption(null);
+    setCustomerMessage('');
+  };
+
+  const handleCallStore = () => {
+    if (!mission) return;
+    window.location.href = `tel:${mission.storePhone}`;
+  };
+
   const [emergencyContact, setEmergencyContact] = useState({ name: '', phone: '', relation: '', isBeneficiary: false });
   const [selectedVehicle, setSelectedVehicle] = useState<'moto' | 'car' | 'bike'>('moto');
 
@@ -253,20 +306,47 @@ const App: React.FC = () => {
       if (!userId) return;
 
       try {
+        // Carregar dados de autenticação (Email)
+        const { data: { user: authUser } } = await supabaseClient.supabase.auth.getUser();
+
         // Carregar perfil
         const profile = await supabaseClient.getProfile(userId);
+
+        // Carregar dados bancários (se existirem)
+        let bankData = null;
+        try {
+          bankData = await supabaseClient.getBankAccount(userId);
+        } catch (e) {
+          // Conta bancária pode não existir ainda
+          console.log('Sem dados bancários ainda');
+        }
+
         if (profile) {
           setCurrentUser(prev => ({
             ...prev,
-            name: profile.name || '',
-            email: profile.email || '',
-            phone: profile.phone || '',
-            cpf: profile.cpf || '',
-            level: profile.level || 'Guepardo PRO',
-            avatar: profile.avatar || prev.avatar,
-            region: profile.region || 'Itu - SP',
-            vehicle: profile.vehicle || 'moto',
-            verified: profile.verified || false
+            // Prioriza full_name (novo schema), fallback para name (schema antigo)
+            name: profile.full_name || profile.name || '',
+            email: authUser?.email || prev.email,
+            phone: profile.phone || prev.phone,
+            cpf: profile.cpf || prev.cpf,
+            level: 'Guepardo PRO',
+            // Prioriza avatar_url
+            avatar: profile.avatar_url || profile.avatar || prev.avatar,
+            region: profile.work_city || profile.region || 'Itu - SP',
+            vehicle: 'moto',
+            verified: profile.status === 'approved' || profile.verified || false,
+            bank: {
+              ...prev.bank,
+              // Mapeia dados bancários se existirem
+              ...(bankData ? {
+                name: bankData.bank_name || prev.bank.name,
+                agency: bankData.agency || prev.bank.agency,
+                account: bankData.account_number || prev.bank.account,
+                type: bankData.account_type || prev.bank.type,
+              } : {}),
+              // Pix Key vem do perfil ou da conta bancária
+              pixKey: profile.pix_key || (bankData?.pix_key) || prev.bank.pixKey
+            }
           }));
         }
 
@@ -717,30 +797,8 @@ const App: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerData.name || !registerData.cpf || !registerData.email || !registerData.password) {
-      alert("Preencha todos os campos obrigatórios.");
-      return;
-    }
-    if (registerData.password !== registerData.confirmPassword) {
-      alert("As senhas não coincidem.");
-      return;
-    }
-    setIsLoadingAuth(true);
-    try {
-      await supabaseClient.signUp(registerData.email, registerData.password, {
-        name: registerData.name,
-        cpf: registerData.cpf,
-        phone: registerData.phone
-      });
-      alert("Conta criada com sucesso! Verifique seu e-mail para confirmar.");
-      setAuthScreen('LOGIN');
-      setRegisterData({ name: '', cpf: '', email: '', phone: '', password: '', confirmPassword: '' });
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      alert(error.message || "Erro ao criar conta. Tente novamente.");
-    } finally {
-      setIsLoadingAuth(false);
-    }
+    // Instead of registering directly, start the onboarding wizard flow
+    setOnboardingScreen('CITY_SELECTION');
   };
 
   const handleVerifyCode = () => {
@@ -782,6 +840,43 @@ const App: React.FC = () => {
       setAuthScreen('LOGIN');
     }, 1500);
   };
+
+  // ---------------- ONBOARDING HANDLERS ----------------
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setOnboardingScreen('WIZARD');
+  };
+
+  const handleWizardComplete = async (wizardData: WizardData) => {
+    setIsLoadingAuth(true);
+    try {
+      // Add selected city to wizard data
+      const completeData = {
+        ...wizardData,
+        workCity: selectedCity
+      };
+
+      await processWizardRegistration(completeData);
+
+      alert("Cadastro realizado com sucesso! Aguarde a aprovação do seu perfil.");
+      setOnboardingScreen(null);
+      setAuthScreen('LOGIN');
+      setSelectedCity('');
+    } catch (error: any) {
+      console.error('Wizard registration error:', error);
+      alert(error.message || "Erro ao completar cadastro. Tente novamente.");
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  const handleWizardCancel = () => {
+    setOnboardingScreen(null);
+    setSelectedCity('');
+    setAuthScreen('LOGIN');
+  };
+
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -866,7 +961,7 @@ const App: React.FC = () => {
                 <div className="flex flex-col items-center space-y-4 pt-2">
                   <button onClick={() => setAuthScreen('RECOVERY')} className={`text-xs font-bold ${textMuted} hover:text-[#FF6B00] transition-colors`}>Esqueci minha senha</button>
                   <div className={`w-full h-px ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                  <button onClick={() => setAuthScreen('REGISTER')} className={`text-xs font-black uppercase tracking-wide ${textPrimary}`}>
+                  <button onClick={() => setOnboardingScreen('CITY_SELECTION')} className={`text-xs font-black uppercase tracking-wide ${textPrimary}`}>
                     Não tem conta? <span className="text-[#FF6B00]">Cadastre-se</span>
                   </button>
                 </div>
@@ -891,6 +986,31 @@ const App: React.FC = () => {
                   <input type="password" value={registerData.password} onChange={e => setRegisterData({ ...registerData, password: e.target.value })} placeholder="Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
                   <input type="password" value={registerData.confirmPassword} onChange={e => setRegisterData({ ...registerData, confirmPassword: e.target.value })} placeholder="Confirmar Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
                 </div>
+
+                {/* Privacy Policy Acceptance */}
+                <div className={`p-3 rounded-xl ${innerBg} border border-white/5`}>
+                  <p className={`text-[10px] ${textMuted} leading-relaxed text-center`}>
+                    Ao criar sua conta, você concorda com nossos{' '}
+                    <a
+                      href="https://guepardodelivery.com.br/termos"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6B00] font-bold hover:underline"
+                    >
+                      Termos de Uso
+                    </a>
+                    {' '}e{' '}
+                    <a
+                      href="https://guepardodelivery.com.br/privacidade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6B00] font-bold hover:underline"
+                    >
+                      Política de Privacidade
+                    </a>
+                  </p>
+                </div>
+
                 <button type="submit" disabled={isLoadingAuth} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center">
                   {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Continuar"}
                 </button>
@@ -1135,7 +1255,14 @@ const App: React.FC = () => {
                         <i className="fas fa-location-arrow text-[10px]"></i>
                         <span>GPS</span>
                       </button>
-                      <button onClick={() => setShowSOSModal(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#FF6B00] ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
+                      <button
+                        onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)}
+                        className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                      >
+                        <i className="fas fa-circle-question text-[10px]"></i>
+                        <span>Ajuda</span>
+                      </button>
+                      <button onClick={() => setShowSOSModal(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
                     </div>
                   </div>
 
@@ -1150,6 +1277,63 @@ const App: React.FC = () => {
                           <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500"><i className="fas fa-map-marked-alt text-xl"></i></div>
                           <span className="text-[8px] font-black text-green-500 uppercase">Maps</span>
                         </button>
+                      </div>
+                    )}
+
+                    {showDeliveryHelpModal && (
+                      <div className={`p-4 rounded-[20px] border border-white/5 space-y-3 ${innerBg} animate-in fade-in slide-in-from-top-2 mb-3`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className={`text-xs font-black uppercase tracking-widest ${textPrimary}`}>Central de Ajuda</h3>
+                          <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400"><i className="fas fa-times text-[10px]"></i></button>
+                        </div>
+
+                        {activeHelpOption === null ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              onClick={() => setActiveHelpOption('customer_not_found')}
+                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]"><i className="fas fa-user-slash"></i></div>
+                              <span className={`text-[10px] font-bold ${textPrimary}`}>Cliente não localizado</span>
+                            </button>
+                            <button
+                              onClick={() => setActiveHelpOption('talk_to_store')}
+                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700]"><i className="fas fa-store"></i></div>
+                              <span className={`text-[10px] font-bold ${textPrimary}`}>Falar com Lojista</span>
+                            </button>
+                          </div>
+                        ) : activeHelpOption === 'customer_not_found' ? (
+                          <div className="space-y-3 animate-in slide-in-from-right">
+                            <p className={`${textMuted} text-[10px]`}>Envie uma mensagem direta para o cliente:</p>
+                            <textarea
+                              value={customerMessage}
+                              onChange={(e) => setCustomerMessage(e.target.value)}
+                              placeholder="Olá, estou em frente ao endereço mas não encontrei ninguém..."
+                              className={`w-full h-20 rounded-xl p-3 text-xs outline-none resize-none border focus:border-[#FF6B00] ${theme === 'dark' ? 'bg-black text-white border-zinc-700' : 'bg-white text-black border-zinc-300'}`}
+                            />
+                            <div className="flex space-x-2">
+                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase ${textMuted} border border-transparent hover:border-zinc-700`}>Voltar</button>
+                              <button onClick={handleSendCustomerMessage} className="flex-[2] h-10 bg-[#FF6B00] rounded-xl font-black text-white text-xs uppercase shadow-lg flex items-center justify-center space-x-2">
+                                <i className="fab fa-whatsapp"></i>
+                                <span>Enviar Mensagem</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3 animate-in slide-in-from-right text-center">
+                            <p className={`${textMuted} text-[10px]`}>Número do Lojista:</p>
+                            <p className={`text-xl font-black ${textPrimary} mb-2`}>{mission.storePhone}</p>
+                            <div className="flex space-x-2">
+                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase ${textMuted} border border-transparent hover:border-zinc-700`}>Voltar</button>
+                              <button onClick={handleCallStore} className="flex-[2] h-10 bg-[#FFD700] rounded-xl font-black text-black text-xs uppercase shadow-lg flex items-center justify-center space-x-2">
+                                <i className="fas fa-phone"></i>
+                                <span>Ligar Agora</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1707,7 +1891,7 @@ const App: React.FC = () => {
               <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Ajustes</h1>
               <div className={`flex items-center space-x-4 mb-10 p-6 rounded-[32px] border ${cardBg}`}>
                 <div className="w-16 h-16 rounded-3xl p-1 border-2 border-[#FF6B00]">
-                  <img src={currentUser.avatar} className="w-full h-full object-cover rounded-2xl" alt="Perfil" />
+                  <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-2xl" alt="Perfil" />
                 </div>
                 <div>
                   <h2 className={`text-xl font-black ${textPrimary}`}>{currentUser.name || 'Entregador'}</h2>
@@ -1801,7 +1985,7 @@ const App: React.FC = () => {
                       phone: '',
                       cpf: '',
                       level: 'Guepardo PRO',
-                      avatar: 'https://i.pravatar.cc/150?u=default',
+                      avatar: DEFAULT_AVATAR,
                       region: 'Itu - SP',
                       vehicle: 'moto',
                       verified: false,
@@ -2060,6 +2244,29 @@ const App: React.FC = () => {
     }
   };
 
+
+  // Show onboarding wizard if in progress
+  if (onboardingScreen === 'CITY_SELECTION') {
+    return (
+      <CitySelection
+        onCitySelect={handleCitySelect}
+        onBack={handleWizardCancel}
+        theme={theme}
+      />
+    );
+  }
+
+  if (onboardingScreen === 'WIZARD') {
+    return (
+      <WizardContainer
+        onComplete={handleWizardComplete}
+        onCancel={handleWizardCancel}
+        initialCity={selectedCity}
+        theme={theme}
+      />
+    );
+  }
+
   if (!isAuthenticated) {
     return renderAuthScreen();
   }
@@ -2071,7 +2278,7 @@ const App: React.FC = () => {
           <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
             <div className="flex items-center justify-center">
               <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
-                <img src={currentUser.avatar} alt="Perfil" className="w-full h-full rounded-full object-cover" />
+                <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
               </div>
             </div>
 
