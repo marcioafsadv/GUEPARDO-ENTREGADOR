@@ -153,6 +153,7 @@ export const createDelivery = async (deliveryData: any) => {
   return data;
 };
 
+
 export const getDeliveries = async (userId: string) => {
   const { data, error } = await supabase
     .from('deliveries')
@@ -163,6 +164,68 @@ export const getDeliveries = async (userId: string) => {
   if (error) throw error;
   return data;
 };
+
+export const subscribeToAvailableMissions = (callback: (mission: any) => void) => {
+  return supabase
+    .channel('public:deliveries')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'deliveries',
+        filter: 'status=eq.pending'
+      },
+      (payload) => {
+        callback(payload.new);
+      }
+    )
+    .subscribe();
+};
+
+export const acceptMission = async (missionId: string, driverId: string) => {
+  const { data, error } = await supabase
+    .from('deliveries')
+    .update({
+      status: 'accepted',
+      driver_id: driverId,
+      accepted_at: new Date().toISOString()
+    })
+    .eq('id', missionId)
+    .eq('status', 'pending') // Ensure it's still pending
+    .select()
+    .single();
+
+
+  if (error) throw error;
+  return data;
+};
+
+export const completeMission = async (missionId: string, driverId: string) => {
+  const { data, error } = await supabase
+    .from('deliveries')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', missionId)
+    .eq('driver_id', driverId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const rejectMission = async (missionId: string, driverId: string) => {
+  // Optional: Log rejection or just ignore locally
+  // For now, we might not need to update the DB if we just want to hide it locally
+  // But if we want to prevent showing it again, we might need a 'rejected_deliveries' table or similar
+  // Or just update status if that's the business logic (e.g. 'rejected' -> returns to pool? or 'cancelled'?)
+  // For this MVP, we'll just log it.
+  console.log(`Driver ${driverId} rejected mission ${missionId}`);
+};
+
 
 // ============ TRANSACTIONS ============
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
-import { COLORS, calculateEarnings, MOCK_STORES, MOCK_CUSTOMERS, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
+import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapMock } from './components/MapMock';
 
 import { HoldToFillButton } from './components/HoldToFillButton';
@@ -444,6 +444,68 @@ const App: React.FC = () => {
     }
   };
 
+  // --- REAL-TIME LOCATION TRACKING ---
+  useEffect(() => {
+    let watchId: number | null = null;
+
+    if (status !== DriverStatus.OFFLINE && userId && gpsEnabled) {
+      console.log("Starting Location Tracking...");
+
+      // Initial Update
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          supabaseClient.updateProfile(userId, {
+            current_lat: latitude,
+            current_lng: longitude,
+            is_online: true,
+            last_location_update: new Date().toISOString()
+          });
+        },
+        (err) => console.error("Error getting initial location", err),
+        { enableHighAccuracy: true }
+      );
+
+      // Continuous Watch
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          // Throttle updates? For now, we update on every change Supabase can handle it, 
+          // or we can debounce. React state might debounce a bit if we put it in state, 
+          // but here we call DB directly.
+          // Let's rely on the watchPosition frequency (usually moves only when distance changes significantly if configured)
+
+          // To save DB writes, maybe we only write every 10s?
+          // For MVP, direct write is fine for small scale.
+          supabaseClient.updateProfile(userId, {
+            current_lat: latitude,
+            current_lng: longitude,
+            last_location_update: new Date().toISOString()
+          }).catch(e => console.error("Location update failed", e));
+        },
+        (err) => console.error("Location watch error", err),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else if (status === DriverStatus.OFFLINE && userId) {
+      // Mark as offline in DB
+      supabaseClient.updateProfile(userId, {
+        is_online: false
+      }).catch(e => console.error("Failed to mark offline", e));
+    }
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        console.log("Location Tracking Stopped.");
+      }
+    };
+  }, [status, userId, gpsEnabled]);
+
+
   const handleSOSAction = (type: 'police' | 'samu' | 'mechanic' | 'share') => {
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     switch (type) {
@@ -515,43 +577,47 @@ const App: React.FC = () => {
     }
   }, [status]);
 
+
   useEffect(() => {
-    let timer: any;
+    let subscription: any;
+
     if (status === DriverStatus.ONLINE && !mission) {
-      timer = setTimeout(() => {
-        const store = MOCK_STORES[Math.floor(Math.random() * MOCK_STORES.length)];
-        const customer = MOCK_CUSTOMERS[Math.floor(Math.random() * MOCK_CUSTOMERS.length)];
+      console.log("Listening for new missions...");
+      subscription = supabaseClient.subscribeToAvailableMissions((newMissionPayload) => {
+        console.log("New mission received:", newMissionPayload);
 
-        const distToStore = parseFloat((Math.random() * 2 + 0.2).toFixed(1));
-        const maxDeliveryDist = Math.max(1, maxDistance - distToStore);
-        const delivDist = parseFloat((Math.random() * Math.min(8, maxDeliveryDist) + 1).toFixed(1));
-        const totalDist = parseFloat((distToStore + delivDist).toFixed(1));
-        const price = calculateEarnings(delivDist);
-
-        if (price < minPrice) return;
-
-        const dynamicMission: any = {
-          id: `PL-${Math.floor(Math.random() * 9000) + 1000}`,
-          storeName: store.name,
-          storeAddress: store.address,
-          customerName: customer.name,
-          customerAddress: customer.address,
-          customerPhoneSuffix: customer.phoneSuffix,
-          items: store.items,
-          collectionCode: store.collectionCode,
-          distanceToStore: distToStore,
-          deliveryDistance: delivDist,
-          totalDistance: totalDist,
-          earnings: price,
-          timeLimit: 25
+        // Transform Supabase data to App's DeliveryMission format
+        const dynamicMission: DeliveryMission = {
+          id: newMissionPayload.id,
+          storeName: newMissionPayload.store_name,
+          storeAddress: newMissionPayload.store_address,
+          customerName: newMissionPayload.customer_name,
+          customerAddress: newMissionPayload.customer_address,
+          customerPhoneSuffix: newMissionPayload.customer_phone_suffix,
+          items: newMissionPayload.items || [],
+          collectionCode: newMissionPayload.collection_code,
+          distanceToStore: newMissionPayload.distance_to_store,
+          deliveryDistance: newMissionPayload.delivery_distance,
+          totalDistance: newMissionPayload.total_distance,
+          earnings: newMissionPayload.earnings,
+          timeLimit: 25, // Default or fetch from DB if available
+          storePhone: newMissionPayload.store_phone || '',
+          customerPhone: newMissionPayload.customer_phone || ''
         };
+
         setMission(dynamicMission);
         setStatus(DriverStatus.ALERTING);
         setAlertCountdown(30);
-      }, 7000);
+      });
     }
-    return () => clearTimeout(timer);
-  }, [status, mission, maxDistance, minPrice]);
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [status, mission]);
+
 
   useEffect(() => {
     let interval: any;
@@ -565,71 +631,62 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [status, alertCountdown]);
 
+
+
   const processDeliverySuccess = async (currentMission: DeliveryMission) => {
+    if (!currentMission || !userId) return;
+
     // Prevent duplicate processing
     const missionId = `Entrega #${currentMission.id}`;
     if (history.some(h => h.type === missionId)) return;
-    const earned = currentMission.earnings;
-    setBalance(prev => prev + earned);
-    setDailyEarnings(prev => prev + earned);
-    setLastEarnings(earned);
-    setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
-    setStatus(DriverStatus.ONLINE);
-    setMission(null);
-    setShowPostDeliveryModal(true);
 
-    const newTransaction: Transaction = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: `Entrega #${currentMission.id}`,
-      amount: earned,
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      date: 'Hoje',
-      weekId: 'current',
-      status: 'COMPLETED',
-      details: {
-        duration: '15 min',
-        stops: 2,
-        timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-      }
-    };
-    setHistory(prev => [newTransaction, ...prev]);
+    try {
+      // 1. Complete mission in Supabase
+      await supabaseClient.completeMission(currentMission.id, userId);
 
-    // Salvar no Supabase
-    if (userId) {
-      try {
-        // Salvar entrega
-        await supabaseClient.createDelivery({
-          id: currentMission.id,
-          driver_id: userId,
-          store_name: currentMission.storeName,
-          store_address: currentMission.storeAddress,
-          customer_name: currentMission.customerName,
-          customer_address: currentMission.customerAddress,
-          customer_phone_suffix: currentMission.customerPhoneSuffix,
-          items: currentMission.items,
-          collection_code: currentMission.collectionCode,
-          distance_to_store: currentMission.distanceToStore,
-          delivery_distance: currentMission.deliveryDistance,
-          total_distance: currentMission.totalDistance,
-          earnings: earned,
-          status: 'COMPLETED',
-          completed_at: new Date().toISOString()
-        });
+      const earned = currentMission.earnings;
 
-        // Salvar transação
-        await supabaseClient.createTransaction({
-          ...newTransaction,
-          user_id: userId
-        });
+      // 2. Prepare transaction data
+      const newTransaction: Transaction = {
+        id: Math.random().toString(36).substr(2, 9),
+        type: `Entrega #${currentMission.id}`,
+        amount: earned,
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Hoje',
+        weekId: 'current',
+        status: 'COMPLETED',
+        details: {
+          duration: '15 min',
+          stops: 2,
+          timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+        }
+      };
 
-        // Atualizar estatísticas
-        await supabaseClient.updateDailyStats(userId, {
-          finished: 1,
-          earnings: earned
-        });
-      } catch (error) {
-        console.error('Error saving delivery to Supabase:', error);
-      }
+      // 3. Save to Supabase (Transaction & Stats)
+      await supabaseClient.createTransaction({
+        ...newTransaction,
+        week_id: newTransaction.weekId, // Ensure snake_case mapping
+        user_id: userId
+      });
+
+      await supabaseClient.updateDailyStats(userId, {
+        finished: 1,
+        earnings: earned
+      });
+
+      // 4. Update local state
+      setBalance(prev => prev + earned);
+      setDailyEarnings(prev => prev + earned);
+      setLastEarnings(earned);
+      setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
+      setStatus(DriverStatus.ONLINE);
+      setMission(null);
+      setShowPostDeliveryModal(true);
+      setHistory(prev => [newTransaction, ...prev]);
+
+    } catch (error) {
+      console.error('Error completing mission:', error);
+      alert('Erro ao finalizar entrega. Tente novamente.');
     }
   };
 
@@ -773,6 +830,41 @@ const App: React.FC = () => {
   const innerBg = theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100';
   const isFilterActive = backHome || maxDistance < 30 || minPrice > 0;
 
+
+  const handleAcceptMission = async () => {
+    if (!mission || !userId) return;
+    try {
+      await supabaseClient.acceptMission(mission.id, userId);
+      setDailyStats(s => ({ ...s, accepted: s.accepted + 1 }));
+      setStatus(DriverStatus.GOING_TO_STORE);
+
+      // Stop the sound
+      if (alertAudioRef.current) {
+        alertAudioRef.current.pause();
+        alertAudioRef.current.currentTime = 0;
+      }
+    } catch (error) {
+      console.error('Error accepting mission:', error);
+      alert('Esta entrega já foi aceita por outro entregador ou não está mais disponível.');
+      setStatus(DriverStatus.ONLINE);
+      setMission(null);
+    }
+  };
+
+  const handleRejectMission = async () => {
+    if (!mission || !userId) return;
+    await supabaseClient.rejectMission(mission.id, userId);
+    setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 }));
+    setStatus(DriverStatus.ONLINE);
+    setMission(null);
+
+    // Stop the sound
+    if (alertAudioRef.current) {
+      alertAudioRef.current.pause();
+      alertAudioRef.current.currentTime = 0;
+    }
+  };
+
   const handleMainAction = () => {
     if (status === DriverStatus.GOING_TO_STORE) setStatus(DriverStatus.ARRIVED_AT_STORE);
     else if (status === DriverStatus.ARRIVED_AT_STORE) setStatus(DriverStatus.PICKING_UP);
@@ -780,6 +872,7 @@ const App: React.FC = () => {
     else if (status === DriverStatus.GOING_TO_CUSTOMER) setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
     else if (status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) handleFinishDelivery();
   };
+
 
   // ---------------- AUTH HANDLERS ----------------
   const handleLogin = async () => {
@@ -2553,9 +2646,10 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
+
             <div className="flex space-x-4 shrink-0">
-              <button onClick={() => { setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 })); setStatus(DriverStatus.ONLINE); setMission(null); }} className={`flex-1 h-16 rounded-2xl font-bold uppercase text-xs ${innerBg} ${textMuted}`}>Recusar</button>
-              <button onClick={() => { setDailyStats(s => ({ ...s, accepted: s.accepted + 1 })); setStatus(DriverStatus.GOING_TO_STORE); }} className="flex-[2] h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs shadow-xl active:scale-95 transition-transform">ACEITAR</button>
+              <button onClick={handleRejectMission} className={`flex-1 h-16 rounded-2xl font-bold uppercase text-xs ${innerBg} ${textMuted}`}>Recusar</button>
+              <button onClick={handleAcceptMission} className="flex-[2] h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs shadow-xl active:scale-95 transition-transform">ACEITAR</button>
             </div>
           </div>
         </div>
