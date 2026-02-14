@@ -472,6 +472,8 @@ const App: React.FC = () => {
             current_lat: latitude,
             current_lng: longitude,
             is_online: true,
+            name: currentUser.name,
+            vehicle_type: currentUser.vehicle,
             last_location_update: new Date().toISOString()
           });
         },
@@ -493,6 +495,8 @@ const App: React.FC = () => {
           supabaseClient.updateProfile(userId, {
             current_lat: latitude,
             current_lng: longitude,
+            name: currentUser.name,
+            vehicle_type: currentUser.vehicle,
             last_location_update: new Date().toISOString()
           }).catch(e => console.error("Location update failed", e));
         },
@@ -516,7 +520,7 @@ const App: React.FC = () => {
         console.log("Location Tracking Stopped.");
       }
     };
-  }, [status, userId, gpsEnabled]);
+  }, [status, userId, gpsEnabled, currentUser.name, currentUser.vehicle]);
 
 
   const handleSOSAction = (type: 'police' | 'samu' | 'mechanic' | 'share') => {
