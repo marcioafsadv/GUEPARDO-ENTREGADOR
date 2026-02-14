@@ -301,6 +301,19 @@ const App: React.FC = () => {
     };
   }, [videoStream]);
 
+  // Restore Session on Mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabaseClient.supabase.auth.getSession();
+      if (session?.user) {
+        console.log("Session restored:", session.user.id);
+        setUserId(session.user.id);
+        setIsAuthenticated(true);
+      }
+    };
+    checkSession();
+  }, []);
+
   // Carregar dados do usuário quando autenticado
   useEffect(() => {
     const loadUserData = async () => {
