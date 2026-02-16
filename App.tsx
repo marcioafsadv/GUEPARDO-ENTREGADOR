@@ -1499,7 +1499,7 @@ const App: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className={`p-5 rounded-[28px] border flex flex-col justify-center ${innerBg} border-transparent`}>
                       <p className={`${textMuted} text-[9px] font-black uppercase mb-1`}>Ganhos Hoje</p>
-                      <p className={`text-2xl font-black ${textPrimary}`}>{showBalance ? `R$ ${dailyEarnings.toFixed(2)}` : 'R$ ••••'}</p>
+                      <p className={`text-2xl font-black ${textPrimary}`}>{showBalance ? `R$ ${(dailyEarnings || 0).toFixed(2)}` : 'R$ ••••'}</p>
                     </div>
                     <div className={`p-5 rounded-[28px] border flex flex-col space-y-2 ${innerBg} border-transparent`}>
                       <div className="flex justify-between items-center pb-1 border-b border-white/5">
@@ -1874,19 +1874,19 @@ const App: React.FC = () => {
               <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>
                 <p className={`${textMuted} text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos da Semana</p>
                 <p className={`text-[10px] font-bold ${textMuted} mb-2`}>{activeWeekLabel}</p>
-                <p className={`text-xl font-black ${textPrimary}`}>R$ {weeklyEarningsTotal.toFixed(2)}</p>
+                <p className={`text-xl font-black ${textPrimary}`}>R$ {(weeklyEarningsTotal || 0).toFixed(2)}</p>
               </div>
               <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>
                 <p className={`${textMuted} text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos de Hoje</p>
                 <p className="text-[10px] font-bold opacity-0 mb-2">Hoje</p>
-                <p className={`text-xl font-black ${textPrimary}`}>R$ {dailyEarnings.toFixed(2)}</p>
+                <p className={`text-xl font-black ${textPrimary}`}>R$ {(dailyEarnings || 0).toFixed(2)}</p>
               </div>
             </div>
 
             <div className={`rounded-[32px] p-8 border mb-8 ${cardBg} relative overflow-hidden`}>
               <div className="absolute -right-4 -top-4 opacity-10"><i className="fas fa-wallet text-8xl text-[#FF6B00]"></i></div>
               <p className={`${textMuted} font-bold uppercase text-[10px] tracking-widest mb-2 relative z-10`}>Saldo Disponível</p>
-              <h2 className={`text-4xl font-black ${textPrimary} mb-6 relative z-10`}>R$ {balance.toFixed(2)}</h2>
+              <h2 className={`text-4xl font-black ${textPrimary} mb-6 relative z-10`}>R$ {(balance || 0).toFixed(2)}</h2>
 
               <button disabled={balance <= 0} onClick={() => setCurrentScreen('WITHDRAWAL_REQUEST')} className={`w-full h-14 rounded-2xl text-white font-black text-xs uppercase italic tracking-widest shadow-lg flex items-center justify-center space-x-2 transition-all relative z-10 ${balance <= 0 ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00] shadow-orange-900/30 active:scale-95'}`}>
                 <i className="fas fa-hand-holding-dollar text-lg"></i>
@@ -2695,7 +2695,7 @@ const App: React.FC = () => {
             <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-900/40"><i className="fas fa-check text-4xl text-white"></i></div>
             <h2 className="text-3xl font-black italic mb-2 text-white">MUITO BEM!</h2>
             <p className="text-zinc-400 font-bold mb-8 uppercase text-xs tracking-widest">Entrega concluída com sucesso</p>
-            <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {lastEarnings.toFixed(2)}</p></div>
+            <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(lastEarnings || 0).toFixed(2)}</p></div>
             <button onClick={() => setShowPostDeliveryModal(false)} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
           </div>
         </div>
