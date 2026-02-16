@@ -656,13 +656,14 @@ const App: React.FC = () => {
         }
       };
 
+      console.log("ℹ️ Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
       fetchPendingDeliveries();
 
       // THEN SUBSCRIBE TO NEW DELIVERIES AND UPDATES
       subscription = supabaseClient.subscribeToAvailableMissions(
         // Callback for new missions (INSERT)
         (newMissionPayload) => {
-          console.log("📥 New mission received:", newMissionPayload);
+          console.log("📥 New mission received:", newMissionPayload, "| Rejected list:", rejectedMissions);
 
           // Only show if not already showing a mission
           if (mission) {
@@ -671,8 +672,9 @@ const App: React.FC = () => {
           }
 
           // Ignore if this mission was previously rejected locally
-          if (rejectedMissions.includes(newMissionPayload.id)) {
-            console.log("🚫 Ignoring rejected mission:", newMissionPayload.id);
+          // Convert both to string to be safe
+          if (rejectedMissions.includes(String(newMissionPayload.id))) {
+            console.log("🚫 Ignoring rejected mission (Subscription):", newMissionPayload.id);
             return;
           }
 
@@ -719,7 +721,7 @@ const App: React.FC = () => {
         subscription.unsubscribe();
       }
     };
-  }, [status, mission]);
+  }, [status, mission, rejectedMissions]);
 
 
   // PERIODIC POLLING: Check for pending deliveries every 10 seconds while ONLINE
@@ -727,7 +729,7 @@ const App: React.FC = () => {
     let pollingInterval: any;
 
     if (status === DriverStatus.ONLINE && !mission && currentUser) {
-      console.log("🔄 Starting periodic polling for pending deliveries...");
+      console.log("🔄 Starting periodic polling for pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
 
       const checkForPendingDeliveries = async () => {
         try {
@@ -746,7 +748,8 @@ const App: React.FC = () => {
 
           if (pendingDeliveries && pendingDeliveries.length > 0) {
             // Find the first pending delivery that hasn't been rejected
-            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(d.id));
+            // Use String comparison to be safe
+            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
 
             if (firstPending) {
               console.log("✅ Polling found pending delivery:", firstPending);
@@ -790,7 +793,7 @@ const App: React.FC = () => {
         clearInterval(pollingInterval);
       }
     };
-  }, [status, mission, currentUser]);
+  }, [status, mission, currentUser, rejectedMissions]);
 
 
   useEffect(() => {
