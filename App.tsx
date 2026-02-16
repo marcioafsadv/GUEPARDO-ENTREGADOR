@@ -257,7 +257,12 @@ const App: React.FC = () => {
   const [balance, setBalance] = useState(0.00);
   const [dailyEarnings, setDailyEarnings] = useState(0.00);
   const [dailyStats, setDailyStats] = useState({ onlineTime: 0, earnings: 0, accepted: 0, rejected: 0 });
-  const [rejectedMissions, setRejectedMissions] = useState<string[]>([]);
+
+  // Initialize rejected missions from localStorage to persist across reloads
+  const [rejectedMissions, setRejectedMissions] = useState<string[]>(() => {
+    const saved = localStorage.getItem('rejectedMissions');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [history, setHistory] = useState<Transaction[]>([]); // Histórico Vazio
   const [payoutsList, setPayoutsList] = useState<any[]>([]); // Lista de Repasses Vazia
 
@@ -1052,8 +1057,10 @@ const App: React.FC = () => {
   const handleRejectMission = async () => {
     if (!mission || !userId) return;
 
-    // Add to local rejected list so it doesn't show up again
-    setRejectedMissions(prev => [...prev, mission.id]);
+    // Add to local rejected list and persist to localStorage
+    const newRejectedList = [...rejectedMissions, mission.id];
+    setRejectedMissions(newRejectedList);
+    localStorage.setItem('rejectedMissions', JSON.stringify(newRejectedList));
 
     await supabaseClient.rejectMission(mission.id, userId);
     setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 }));
