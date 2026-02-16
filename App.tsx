@@ -472,10 +472,8 @@ const App: React.FC = () => {
             current_lat: latitude,
             current_lng: longitude,
             is_online: true,
-            name: currentUser.name,
-            vehicle_type: currentUser.vehicle,
             last_location_update: new Date().toISOString()
-          });
+          }).catch(e => console.error("Initial location update failed", e));
         },
         (err) => console.error("Error getting initial location", err),
         { enableHighAccuracy: true }
@@ -495,8 +493,6 @@ const App: React.FC = () => {
           supabaseClient.updateProfile(userId, {
             current_lat: latitude,
             current_lng: longitude,
-            name: currentUser.name,
-            vehicle_type: currentUser.vehicle,
             last_location_update: new Date().toISOString()
           }).catch(e => console.error("Location update failed", e));
         },
@@ -580,6 +576,7 @@ const App: React.FC = () => {
       timer = setTimeout(() => {
         setIsOrderReady(true);
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        // Status will be updated after code validation, not automatically
       }, 10000);
     } else {
       setIsOrderReady(false);
@@ -595,37 +592,114 @@ const App: React.FC = () => {
   }, [status]);
 
 
+
   useEffect(() => {
     let subscription: any;
 
     if (status === DriverStatus.ONLINE && !mission) {
       console.log("Listening for new missions...");
-      subscription = supabaseClient.subscribeToAvailableMissions((newMissionPayload) => {
-        console.log("New mission received:", newMissionPayload);
 
-        // Transform Supabase data to App's DeliveryMission format
-        const dynamicMission: DeliveryMission = {
-          id: newMissionPayload.id,
-          storeName: newMissionPayload.store_name,
-          storeAddress: newMissionPayload.store_address,
-          customerName: newMissionPayload.customer_name,
-          customerAddress: newMissionPayload.customer_address,
-          customerPhoneSuffix: newMissionPayload.customer_phone_suffix,
-          items: newMissionPayload.items || [],
-          collectionCode: newMissionPayload.collection_code,
-          distanceToStore: newMissionPayload.distance_to_store,
-          deliveryDistance: newMissionPayload.delivery_distance,
-          totalDistance: newMissionPayload.total_distance,
-          earnings: newMissionPayload.earnings,
-          timeLimit: 25, // Default or fetch from DB if available
-          storePhone: newMissionPayload.store_phone || '',
-          customerPhone: newMissionPayload.customer_phone || ''
-        };
+      // FETCH EXISTING PENDING DELIVERIES FIRST
+      const fetchPendingDeliveries = async () => {
+        try {
+          console.log("🔍 Fetching existing pending deliveries...");
+          const { data: pendingDeliveries, error } = await supabaseClient.supabase
+            .from('deliveries')
+            .select('*')
+            .eq('status', 'pending')
+            .is('driver_id', null)
+            .order('created_at', { ascending: true })
+            .limit(1); // Get the oldest pending delivery
 
-        setMission(dynamicMission);
-        setStatus(DriverStatus.ALERTING);
-        setAlertCountdown(30);
-      });
+          if (error) {
+            console.error("❌ Error fetching pending deliveries:", error);
+            return;
+          }
+
+          if (pendingDeliveries && pendingDeliveries.length > 0) {
+            const firstPending = pendingDeliveries[0];
+            console.log("✅ Found existing pending delivery:", firstPending);
+
+            // Transform to DeliveryMission format with safe defaults
+            const dynamicMission: DeliveryMission = {
+              id: firstPending.id,
+              storeName: firstPending.store_name || 'Loja',
+              storeAddress: firstPending.store_address || '',
+              customerName: firstPending.customer_name || 'Cliente',
+              customerAddress: firstPending.customer_address || '',
+              customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+              items: firstPending.items || [],
+              collectionCode: firstPending.collection_code || '0000',
+              distanceToStore: firstPending.distance_to_store || 1.5,
+              deliveryDistance: firstPending.delivery_distance || 2.0,
+              totalDistance: firstPending.total_distance || 3.5,
+              earnings: parseFloat(firstPending.earnings || '0'),
+              timeLimit: 25,
+              storePhone: '', // Not in DB yet
+              customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+            };
+
+            setMission(dynamicMission);
+            setStatus(DriverStatus.ALERTING);
+            setAlertCountdown(30);
+          } else {
+            console.log("ℹ️ No pending deliveries found");
+          }
+        } catch (err) {
+          console.error("❌ Error in fetchPendingDeliveries:", err);
+        }
+      };
+
+      fetchPendingDeliveries();
+
+      // THEN SUBSCRIBE TO NEW DELIVERIES AND UPDATES
+      subscription = supabaseClient.subscribeToAvailableMissions(
+        // Callback for new missions (INSERT)
+        (newMissionPayload) => {
+          console.log("📥 New mission received:", newMissionPayload);
+
+          // Only show if not already showing a mission
+          if (mission) {
+            console.log("⚠️ Already showing a mission, ignoring new one");
+            return;
+          }
+
+          // Transform Supabase data to App's DeliveryMission format
+          const dynamicMission: DeliveryMission = {
+            id: newMissionPayload.id,
+            storeName: newMissionPayload.store_name,
+            storeAddress: newMissionPayload.store_address,
+            customerName: newMissionPayload.customer_name,
+            customerAddress: newMissionPayload.customer_address,
+            customerPhoneSuffix: newMissionPayload.customer_phone_suffix,
+            items: newMissionPayload.items || [],
+            collectionCode: newMissionPayload.collection_code || '0000',
+            distanceToStore: newMissionPayload.distance_to_store || 1.5,
+            deliveryDistance: newMissionPayload.delivery_distance || 2.0,
+            totalDistance: newMissionPayload.total_distance || 3.5,
+            earnings: parseFloat(newMissionPayload.earnings || '0'),
+            timeLimit: 25,
+            storePhone: newMissionPayload.store_phone || '',
+            customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : ''
+          };
+
+          setMission(dynamicMission);
+          setStatus(DriverStatus.ALERTING);
+          setAlertCountdown(30);
+        },
+        // Callback for accepted missions (UPDATE)
+        (acceptedMissionId) => {
+          console.log("✅ Mission accepted by another courier:", acceptedMissionId);
+
+          // If this is the mission we're currently showing, remove it
+          if (mission?.id === acceptedMissionId) {
+            console.log("⚠️ Removing mission alert (accepted by another courier)");
+            setMission(null);
+            setStatus(DriverStatus.ONLINE);
+            setAlertCountdown(0);
+          }
+        }
+      );
     }
 
     return () => {
@@ -634,6 +708,73 @@ const App: React.FC = () => {
       }
     };
   }, [status, mission]);
+
+
+  // PERIODIC POLLING: Check for pending deliveries every 10 seconds while ONLINE
+  useEffect(() => {
+    let pollingInterval: any;
+
+    if (status === DriverStatus.ONLINE && !mission && currentUser) {
+      console.log("🔄 Starting periodic polling for pending deliveries...");
+
+      const checkForPendingDeliveries = async () => {
+        try {
+          const { data: pendingDeliveries, error } = await supabaseClient.supabase
+            .from('deliveries')
+            .select('*')
+            .eq('status', 'pending')
+            .is('driver_id', null)
+            .order('created_at', { ascending: true })
+            .limit(1);
+
+          if (error) {
+            console.error("❌ Polling error:", error);
+            return;
+          }
+
+          if (pendingDeliveries && pendingDeliveries.length > 0) {
+            const firstPending = pendingDeliveries[0];
+            console.log("✅ Polling found pending delivery:", firstPending);
+
+            const dynamicMission: DeliveryMission = {
+              id: firstPending.id,
+              storeName: firstPending.store_name || 'Loja',
+              storeAddress: firstPending.store_address || '',
+              customerName: firstPending.customer_name || 'Cliente',
+              customerAddress: firstPending.customer_address || '',
+              customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+              items: firstPending.items || [],
+              collectionCode: firstPending.collection_code || '0000',
+              distanceToStore: firstPending.distance_to_store || 1.5,
+              deliveryDistance: firstPending.delivery_distance || 2.0,
+              totalDistance: firstPending.total_distance || 3.5,
+              earnings: parseFloat(firstPending.earnings || '0'),
+              timeLimit: 25,
+              storePhone: '',
+              customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+            };
+
+            setMission(dynamicMission);
+            setStatus(DriverStatus.ALERTING);
+            setAlertCountdown(30);
+          }
+        } catch (err) {
+          console.error("❌ Polling exception:", err);
+        }
+      };
+
+      // Check immediately, then every 10 seconds
+      checkForPendingDeliveries();
+      pollingInterval = setInterval(checkForPendingDeliveries, 10000);
+    }
+
+    return () => {
+      if (pollingInterval) {
+        console.log("🛑 Stopping periodic polling");
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [status, mission, currentUser]);
 
 
   useEffect(() => {
@@ -650,23 +791,25 @@ const App: React.FC = () => {
 
 
 
-  const processDeliverySuccess = async (currentMission: DeliveryMission) => {
-    if (!currentMission || !userId) return;
+  const processDeliverySuccess = async () => {
+    if (!mission || !userId) return;
 
     // Prevent duplicate processing
-    const missionId = `Entrega #${currentMission.id}`;
+    const missionId = `Entrega #${mission.id}`;
     if (history.some(h => h.type === missionId)) return;
 
     try {
       // 1. Complete mission in Supabase
-      await supabaseClient.completeMission(currentMission.id, userId);
+      console.log('🎯 Step 1: Completing mission in database...', { missionId: mission.id, userId });
+      await supabaseClient.completeMission(mission.id, userId);
+      console.log('✅ Step 1: Mission completed successfully');
 
-      const earned = currentMission.earnings;
+      const earned = mission.earnings;
 
       // 2. Prepare transaction data
       const newTransaction: Transaction = {
         id: Math.random().toString(36).substr(2, 9),
-        type: `Entrega #${currentMission.id}`,
+        type: `Entrega #${mission.id}`,
         amount: earned,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         date: 'Hoje',
@@ -680,16 +823,25 @@ const App: React.FC = () => {
       };
 
       // 3. Save to Supabase (Transaction & Stats)
+      console.log('💰 Step 2: Creating transaction...', newTransaction);
+
+      // Only send fields that exist in the database schema
       await supabaseClient.createTransaction({
-        ...newTransaction,
-        week_id: newTransaction.weekId, // Ensure snake_case mapping
+        id: newTransaction.id,
+        type: newTransaction.type,
+        amount: newTransaction.amount,
+        status: newTransaction.status,
+        week_id: newTransaction.weekId, // Map to snake_case
         user_id: userId
       });
+      console.log('✅ Step 2: Transaction created successfully');
 
+      console.log('📊 Step 3: Updating daily stats...', { userId, finished: 1, earnings: earned });
       await supabaseClient.updateDailyStats(userId, {
         finished: 1,
         earnings: earned
       });
+      console.log('✅ Step 3: Daily stats updated successfully');
 
       // 4. Update local state
       setBalance(prev => prev + earned);
@@ -701,9 +853,18 @@ const App: React.FC = () => {
       setShowPostDeliveryModal(true);
       setHistory(prev => [newTransaction, ...prev]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error completing mission:', error);
-      alert('Erro ao finalizar entrega. Tente novamente.');
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint
+      });
+
+      // Show more specific error message
+      const errorMsg = error?.message || 'Erro desconhecido';
+      alert(`Erro ao finalizar entrega: ${errorMsg}\n\nTente novamente.`);
     }
   };
 
@@ -714,7 +875,7 @@ const App: React.FC = () => {
       setCurrentScreen('FACIAL_VERIFICATION');
       return;
     }
-    processDeliverySuccess(mission);
+    processDeliverySuccess();
   };
 
   const startCamera = async () => {
@@ -753,7 +914,7 @@ const App: React.FC = () => {
           setHasVerifiedSession(true);
           setTimeout(() => {
             setCurrentScreen('HOME');
-            if (mission) processDeliverySuccess(mission);
+            if (mission) processDeliverySuccess();
           }, 1500);
         }, 2000);
       }
@@ -851,7 +1012,10 @@ const App: React.FC = () => {
   const handleAcceptMission = async () => {
     if (!mission || !userId) return;
     try {
-      await supabaseClient.acceptMission(mission.id, userId);
+      console.log('🎯 Attempting to accept mission:', { missionId: mission.id, userId });
+      const result = await supabaseClient.acceptMission(mission.id, userId);
+      console.log('✅ Mission accepted successfully:', result);
+
       setDailyStats(s => ({ ...s, accepted: s.accepted + 1 }));
       setStatus(DriverStatus.GOING_TO_STORE);
 
@@ -860,8 +1024,14 @@ const App: React.FC = () => {
         alertAudioRef.current.pause();
         alertAudioRef.current.currentTime = 0;
       }
-    } catch (error) {
-      console.error('Error accepting mission:', error);
+    } catch (error: any) {
+      console.error('❌ Error accepting mission:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       alert('Esta entrega já foi aceita por outro entregador ou não está mais disponível.');
       setStatus(DriverStatus.ONLINE);
       setMission(null);
@@ -882,11 +1052,56 @@ const App: React.FC = () => {
     }
   };
 
-  const handleMainAction = () => {
-    if (status === DriverStatus.GOING_TO_STORE) setStatus(DriverStatus.ARRIVED_AT_STORE);
+  const handleMainAction = async () => {
+    if (status === DriverStatus.GOING_TO_STORE) {
+      // Update database when courier arrives at store
+      if (mission && userId) {
+        try {
+          await supabaseClient.supabase
+            .from('deliveries')
+            .update({ status: 'arrived_pickup' })
+            .eq('id', mission.id)
+            .eq('driver_id', userId);
+          console.log('✅ Updated delivery status to arrived_pickup');
+        } catch (error) {
+          console.error('❌ Error updating delivery status:', error);
+        }
+      }
+      setStatus(DriverStatus.ARRIVED_AT_STORE);
+    }
     else if (status === DriverStatus.ARRIVED_AT_STORE) setStatus(DriverStatus.PICKING_UP);
-    else if (status === DriverStatus.PICKING_UP && isCodeValid()) setStatus(DriverStatus.GOING_TO_CUSTOMER);
-    else if (status === DriverStatus.GOING_TO_CUSTOMER) setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
+    else if (status === DriverStatus.PICKING_UP && isCodeValid()) {
+      // Update database status to in_transit when pickup code is validated
+      if (mission && userId) {
+        try {
+          await supabaseClient.supabase
+            .from('deliveries')
+            .update({ status: 'in_transit' })
+            .eq('id', mission.id)
+            .eq('driver_id', userId);
+          console.log('✅ Updated delivery status to in_transit after code validation');
+        } catch (error) {
+          console.error('❌ Error updating delivery status:', error);
+        }
+      }
+      setStatus(DriverStatus.GOING_TO_CUSTOMER);
+    }
+    else if (status === DriverStatus.GOING_TO_CUSTOMER) {
+      // Update database when courier arrives at customer
+      if (mission && userId) {
+        try {
+          await supabaseClient.supabase
+            .from('deliveries')
+            .update({ status: 'arrived_at_customer' })
+            .eq('id', mission.id)
+            .eq('driver_id', userId);
+          console.log('✅ Updated delivery status to arrived_at_customer');
+        } catch (error) {
+          console.error('❌ Error updating delivery status:', error);
+        }
+      }
+      setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
+    }
     else if (status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) handleFinishDelivery();
   };
 
