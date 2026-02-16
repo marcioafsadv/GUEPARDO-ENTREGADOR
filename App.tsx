@@ -256,7 +256,8 @@ const App: React.FC = () => {
   // Estatísticas e Financeiro - INICIANDO ZERADOS PARA NOVO USUÁRIO
   const [balance, setBalance] = useState(0.00);
   const [dailyEarnings, setDailyEarnings] = useState(0.00);
-  const [dailyStats, setDailyStats] = useState({ accepted: 0, finished: 0, rejected: 0 });
+  const [dailyStats, setDailyStats] = useState({ onlineTime: 0, earnings: 0, accepted: 0, rejected: 0 });
+  const [rejectedMissions, setRejectedMissions] = useState<string[]>([]);
   const [history, setHistory] = useState<Transaction[]>([]); // Histórico Vazio
   const [payoutsList, setPayoutsList] = useState<any[]>([]); // Lista de Repasses Vazia
 
@@ -664,6 +665,12 @@ const App: React.FC = () => {
             return;
           }
 
+          // Ignore if this mission was previously rejected locally
+          if (rejectedMissions.includes(newMissionPayload.id)) {
+            console.log("🚫 Ignoring rejected mission:", newMissionPayload.id);
+            return;
+          }
+
           // Transform Supabase data to App's DeliveryMission format
           const dynamicMission: DeliveryMission = {
             id: newMissionPayload.id,
@@ -725,7 +732,7 @@ const App: React.FC = () => {
             .eq('status', 'pending')
             .is('driver_id', null)
             .order('created_at', { ascending: true })
-            .limit(1);
+            .limit(10); // Fetch a few to filter locally if needed
 
           if (error) {
             console.error("❌ Polling error:", error);
@@ -733,30 +740,34 @@ const App: React.FC = () => {
           }
 
           if (pendingDeliveries && pendingDeliveries.length > 0) {
-            const firstPending = pendingDeliveries[0];
-            console.log("✅ Polling found pending delivery:", firstPending);
+            // Find the first pending delivery that hasn't been rejected
+            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(d.id));
 
-            const dynamicMission: DeliveryMission = {
-              id: firstPending.id,
-              storeName: firstPending.store_name || 'Loja',
-              storeAddress: firstPending.store_address || '',
-              customerName: firstPending.customer_name || 'Cliente',
-              customerAddress: firstPending.customer_address || '',
-              customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-              items: firstPending.items || [],
-              collectionCode: firstPending.collection_code || '0000',
-              distanceToStore: firstPending.distance_to_store || 1.5,
-              deliveryDistance: firstPending.delivery_distance || 2.0,
-              totalDistance: firstPending.total_distance || 3.5,
-              earnings: parseFloat(firstPending.earnings || '0'),
-              timeLimit: 25,
-              storePhone: '',
-              customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
-            };
+            if (firstPending) {
+              console.log("✅ Polling found pending delivery:", firstPending);
 
-            setMission(dynamicMission);
-            setStatus(DriverStatus.ALERTING);
-            setAlertCountdown(30);
+              const dynamicMission: DeliveryMission = {
+                id: firstPending.id,
+                storeName: firstPending.store_name || 'Loja',
+                storeAddress: firstPending.store_address || '',
+                customerName: firstPending.customer_name || 'Cliente',
+                customerAddress: firstPending.customer_address || '',
+                customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+                items: firstPending.items || [],
+                collectionCode: firstPending.collection_code || '0000',
+                distanceToStore: firstPending.distance_to_store || 1.5,
+                deliveryDistance: firstPending.delivery_distance || 2.0,
+                totalDistance: firstPending.total_distance || 3.5,
+                earnings: parseFloat(firstPending.earnings || '0'),
+                timeLimit: 25,
+                storePhone: '',
+                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+              };
+
+              setMission(dynamicMission);
+              setStatus(DriverStatus.ALERTING);
+              setAlertCountdown(30);
+            }
           }
         } catch (err) {
           console.error("❌ Polling exception:", err);
@@ -1040,6 +1051,10 @@ const App: React.FC = () => {
 
   const handleRejectMission = async () => {
     if (!mission || !userId) return;
+
+    // Add to local rejected list so it doesn't show up again
+    setRejectedMissions(prev => [...prev, mission.id]);
+
     await supabaseClient.rejectMission(mission.id, userId);
     setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 }));
     setStatus(DriverStatus.ONLINE);
