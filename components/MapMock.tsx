@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer, Circle, TrafficLayer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer, TrafficLayer, Circle } from '@react-google-maps/api';
 import { DriverStatus } from '../types';
 
 interface MapMockProps {
@@ -10,6 +10,8 @@ interface MapMockProps {
   mapMode?: 'standard' | 'satellite';
   showTraffic?: boolean;
   destinationAddress?: string | null;
+  pickupAddress?: string | null;
+  reCenterTrigger?: number;
 }
 
 const containerStyle = {
@@ -40,24 +42,9 @@ const darkMapStyle = [
     stylers: [{ color: "#263c3f" }],
   },
   {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#6b9a76" }],
-  },
-  {
     featureType: "road",
     elementType: "geometry",
     stylers: [{ color: "#38414e" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a37" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }],
   },
   {
     featureType: "road.highway",
@@ -65,38 +52,8 @@ const darkMapStyle = [
     stylers: [{ color: "#746855" }],
   },
   {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#1f2835" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#f3d19c" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#2f3948" }],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
-  },
-  {
     featureType: "water",
     elementType: "geometry",
-    stylers: [{ color: "#17263c" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.stroke",
     stylers: [{ color: "#17263c" }],
   }
 ];
@@ -108,7 +65,9 @@ export const MapMock: React.FC<MapMockProps> = ({
   showHeatMap = false,
   mapMode = 'standard',
   showTraffic = false,
-  destinationAddress
+  destinationAddress,
+  pickupAddress,
+  reCenterTrigger
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -120,6 +79,8 @@ export const MapMock: React.FC<MapMockProps> = ({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
 
   // Directions State
   const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
@@ -154,27 +115,35 @@ export const MapMock: React.FC<MapMockProps> = ({
     }
   }, []);
 
-  // Determine Destination (Deprecated Mock Logic removed)
-  // Now we rely on destinationAddress passed from parent or extracted from Directions
-
-  // Reset destination if no address
+  // Reset states when addresses change
   useEffect(() => {
-    if (!destinationAddress) {
+    if (!destinationAddress && !pickupAddress) {
       setDestinationLocation(null);
+      setPickupLocation(null);
       setDirectionsResponse(null);
       setDistance('');
       setDuration('');
+      setIsUserInteracting(false);
     }
-  }, [destinationAddress]);
+  }, [destinationAddress, pickupAddress]);
 
-  // Fit Bounds happens automatically with DirectionsRenderer or manual bounds
+  // Handle auto-panning with interaction check
   useEffect(() => {
-    if (map && currentLocation && !directionsResponse) {
+    if (map && currentLocation && !directionsResponse && !isUserInteracting) {
       map.panTo(currentLocation);
       map.setZoom(16);
     }
-  }, [map, currentLocation, directionsResponse]);
+  }, [map, currentLocation, directionsResponse, isUserInteracting]);
 
+  // Global Re-center Trigger (from Sidebar Button)
+  useEffect(() => {
+    if (reCenterTrigger && map && currentLocation) {
+      console.log("Global re-center triggered");
+      setIsUserInteracting(false);
+      map.panTo(currentLocation);
+      map.setZoom(16);
+    }
+  }, [reCenterTrigger]);
 
   // Styles & Options
   const mapOptions = useMemo(() => ({
@@ -186,23 +155,34 @@ export const MapMock: React.FC<MapMockProps> = ({
   // Directions Callback
   const directionsCallback = useCallback((result: google.maps.DirectionsResult | null, status: google.maps.DirectionsStatus) => {
     if (status === 'OK' && result) {
-      // Only update if checks pass to avoid infinite loop
       if (countRef.current === 0 || !directionsResponse) {
         setDirectionsResponse(result);
 
-        if (result.routes[0]?.legs[0]) {
-          setDistance(result.routes[0].legs[0].distance?.text || '');
-          setDuration(result.routes[0].legs[0].duration?.text || '');
+        if (result.routes[0]?.legs) {
+          // Sum up total stats if multiple legs
+          let totalDist = 0;
+          let totalDur = 0;
+          result.routes[0].legs.forEach(leg => {
+            totalDist += leg.distance?.value || 0;
+            totalDur += leg.duration?.value || 0;
+          });
 
-          // Set Marker Destination from Route Result
-          if (result.routes[0].legs[0].end_location) {
-            const endLoc = result.routes[0].legs[0].end_location;
-            setDestinationLocation({ lat: endLoc.lat(), lng: endLoc.lng() });
+          setDistance(`${(totalDist / 1000).toFixed(1)} km`);
+          setDuration(`${Math.ceil(totalDur / 60)} min`);
+
+          // Extract locations for markers
+          const legs = result.routes[0].legs;
+          if (legs.length > 0) {
+            const lastLegEnd = legs[legs.length - 1].end_location;
+            setDestinationLocation({ lat: lastLegEnd.lat(), lng: lastLegEnd.lng() });
+
+            if (legs.length > 1) {
+              const firstLegEnd = legs[0].end_location;
+              setPickupLocation({ lat: firstLegEnd.lat(), lng: firstLegEnd.lng() });
+            }
           }
         }
       }
-    } else {
-      console.error(`Directions request failed due to ${status}`);
     }
   }, [directionsResponse]);
 
@@ -210,8 +190,7 @@ export const MapMock: React.FC<MapMockProps> = ({
   useEffect(() => {
     countRef.current = 0;
     setDirectionsResponse(null);
-  }, [currentLocation?.lat, currentLocation?.lng, destinationLocation?.lat, destinationLocation?.lng]);
-
+  }, [currentLocation?.lat, currentLocation?.lng, destinationLocation?.lat, destinationLocation?.lng, pickupLocation?.lat, pickupLocation?.lng, destinationAddress, pickupAddress]);
 
   // Heatmap Data (Stabilized Mock Circles)
   const heatmapItems = useMemo(() => {
@@ -257,28 +236,58 @@ export const MapMock: React.FC<MapMockProps> = ({
     ));
   };
 
+  // Initial center state to avoid snapping when currentLocation updates
+  const [initialCenter] = useState(currentLocation || { lat: -23.5505, lng: -46.6333 });
+
+  // Interaction Handlers
+  const handleInteraction = useCallback(() => {
+    if (!isUserInteracting) {
+      console.log("Map interaction detected - stopping auto-centering");
+      setIsUserInteracting(true);
+    }
+  }, [isUserInteracting]);
+
   if (!isLoaded) return <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white">Carregando Mapa...</div>;
 
   return (
     <div className="relative w-full h-full">
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={currentLocation || { lat: -23.5505, lng: -46.6333 }} // Default SP
+        // Use initialCenter to avoid snapping back when currentLocation updates
+        center={initialCenter}
         zoom={15}
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={mapOptions}
+        onDragStart={handleInteraction}
+        onDrag={handleInteraction}
+        onMouseDown={handleInteraction}
+        onZoomChanged={() => {
+          if (map) handleInteraction();
+        }}
       >
         {/* DRIVER MARKER */}
         {currentLocation && (
           <Marker
             position={currentLocation}
             icon={{
-              url: '/cheetah-icon.png', // Local Asset (Cheetah)
+              url: '/cheetah-icon.png',
               scaledSize: new google.maps.Size(60, 48),
               anchor: new google.maps.Point(30, 24)
             }}
-            zIndex={2}
+            zIndex={10}
+          />
+        )}
+
+        {/* PICKUP MARKER */}
+        {pickupLocation && (
+          <Marker
+            position={pickupLocation}
+            icon={{
+              url: 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png', // Store
+              scaledSize: new google.maps.Size(40, 40)
+            }}
+            zIndex={5}
           />
         )}
 
@@ -287,21 +296,22 @@ export const MapMock: React.FC<MapMockProps> = ({
           <Marker
             position={destinationLocation}
             icon={{
-              url: (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE)
-                ? 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png' // Store
-                : 'https://cdn-icons-png.flaticon.com/512/25/25694.png', // Home
+              url: 'https://cdn-icons-png.flaticon.com/512/25/25694.png', // Home
               scaledSize: new google.maps.Size(40, 40)
             }}
-            zIndex={1}
+            zIndex={5}
           />
         )}
 
         {/* REAL DIRECTIONS ROUTE */}
-        {currentLocation && destinationAddress && showRoute && (
+        {currentLocation && (destinationAddress || pickupAddress) && showRoute && (
           <DirectionsService
             options={{
-              destination: destinationAddress,
               origin: currentLocation,
+              destination: destinationAddress || pickupAddress || currentLocation,
+              waypoints: (pickupAddress && destinationAddress) ? [
+                { location: pickupAddress, stopover: true }
+              ] : [],
               travelMode: 'DRIVING' as google.maps.TravelMode
             }}
             callback={directionsCallback}
@@ -312,7 +322,7 @@ export const MapMock: React.FC<MapMockProps> = ({
           <DirectionsRenderer
             options={{
               directions: directionsResponse,
-              suppressMarkers: true, // Use our custom markers
+              suppressMarkers: true,
               polylineOptions: {
                 strokeColor: '#FF6B00',
                 strokeOpacity: 0.8,

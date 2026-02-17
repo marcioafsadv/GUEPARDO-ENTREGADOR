@@ -163,6 +163,7 @@ const App: React.FC = () => {
   const [mapCenterKey, setMapCenterKey] = useState(0);
   const [lastEarnings, setLastEarnings] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
+  const [reCenterTrigger, setReCenterTrigger] = useState(0);
 
   // Estado de Sessão e Segurança
   const [hasVerifiedSession, setHasVerifiedSession] = useState(false);
@@ -256,7 +257,7 @@ const App: React.FC = () => {
   // Estatísticas e Financeiro - INICIANDO ZERADOS PARA NOVO USUÁRIO
   const [balance, setBalance] = useState(0.00);
   const [dailyEarnings, setDailyEarnings] = useState(0.00);
-  const [dailyStats, setDailyStats] = useState({ onlineTime: 0, earnings: 0, accepted: 0, rejected: 0 });
+  const [dailyStats, setDailyStats] = useState({ onlineTime: 0, earnings: 0, accepted: 0, rejected: 0, finished: 0 });
 
   // Initialize rejected missions from localStorage to persist across reloads
   const [rejectedMissions, setRejectedMissions] = useState<string[]>(() => {
@@ -390,7 +391,9 @@ const App: React.FC = () => {
           setDailyStats({
             accepted: stats.accepted || 0,
             finished: stats.finished || 0,
-            rejected: stats.rejected || 0
+            rejected: stats.rejected || 0,
+            onlineTime: stats.onlineTime || 0,
+            earnings: stats.earnings || 0
           });
           setDailyEarnings(stats.earnings || 0);
         }
@@ -1536,17 +1539,21 @@ const App: React.FC = () => {
                 key={mapCenterKey}
                 status={status}
                 theme={theme}
-                showRoute={status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE && status !== DriverStatus.ALERTING}
+                showRoute={(status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE)}
                 destinationAddress={
-                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
-                    ? mission?.storeAddress
-                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
-                      ? mission?.customerAddress
-                      : null
+                  status === DriverStatus.ALERTING
+                    ? mission?.customerAddress
+                    : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      ? mission?.storeAddress
+                      : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                        ? mission?.customerAddress
+                        : null
                 }
+                pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
                 showHeatMap={showHeatMap}
                 mapMode={mapMode}
                 showTraffic={showTraffic}
+                reCenterTrigger={reCenterTrigger}
               />
 
               <div className="absolute right-4 bottom-24 flex flex-col space-y-3 z-[1001]">
@@ -1565,7 +1572,7 @@ const App: React.FC = () => {
                   <i className="fas fa-layer-group text-lg"></i>
                 </button>
 
-                <button onClick={() => setMapCenterKey(k => k + 1)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-[#FF6B00] border active:scale-90 transition-transform ${cardBg}`}>
+                <button onClick={() => setReCenterTrigger(t => t + 1)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-[#FF6B00] border active:scale-90 transition-transform ${cardBg}`}>
                   <i className="fas fa-location-crosshairs text-lg"></i>
                 </button>
                 <button onClick={() => setShowSOSModal(true)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-red-500 border active:scale-90 transition-transform ${cardBg}`}>
@@ -2384,7 +2391,7 @@ const App: React.FC = () => {
                     });
                     setBalance(0);
                     setDailyEarnings(0);
-                    setDailyStats({ accepted: 0, finished: 0, rejected: 0 });
+                    setDailyStats({ accepted: 0, finished: 0, rejected: 0, onlineTime: 0, earnings: 0 });
                     setHistory([]);
                   } catch (error) {
                     console.error('Logout error:', error);
@@ -2926,8 +2933,8 @@ const App: React.FC = () => {
       )}
 
       {status === DriverStatus.ALERTING && mission && (
-        <div className="absolute inset-0 bg-black/80 z-[8000] flex items-end p-6 backdrop-blur-md animate-in slide-in-from-bottom duration-500">
-          <div className={`w-full rounded-[40px] p-8 border-t-8 border-[#FF6B00] shadow-2xl pulse-orange relative overflow-hidden transition-all duration-300 max-h-[90%] flex flex-col ${cardBg}`}>
+        <div className="absolute inset-0 z-[8000] flex items-end p-6 pointer-events-none animate-in slide-in-from-bottom duration-500">
+          <div className={`w-full rounded-[40px] p-8 border-t-8 border-[#FF6B00] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] pulse-orange relative overflow-hidden transition-all duration-300 max-h-[90%] flex flex-col pointer-events-auto ${cardBg}`}>
             <div className="absolute top-8 right-12 flex flex-col items-center">
               <div className="w-12 h-12 rounded-full border-4 border-[#FF6B00] flex items-center justify-center shrink-0">
                 <span className={`text-xl font-black ${textPrimary}`}>{alertCountdown}</span>
