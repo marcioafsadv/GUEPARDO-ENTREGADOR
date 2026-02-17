@@ -608,14 +608,14 @@ const App: React.FC = () => {
       // FETCH EXISTING PENDING DELIVERIES FIRST
       const fetchPendingDeliveries = async () => {
         try {
-          console.log("🔍 Fetching existing pending deliveries...");
+          console.log("🔍 Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
           const { data: pendingDeliveries, error } = await supabaseClient.supabase
             .from('deliveries')
             .select('*')
             .eq('status', 'pending')
             .is('driver_id', null)
             .order('created_at', { ascending: true })
-            .limit(1); // Get the oldest pending delivery
+            .limit(20); // Fetch more to allow for local filtering of rejected missions
 
           if (error) {
             console.error("❌ Error fetching pending deliveries:", error);
@@ -623,31 +623,37 @@ const App: React.FC = () => {
           }
 
           if (pendingDeliveries && pendingDeliveries.length > 0) {
-            const firstPending = pendingDeliveries[0];
-            console.log("✅ Found existing pending delivery:", firstPending);
+            // Find the first pending delivery that hasn't been rejected
+            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
 
-            // Transform to DeliveryMission format with safe defaults
-            const dynamicMission: DeliveryMission = {
-              id: firstPending.id,
-              storeName: firstPending.store_name || 'Loja',
-              storeAddress: firstPending.store_address || '',
-              customerName: firstPending.customer_name || 'Cliente',
-              customerAddress: firstPending.customer_address || '',
-              customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-              items: firstPending.items || [],
-              collectionCode: firstPending.collection_code || '0000',
-              distanceToStore: firstPending.distance_to_store || 1.5,
-              deliveryDistance: firstPending.delivery_distance || 2.0,
-              totalDistance: firstPending.total_distance || 3.5,
-              earnings: parseFloat(firstPending.earnings || '0'),
-              timeLimit: 25,
-              storePhone: '', // Not in DB yet
-              customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
-            };
+            if (firstPending) {
+              console.log("✅ Found valid pending delivery:", firstPending);
 
-            setMission(dynamicMission);
-            setStatus(DriverStatus.ALERTING);
-            setAlertCountdown(30);
+              // Transform to DeliveryMission format with safe defaults
+              const dynamicMission: DeliveryMission = {
+                id: firstPending.id,
+                storeName: firstPending.store_name || 'Loja',
+                storeAddress: firstPending.store_address || '',
+                customerName: firstPending.customer_name || 'Cliente',
+                customerAddress: firstPending.customer_address || '',
+                customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+                items: firstPending.items || [],
+                collectionCode: firstPending.collection_code || '0000',
+                distanceToStore: firstPending.distance_to_store || 1.5,
+                deliveryDistance: firstPending.delivery_distance || 2.0,
+                totalDistance: firstPending.total_distance || 3.5,
+                earnings: parseFloat(firstPending.earnings || '0'),
+                timeLimit: 25,
+                storePhone: '', // Not in DB yet
+                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+              };
+
+              setMission(dynamicMission);
+              setStatus(DriverStatus.ALERTING);
+              setAlertCountdown(30);
+            } else {
+              console.log("ℹ️ All pending deliveries were already rejected");
+            }
           } else {
             console.log("ℹ️ No pending deliveries found");
           }
@@ -827,7 +833,7 @@ const App: React.FC = () => {
         else if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE) {
           if (newStatus === 'cancelled') {
             console.log("⚠️ Active delivery cancelled by store.");
-            alert('⚠️ ATENÇÃO: A entrega foi cancelada pela loja. Não prossiga com a coleta/entrega.');
+            alert('Pedido cancelado pelo lojista. Você não está mais em rota.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
             // Optionally redirect to home or stop navigation
@@ -1534,7 +1540,9 @@ const App: React.FC = () => {
                 destinationAddress={
                   (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
                     ? mission?.storeAddress
-                    : mission?.customerAddress
+                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                      ? mission?.customerAddress
+                      : null
                 }
                 showHeatMap={showHeatMap}
                 mapMode={mapMode}
