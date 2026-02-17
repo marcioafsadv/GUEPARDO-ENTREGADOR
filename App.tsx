@@ -1478,6 +1478,11 @@ const App: React.FC = () => {
                 status={status}
                 theme={theme}
                 showRoute={status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE && status !== DriverStatus.ALERTING}
+                destinationAddress={
+                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    ? mission?.storeAddress
+                    : mission?.customerAddress
+                }
                 showHeatMap={showHeatMap}
                 mapMode={mapMode}
                 showTraffic={showTraffic}

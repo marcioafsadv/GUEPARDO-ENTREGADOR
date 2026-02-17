@@ -9,6 +9,7 @@ interface MapMockProps {
   showHeatMap?: boolean;
   mapMode?: 'standard' | 'satellite';
   showTraffic?: boolean;
+  destinationAddress?: string | null;
 }
 
 const containerStyle = {
@@ -106,7 +107,8 @@ export const MapMock: React.FC<MapMockProps> = ({
   theme = 'dark',
   showHeatMap = false,
   mapMode = 'standard',
-  showTraffic = false
+  showTraffic = false,
+  destinationAddress
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -151,21 +153,18 @@ export const MapMock: React.FC<MapMockProps> = ({
     }
   }, []);
 
-  // Determine Destination
+  // Determine Destination (Deprecated Mock Logic removed)
+  // Now we rely on destinationAddress passed from parent or extracted from Directions
+
+  // Reset destination if no address
   useEffect(() => {
-    if (showRoute && currentLocation) {
-      if (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE) {
-        setDestinationLocation({ lat: currentLocation.lat + 0.005, lng: currentLocation.lng + 0.005 });
-      } else {
-        setDestinationLocation({ lat: currentLocation.lat - 0.003, lng: currentLocation.lng - 0.003 });
-      }
-    } else {
+    if (!destinationAddress) {
       setDestinationLocation(null);
-      setDirectionsResponse(null); // Clear route when not active
+      setDirectionsResponse(null);
       setDistance('');
       setDuration('');
     }
-  }, [showRoute, status, currentLocation]);
+  }, [destinationAddress]);
 
   // Fit Bounds happens automatically with DirectionsRenderer or manual bounds
   useEffect(() => {
@@ -193,6 +192,12 @@ export const MapMock: React.FC<MapMockProps> = ({
         if (result.routes[0]?.legs[0]) {
           setDistance(result.routes[0].legs[0].distance?.text || '');
           setDuration(result.routes[0].legs[0].duration?.text || '');
+
+          // Set Marker Destination from Route Result
+          if (result.routes[0].legs[0].end_location) {
+            const endLoc = result.routes[0].legs[0].end_location;
+            setDestinationLocation({ lat: endLoc.lat(), lng: endLoc.lng() });
+          }
         }
       }
     } else {
@@ -271,10 +276,10 @@ export const MapMock: React.FC<MapMockProps> = ({
         )}
 
         {/* REAL DIRECTIONS ROUTE */}
-        {currentLocation && destinationLocation && (
+        {currentLocation && destinationAddress && showRoute && (
           <DirectionsService
             options={{
-              destination: destinationLocation,
+              destination: destinationAddress,
               origin: currentLocation,
               travelMode: 'DRIVING' as google.maps.TravelMode
             }}
