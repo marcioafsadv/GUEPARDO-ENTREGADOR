@@ -113,6 +113,7 @@ export const MapMock: React.FC<MapMockProps> = ({
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: "AIzaSyBIttodmc3z2FrmG4rBFgD_Xct7UYt43es",
+    language: 'pt-BR',
     libraries: LIBRARIES
   });
 
