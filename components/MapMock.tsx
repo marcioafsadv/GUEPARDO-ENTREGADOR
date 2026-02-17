@@ -1,5 +1,5 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, Polyline, Circle, TrafficLayer } from '@react-google-maps/api';
 import { DriverStatus } from '../types';
 
 interface MapMockProps {
@@ -11,233 +11,254 @@ interface MapMockProps {
   showTraffic?: boolean;
 }
 
-export const MapMock: React.FC<MapMockProps> = ({ 
-  status, 
-  showRoute = false, 
+const containerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
+const LIBRARIES: ("places" | "geometry")[] = ["geometry"];
+
+// --- MAP STYLES ---
+const darkMapStyle = [
+  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+  {
+    featureType: "administrative.locality",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#d59563" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#d59563" }],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "geometry",
+    stylers: [{ color: "#263c3f" }],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#6b9a76" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#38414e" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#212a37" }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#9ca5b3" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#746855" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#1f2835" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#f3d19c" }],
+  },
+  {
+    featureType: "transit",
+    elementType: "geometry",
+    stylers: [{ color: "#2f3948" }],
+  },
+  {
+    featureType: "transit.station",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#d59563" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#17263c" }],
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#515c6d" }],
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#17263c" }],
+  }
+];
+
+export const MapMock: React.FC<MapMockProps> = ({
+  status,
+  showRoute = false,
   theme = 'dark',
   showHeatMap = false,
   mapMode = 'standard',
   showTraffic = false
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const tileLayerRef = useRef<any>(null);
-  const driverMarkerRef = useRef<any>(null);
-  const destinationMarkerRef = useRef<any>(null);
-  const heatMapLayerRef = useRef<any>(null); // LayerGroup for heat circles
-  const trafficLayerRef = useRef<any>(null); // LayerGroup for traffic lines
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: "AIzaSyBIttodmc3z2FrmG4rBFgD_Xct7UYt43es",
+    libraries: LIBRARIES
+  });
 
-  // Tile Provider URLs
-  const getTileUrl = (t: string, mode: string) => {
-    if (mode === 'satellite') {
-       // Esri World Imagery (Satellite)
-       return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    }
-    
-    // Standard Mode (Dark or Voyager)
-    return t === 'dark' 
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  };
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    const L = (window as any).L;
-    if (!L) return;
-
-    mapRef.current = L.map(mapContainerRef.current, {
-      zoomControl: false,
-      attributionControl: false,
-    }).setView([-23.5505, -46.6333], 15);
-
-    tileLayerRef.current = L.tileLayer(getTileUrl(theme, mapMode), {
-      maxZoom: 19
-    }).addTo(mapRef.current);
-
-    navigator.geolocation.getCurrentPosition((position) => {
-      if (!mapRef.current) return;
-      
-      const { latitude, longitude } = position.coords;
-      mapRef.current.setView([latitude, longitude], 16);
-      
-      const driverIcon = L.divIcon({
-        className: 'driver-marker-icon',
-        html: `
-          <div class="relative flex items-center justify-center">
-            <div class="w-10 h-10 bg-[#FF6B00] rounded-full border-2 border-white flex items-center justify-center shadow-lg relative z-10">
-              <i class="fas fa-motorcycle text-white text-sm"></i>
-            </div>
-            <div class="absolute w-12 h-12 bg-[#FF6B00] rounded-full opacity-30 animate-ping"></div>
-          </div>
-        `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-      });
-
-      driverMarkerRef.current = L.marker([latitude, longitude], { icon: driverIcon }).addTo(mapRef.current);
-    });
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
+  const onLoad = useCallback(function callback(map: google.maps.Map) {
+    setMap(map);
   }, []);
 
-  // Update Base Tile Layer when theme or mode changes
-  useEffect(() => {
-    if (tileLayerRef.current && mapRef.current) {
-      tileLayerRef.current.setUrl(getTileUrl(theme, mapMode));
-    }
-  }, [theme, mapMode]);
+  const onUnmount = useCallback(function callback(map: google.maps.Map) {
+    setMap(null);
+  }, []);
 
-  // Handle Heatmap Visualization
+  // Sync Location
   useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    
-    // Clear existing heat layer
-    if (heatMapLayerRef.current) {
-      mapRef.current.removeLayer(heatMapLayerRef.current);
-      heatMapLayerRef.current = null;
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error("Error watching position:", error);
+        },
+        { enableHighAccuracy: true }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
+  }, []);
 
-    if (showHeatMap) {
-      // Simulate High Demand Zones with Circles
-      const center = mapRef.current.getCenter();
-      const circles = [];
-      
-      // Create 5 random "hotspots" near the center
-      for (let i = 0; i < 5; i++) {
-        const lat = center.lat + (Math.random() - 0.5) * 0.02;
-        const lng = center.lng + (Math.random() - 0.5) * 0.02;
-        
-        circles.push(
-           L.circle([lat, lng], {
-             color: 'transparent',
-             fillColor: '#FF6B00',
-             fillOpacity: 0.3,
-             radius: 300 + Math.random() * 200
-           })
-        );
-         circles.push(
-           L.circle([lat, lng], {
-             color: 'transparent',
-             fillColor: '#FFD700',
-             fillOpacity: 0.4,
-             radius: 100 + Math.random() * 50
-           })
-        );
+  // Determine Destination
+  useEffect(() => {
+    if (showRoute && currentLocation) {
+      if (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE) {
+        setDestinationLocation({ lat: currentLocation.lat + 0.005, lng: currentLocation.lng + 0.005 });
+      } else {
+        setDestinationLocation({ lat: currentLocation.lat - 0.003, lng: currentLocation.lng - 0.003 });
       }
-      
-      heatMapLayerRef.current = L.layerGroup(circles).addTo(mapRef.current);
-    }
-  }, [showHeatMap, mapRef.current]);
-
-  // Handle Traffic Visualization
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    
-    // Clear existing traffic layer
-    if (trafficLayerRef.current) {
-      mapRef.current.removeLayer(trafficLayerRef.current);
-      trafficLayerRef.current = null;
-    }
-
-    if (showTraffic) {
-      // Simulate Traffic with Polylines (Mocking congested streets)
-      const center = mapRef.current.getCenter();
-      const lines = [];
-
-      // Create random "streets"
-      for(let i=0; i<8; i++) {
-         const startLat = center.lat + (Math.random() - 0.5) * 0.03;
-         const startLng = center.lng + (Math.random() - 0.5) * 0.03;
-         const endLat = startLat + (Math.random() - 0.5) * 0.01;
-         const endLng = startLng + (Math.random() - 0.5) * 0.01;
-
-         lines.push(
-            L.polyline([[startLat, startLng], [endLat, endLng]], {
-               color: 'red',
-               weight: 5,
-               opacity: 0.6,
-               smoothFactor: 1
-            })
-         );
-      }
-
-      trafficLayerRef.current = L.layerGroup(lines).addTo(mapRef.current);
-    }
-  }, [showTraffic, mapRef.current]);
-
-
-  // Handle Route and Markers Logic (Existing)
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
-
-    if (destinationMarkerRef.current) {
-      mapRef.current.removeLayer(destinationMarkerRef.current);
-      destinationMarkerRef.current = null;
-    }
-
-    if (showRoute) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        if (!mapRef.current) return;
-        
-        const { latitude, longitude } = pos.coords;
-        let destCoords: [number, number];
-        let iconHtml = '';
-        
-        if (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE) {
-          destCoords = [latitude + 0.005, longitude + 0.005];
-          iconHtml = `
-            <div class="w-10 h-10 bg-white rounded-full border-4 border-[#FF6B00] flex items-center justify-center shadow-lg">
-              <i class="fas fa-store text-[#FF6B00]"></i>
-            </div>
-          `;
-        } else {
-          destCoords = [latitude - 0.003, longitude - 0.003];
-          iconHtml = `
-            <div class="w-10 h-10 bg-[#FFD700] rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-              <i class="fas fa-home text-black"></i>
-            </div>
-          `;
-        }
-
-        const destIcon = L.divIcon({
-          className: 'dest-marker-icon',
-          html: iconHtml,
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
-        });
-
-        destinationMarkerRef.current = L.marker(destCoords, { icon: destIcon }).addTo(mapRef.current);
-        
-        const markers = [];
-        if (driverMarkerRef.current) markers.push(driverMarkerRef.current);
-        if (destinationMarkerRef.current) markers.push(destinationMarkerRef.current);
-        
-        if (markers.length > 0) {
-          const group = L.featureGroup(markers);
-          mapRef.current.fitBounds(group.getBounds(), { padding: [100, 100] });
-        }
-      });
     } else {
-       if (driverMarkerRef.current && mapRef.current) {
-         mapRef.current.setView(driverMarkerRef.current.getLatLng(), 16);
-       }
+      setDestinationLocation(null);
     }
-  }, [status, showRoute]);
+  }, [showRoute, status, currentLocation]);
+
+  // Fit Bounds
+  useEffect(() => {
+    if (map && currentLocation) {
+      if (destinationLocation) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(currentLocation);
+        bounds.extend(destinationLocation);
+        map.fitBounds(bounds, 50);
+      } else {
+        map.panTo(currentLocation);
+        map.setZoom(16);
+      }
+    }
+  }, [map, currentLocation, destinationLocation]);
+
+
+  // Styles & Options
+  const mapOptions = useMemo(() => ({
+    disableDefaultUI: true,
+    mapTypeId: mapMode === 'satellite' ? 'satellite' : 'roadmap',
+    styles: (theme === 'dark' && mapMode !== 'satellite') ? darkMapStyle : []
+  }), [theme, mapMode]);
+
+  // Heatmap Data (Mock Circles)
+  const renderHeatmap = () => {
+    if (!showHeatMap || !map || !currentLocation) return null;
+    const items = [];
+    const center = currentLocation;
+    for (let i = 0; i < 5; i++) {
+      const lat = center.lat + (Math.random() - 0.5) * 0.02;
+      const lng = center.lng + (Math.random() - 0.5) * 0.02;
+      items.push(
+        <Circle
+          key={`heat-${i}`}
+          center={{ lat, lng }}
+          radius={300 + Math.random() * 200}
+          options={{
+            strokeColor: 'transparent',
+            fillColor: i % 2 === 0 ? '#FF6B00' : '#FFD700',
+            fillOpacity: 0.3
+          }}
+        />
+      );
+    }
+    return items;
+  };
+
+  if (!isLoaded) return <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white">Carregando Mapa...</div>;
 
   return (
-    <div className="absolute inset-0 w-full h-full">
-      <div ref={mapContainerRef} className="w-full h-full" />
-      <div className="leaflet-vignette absolute inset-0 pointer-events-none"></div>
-    </div>
+    <GoogleMap
+      mapContainerStyle={containerStyle}
+      center={currentLocation || { lat: -23.5505, lng: -46.6333 }} // Default SP
+      zoom={15}
+      onLoad={onLoad}
+      onUnmount={onUnmount}
+      options={mapOptions}
+    >
+      {/* DRIVER MARKER */}
+      {currentLocation && (
+        <Marker
+          position={currentLocation}
+          icon={{
+            url: 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png', // Motorcycle Icon (or use local asset)
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 20)
+          }}
+        />
+      )}
+
+      {/* DESTINATION MARKER */}
+      {destinationLocation && (
+        <Marker
+          position={destinationLocation}
+          icon={{
+            // Store or Home based on status logic (simplified here)
+            url: (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE)
+              ? 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png' // Store
+              : 'https://cdn-icons-png.flaticon.com/512/25/25694.png', // Home
+            scaledSize: new google.maps.Size(40, 40)
+          }}
+        />
+      )}
+
+      {/* ROUTE */}
+      {currentLocation && destinationLocation && (
+        <Polyline
+          path={[currentLocation, destinationLocation]}
+          options={{
+            strokeColor: '#FF6B00',
+            strokeOpacity: 0.8,
+            strokeWeight: 6,
+            geodesic: true,
+          }}
+        />
+      )}
+
+      {/* TRAFFIC */}
+      {showTraffic && <TrafficLayer />}
+
+      {/* HEATMAP */}
+      {renderHeatmap()}
+
+    </GoogleMap>
   );
 };
