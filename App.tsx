@@ -1115,20 +1115,37 @@ const App: React.FC = () => {
 
   const handleMainAction = async () => {
     if (status === DriverStatus.GOING_TO_STORE) {
-      // Update database when courier arrives at store
+      // PROMISE: Check status before updating
       if (mission && userId) {
         try {
+          const { data: currentDelivery, error: fetchError } = await supabaseClient.supabase
+            .from('deliveries')
+            .select('status')
+            .eq('id', mission.id)
+            .single();
+
+          if (fetchError) throw fetchError;
+
+          if (currentDelivery.status === 'cancelled') {
+            alert('❌ Este pedido foi cancelado pela loja!');
+            setMission(null);
+            setStatus(DriverStatus.ONLINE);
+            return;
+          }
+
+          // Update database when courier arrives at store
           await supabaseClient.supabase
             .from('deliveries')
             .update({ status: 'arrived_pickup' })
             .eq('id', mission.id)
             .eq('driver_id', userId);
           console.log('✅ Updated delivery status to arrived_pickup');
+          setStatus(DriverStatus.ARRIVED_AT_STORE);
         } catch (error) {
           console.error('❌ Error updating delivery status:', error);
+          alert('Erro ao atualizar status. Verifique sua conexão.');
         }
       }
-      setStatus(DriverStatus.ARRIVED_AT_STORE);
     }
     else if (status === DriverStatus.ARRIVED_AT_STORE) setStatus(DriverStatus.PICKING_UP);
     else if (status === DriverStatus.PICKING_UP && isCodeValid()) {
