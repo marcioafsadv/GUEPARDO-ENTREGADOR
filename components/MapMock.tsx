@@ -213,28 +213,48 @@ export const MapMock: React.FC<MapMockProps> = ({
   }, [currentLocation?.lat, currentLocation?.lng, destinationLocation?.lat, destinationLocation?.lng]);
 
 
-  // Heatmap Data (Mock Circles)
-  const renderHeatmap = () => {
-    if (!showHeatMap || !map || !currentLocation) return null;
+  // Heatmap Data (Stabilized Mock Circles)
+  const heatmapItems = useMemo(() => {
+    if (!showHeatMap || !currentLocation) return [];
+
+    // Stabilize by rounding coordinates to avoid flickering on micro-movements
+    const stableLat = Math.round(currentLocation.lat * 1000) / 1000;
+    const stableLng = Math.round(currentLocation.lng * 1000) / 1000;
+
+    // Use a deterministic seed based on stable location
+    const seed = stableLat + stableLng;
+    const pseudoRandom = (n: number) => {
+      const x = Math.sin(seed + n) * 10000;
+      return x - Math.floor(x);
+    };
+
     const items = [];
-    const center = currentLocation;
     for (let i = 0; i < 5; i++) {
-      const lat = center.lat + (Math.random() - 0.5) * 0.02;
-      const lng = center.lng + (Math.random() - 0.5) * 0.02;
-      items.push(
-        <Circle
-          key={`heat-${i}`}
-          center={{ lat, lng }}
-          radius={300 + Math.random() * 200}
-          options={{
-            strokeColor: 'transparent',
-            fillColor: i % 2 === 0 ? '#FF6B00' : '#FFD700',
-            fillOpacity: 0.3
-          }}
-        />
-      );
+      const lat = stableLat + (pseudoRandom(i) - 0.5) * 0.02;
+      const lng = stableLng + (pseudoRandom(i + 10) - 0.5) * 0.02;
+      items.push({
+        id: `heat-${i}`,
+        center: { lat, lng },
+        radius: 300 + pseudoRandom(i + 20) * 200,
+        fillColor: i % 2 === 0 ? '#FF6B00' : '#FFD700'
+      });
     }
     return items;
+  }, [showHeatMap, currentLocation?.lat, currentLocation?.lng]);
+
+  const renderHeatmap = () => {
+    return heatmapItems.map(item => (
+      <Circle
+        key={item.id}
+        center={item.center}
+        radius={item.radius}
+        options={{
+          strokeColor: 'transparent',
+          fillColor: item.fillColor,
+          fillOpacity: 0.3
+        }}
+      />
+    ));
   };
 
   if (!isLoaded) return <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white">Carregando Mapa...</div>;
