@@ -660,6 +660,7 @@ const App: React.FC = () => {
       fetchPendingDeliveries();
 
       // THEN SUBSCRIBE TO NEW DELIVERIES AND UPDATES
+      // THEN SUBSCRIBE TO NEW DELIVERIES AND UPDATES
       subscription = supabaseClient.subscribeToAvailableMissions(
         // Callback for new missions (INSERT)
         (newMissionPayload) => {
@@ -701,17 +702,9 @@ const App: React.FC = () => {
           setStatus(DriverStatus.ALERTING);
           setAlertCountdown(30);
         },
-        // Callback for accepted missions (UPDATE)
-        (acceptedMissionId) => {
-          console.log("✅ Mission accepted by another courier:", acceptedMissionId);
-
-          // If this is the mission we're currently showing, remove it
-          if (mission?.id === acceptedMissionId) {
-            console.log("⚠️ Removing mission alert (accepted by another courier)");
-            setMission(null);
-            setStatus(DriverStatus.ONLINE);
-            setAlertCountdown(0);
-          }
+        // Callback for mission changes (UPDATE) - mostly irrelevant here as we unsubscribe when mission is set
+        (unavailableMissionId) => {
+          console.log("ℹ️ Mission became unavailable:", unavailableMissionId);
         }
       );
     }
@@ -807,6 +800,49 @@ const App: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [status, alertCountdown]);
+
+
+  // MONITOR ACTIVE MISSION (ALERTING or IN_PROGRESS)
+  useEffect(() => {
+    let subscription: any;
+
+    if (mission) {
+      console.log(`👀 Monitoring active mission: ${mission.id} (Status: ${status})`);
+
+      subscription = supabaseClient.subscribeToActiveMission(mission.id, (newStatus) => {
+        console.log(`📢 Mission ${mission.id} status update: ${newStatus}`);
+
+        // CASE 1: While alerting, if mission is taken by someone else or cancelled
+        if (status === DriverStatus.ALERTING) {
+          if (newStatus !== 'pending') {
+            console.log("⚠️ Alerting mission is no longer pending. Removing alert.");
+            setMission(null);
+            setStatus(DriverStatus.ONLINE);
+            setAlertCountdown(0);
+            if (newStatus === 'cancelled') alert('O pedido foi cancelado pela loja.');
+            else alert('Esta entrega acabou de ser aceita por outro entregador.');
+          }
+        }
+        // CASE 2: While doing the delivery, if mission is cancelled
+        else if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE) {
+          if (newStatus === 'cancelled') {
+            console.log("⚠️ Active delivery cancelled by store.");
+            alert('⚠️ ATENÇÃO: A entrega foi cancelada pela loja. Não prossiga com a coleta/entrega.');
+            setMission(null);
+            setStatus(DriverStatus.ONLINE);
+            // Optionally redirect to home or stop navigation
+          }
+        }
+      });
+    }
+
+    return () => {
+      if (subscription) {
+        console.log("🛑 Stopping active mission monitoring");
+        subscription.unsubscribe();
+      }
+    };
+  }, [mission, status]);
 
 
 

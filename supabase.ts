@@ -165,9 +165,12 @@ export const getDeliveries = async (userId: string) => {
   return data;
 };
 
-export const subscribeToAvailableMissions = (callback: (mission: any) => void) => {
+export const subscribeToAvailableMissions = (
+  onNewMission: (mission: any) => void,
+  onMissionUnavailable: (missionId: string) => void
+) => {
   return supabase
-    .channel('public:deliveries')
+    .channel('public:deliveries:available')
     .on(
       'postgres_changes',
       {
@@ -177,7 +180,42 @@ export const subscribeToAvailableMissions = (callback: (mission: any) => void) =
         filter: 'status=eq.pending'
       },
       (payload) => {
-        callback(payload.new);
+        onNewMission(payload.new);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'deliveries'
+      },
+      (payload) => {
+        // If a delivery is no longer pending (accepted, cancelled, etc.), notify
+        if (payload.new.status !== 'pending') {
+          onMissionUnavailable(payload.new.id);
+        }
+      }
+    )
+    .subscribe();
+};
+
+export const subscribeToActiveMission = (
+  missionId: string,
+  onStatusChange: (status: string) => void
+) => {
+  return supabase
+    .channel(`public:deliveries:${missionId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'deliveries',
+        filter: `id=eq.${missionId}`
+      },
+      (payload) => {
+        onStatusChange(payload.new.status);
       }
     )
     .subscribe();
