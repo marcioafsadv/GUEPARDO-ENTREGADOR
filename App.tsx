@@ -869,7 +869,7 @@ const App: React.FC = () => {
     if (!mission || !userId) return;
 
     // Prevent duplicate processing
-    const missionId = `Entrega #${mission.id}`;
+    const missionId = `Entrega #${mission.displayId || mission.id.slice(-4)}`;
     if (history.some(h => h.type === missionId)) return;
 
     try {
@@ -883,7 +883,7 @@ const App: React.FC = () => {
       // 2. Prepare transaction data
       const newTransaction: Transaction = {
         id: Math.random().toString(36).substr(2, 9),
-        type: `Entrega #${mission.id}`,
+        type: `Entrega #${mission.displayId || mission.id.slice(-4)}`,
         amount: earned,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         date: 'Hoje',
@@ -1700,7 +1700,7 @@ const App: React.FC = () => {
                               </div>
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Pedido</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>#{mission?.displayId || mission?.id?.slice(0, 4)}</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>#{mission?.displayId || mission?.id?.slice(-4)}</p>
                               </div>
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Código</p>
@@ -1799,7 +1799,7 @@ const App: React.FC = () => {
                           <h4 className={`text-xs font-black uppercase italic ${textPrimary}`}>
                             {isOrderReady ? 'Retire no Balcão' : 'Aguarde o Lojista'}
                           </h4>
-                          <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: #{mission?.displayId || mission?.id?.slice(0, 4)}</p>
+                          <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: #{mission?.displayId || mission?.id?.slice(-4)}</p>
                         </div>
                       </div>
                     )}
