@@ -166,7 +166,7 @@ const App: React.FC = () => {
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
 
   // Estado de Sessão e Segurança
-  const [hasVerifiedSession, setHasVerifiedSession] = useState(false);
+  const [hasVerifiedSession, setHasVerifiedSession] = useState(true);
   const [verificationStep, setVerificationStep] = useState<'START' | 'CAMERA' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('START');
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -214,6 +214,7 @@ const App: React.FC = () => {
   // Settings
   /* Delivery Help States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
   const [customerMessage, setCustomerMessage] = useState('');
 
@@ -442,6 +443,13 @@ const App: React.FC = () => {
   };
 
   const toggleOnlineStatus = () => {
+    // Priority Check: Verification
+    if (!hasVerifiedSession) {
+      setVerificationStep('START');
+      setCurrentScreen('FACIAL_VERIFICATION');
+      return;
+    }
+
     if (status === DriverStatus.ONLINE) {
       setStatus(DriverStatus.OFFLINE);
       setMission(null);
@@ -640,7 +648,7 @@ const App: React.FC = () => {
                 customerName: firstPending.customer_name || 'Cliente',
                 customerAddress: firstPending.customer_address || '',
                 customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-                items: firstPending.items || [],
+                items: Array.isArray(firstPending.items) ? firstPending.items : (firstPending.items?.items || []),
                 collectionCode: firstPending.collection_code || '0000',
                 distanceToStore: firstPending.distance_to_store || 1.5,
                 deliveryDistance: firstPending.delivery_distance || 2.0,
@@ -648,7 +656,8 @@ const App: React.FC = () => {
                 earnings: parseFloat(firstPending.earnings || '0'),
                 timeLimit: 25,
                 storePhone: '', // Not in DB yet
-                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
+                displayId: !Array.isArray(firstPending.items) && firstPending.items?.displayId ? firstPending.items.displayId : undefined
               };
 
               setMission(dynamicMission);
@@ -696,7 +705,7 @@ const App: React.FC = () => {
             customerName: newMissionPayload.customer_name,
             customerAddress: newMissionPayload.customer_address,
             customerPhoneSuffix: newMissionPayload.customer_phone_suffix,
-            items: newMissionPayload.items || [],
+            items: Array.isArray(newMissionPayload.items) ? newMissionPayload.items : (newMissionPayload.items?.items || []),
             collectionCode: newMissionPayload.collection_code || '0000',
             distanceToStore: newMissionPayload.distance_to_store || 1.5,
             deliveryDistance: newMissionPayload.delivery_distance || 2.0,
@@ -704,7 +713,8 @@ const App: React.FC = () => {
             earnings: parseFloat(newMissionPayload.earnings || '0'),
             timeLimit: 25,
             storePhone: newMissionPayload.store_phone || '',
-            customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : ''
+            customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
+            displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined
           };
 
           setMission(dynamicMission);
@@ -913,6 +923,7 @@ const App: React.FC = () => {
       setLastEarnings(earned);
       setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
       setStatus(DriverStatus.ONLINE);
+      setHasVerifiedSession(false);
       setMission(null);
       setShowPostDeliveryModal(true);
       setHistory(prev => [newTransaction, ...prev]);
@@ -934,11 +945,6 @@ const App: React.FC = () => {
 
   const handleFinishDelivery = () => {
     if (!mission) return;
-    if (!hasVerifiedSession) {
-      setVerificationStep('START');
-      setCurrentScreen('FACIAL_VERIFICATION');
-      return;
-    }
     processDeliverySuccess();
   };
 
@@ -978,7 +984,7 @@ const App: React.FC = () => {
           setHasVerifiedSession(true);
           setTimeout(() => {
             setCurrentScreen('HOME');
-            if (mission) processDeliverySuccess();
+            setStatus(DriverStatus.ONLINE);
           }, 1500);
         }, 2000);
       }
@@ -1630,6 +1636,14 @@ const App: React.FC = () => {
                     </span>
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => setShowOrderDetails(!showOrderDetails)}
+                        className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                      >
+                        <i className="fas fa-shopping-bag text-[10px]"></i>
+                        {/* <span>Detalhes</span> Optional text, user asked for "icon of the bag" but usually buttons have labels or just icon. The existing buttons have text. I will leave it icon-only or with text? The user said "ícone da bag anexa ao lado esquerdo do GPS". I'll keep consistency with other buttons if space permits, or just icon if tight. GPS button has text. I'll add text for consistency but maybe just icon if user stressed "icon". Let's try with text "Det" or just icon. Existing: GPS, AJUDA. Let's start with just the icon to save space as requested "ícone da bag". Actually, the GPS button has `<span>GPS</span>`. I'll add `<span>PEDIDO</span>` or similar? Or just empty? User said "ícone da bag". I will add the icon and maybe existing style. */}
+                        <span>PEDIDO</span>
+                      </button>
+                      <button
                         onClick={() => setShowMissionMapPicker(!showMissionMapPicker)}
                         className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
                       >
@@ -1661,6 +1675,55 @@ const App: React.FC = () => {
                       </div>
                     )}
 
+                    {showOrderDetails && (
+                      <div className={`p-4 rounded-[20px] border border-white/5 space-y-4 ${innerBg} animate-in fade-in slide-in-from-top-2 mb-3`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className={`text-xs font-black uppercase tracking-widest ${textPrimary} flex items-center space-x-2`}>
+                            <i className="fas fa-list-check text-[#FF6B00]"></i>
+                            <span>Detalhes da Missão</span>
+                          </h3>
+                          <button onClick={() => setShowOrderDetails(false)} className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                            <i className="fas fa-times text-[10px]"></i>
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {/* Store Details */}
+                          <div className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted} mb-1`}>Retirar em</p>
+                            <p className={`text-sm font-black ${textPrimary} truncate`}>{mission?.storeName}</p>
+                            <p className={`text-xs font-bold ${textMuted} truncate`}>{mission?.storeAddress?.split(',')[0]}</p>
+                            <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
+                              <div>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Qtd.</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length > 1 ? mission.items.length : '1'}</p>
+                              </div>
+                              <div>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Pedido</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>#{mission?.displayId || mission?.id?.slice(0, 4)}</p>
+                              </div>
+                              <div>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Código</p>
+                                <p className={`text-sm font-black text-[#FF6B00]`}>{mission?.collectionCode}</p>
+                              </div>
+                            </div>
+                          </div>
+
+
+                          {/* Customer Details */}
+                          <div className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted} mb-1`}>Entregar para</p>
+                            <p className={`text-sm font-black ${textPrimary} truncate`}>{mission?.customerName}</p>
+                            <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
+                              <div>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Qtd.</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length > 1 ? mission.items.length : '1'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {showDeliveryHelpModal && (
                       <div className={`p-4 rounded-[20px] border border-white/5 space-y-3 ${innerBg} animate-in fade-in slide-in-from-top-2 mb-3`}>
                         <div className="flex items-center justify-between mb-2">
@@ -1736,7 +1799,7 @@ const App: React.FC = () => {
                           <h4 className={`text-xs font-black uppercase italic ${textPrimary}`}>
                             {isOrderReady ? 'Retire no Balcão' : 'Aguarde o Lojista'}
                           </h4>
-                          <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: {mission.id}</p>
+                          <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: #{mission?.displayId || mission?.id?.slice(0, 4)}</p>
                         </div>
                       </div>
                     )}
@@ -1804,68 +1867,71 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )
+            }
 
-            {showLayersModal && (
-              <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-300 pb-12 ${cardBg}`}>
-                  <div className="flex justify-between items-center mb-8">
-                    <h2 className={`text-2xl font-black italic ${textPrimary}`}>Camadas do Mapa</h2>
-                    <button onClick={() => setShowLayersModal(false)} className={`w-10 h-10 rounded-full flex items-center justify-center ${innerBg} ${textMuted} active:scale-90 transition-transform`}>
-                      <i className="fas fa-times text-lg"></i>
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${showHeatMap ? 'bg-[#FF6B00]/10 border-[#FF6B00]/30' : innerBg}`} onClick={() => setShowHeatMap(!showHeatMap)}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${showHeatMap ? 'bg-[#FF6B00] text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
-                          <i className="fas fa-fire"></i>
-                        </div>
-                        <div>
-                          <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Zonas de Alta Demanda</h3>
-                          <p className={`text-[9px] font-bold ${textMuted}`}>Visualizar Heatmap</p>
-                        </div>
-                      </div>
-                      <div className={`w-11 h-6 rounded-full relative transition-colors ${showHeatMap ? 'bg-[#FF6B00]' : 'bg-zinc-700'}`}>
-                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${showHeatMap ? 'translate-x-5' : ''}`}></div>
-                      </div>
+            {
+              showLayersModal && (
+                <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm animate-in fade-in duration-300">
+                  <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-300 pb-12 ${cardBg}`}>
+                    <div className="flex justify-between items-center mb-8">
+                      <h2 className={`text-2xl font-black italic ${textPrimary}`}>Camadas do Mapa</h2>
+                      <button onClick={() => setShowLayersModal(false)} className={`w-10 h-10 rounded-full flex items-center justify-center ${innerBg} ${textMuted} active:scale-90 transition-transform`}>
+                        <i className="fas fa-times text-lg"></i>
+                      </button>
                     </div>
 
-                    <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${showTraffic ? 'bg-red-500/10 border-red-500/30' : innerBg}`} onClick={() => setShowTraffic(!showTraffic)}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${showTraffic ? 'bg-red-500 text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
-                          <i className="fas fa-traffic-light"></i>
+                    <div className="space-y-4">
+                      <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${showHeatMap ? 'bg-[#FF6B00]/10 border-[#FF6B00]/30' : innerBg}`} onClick={() => setShowHeatMap(!showHeatMap)}>
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${showHeatMap ? 'bg-[#FF6B00] text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
+                            <i className="fas fa-fire"></i>
+                          </div>
+                          <div>
+                            <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Zonas de Alta Demanda</h3>
+                            <p className={`text-[9px] font-bold ${textMuted}`}>Visualizar Heatmap</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Trânsito em Tempo Real</h3>
-                          <p className={`text-[9px] font-bold ${textMuted}`}>Camada de Tráfego</p>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${showHeatMap ? 'bg-[#FF6B00]' : 'bg-zinc-700'}`}>
+                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${showHeatMap ? 'translate-x-5' : ''}`}></div>
                         </div>
                       </div>
-                      <div className={`w-11 h-6 rounded-full relative transition-colors ${showTraffic ? 'bg-red-500' : 'bg-zinc-700'}`}>
-                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${showTraffic ? 'translate-x-5' : ''}`}></div>
-                      </div>
-                    </div>
 
-                    <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]/10 border-[#33CCFF]/30' : innerBg}`} onClick={() => setMapMode(prev => prev === 'standard' ? 'satellite' : 'standard')}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mapMode === 'satellite' ? 'bg-[#33CCFF] text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
-                          <i className="fas fa-satellite"></i>
+                      <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${showTraffic ? 'bg-red-500/10 border-red-500/30' : innerBg}`} onClick={() => setShowTraffic(!showTraffic)}>
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${showTraffic ? 'bg-red-500 text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
+                            <i className="fas fa-traffic-light"></i>
+                          </div>
+                          <div>
+                            <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Trânsito em Tempo Real</h3>
+                            <p className={`text-[9px] font-bold ${textMuted}`}>Camada de Tráfego</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Modo Satélite</h3>
-                          <p className={`text-[9px] font-bold ${textMuted}`}>Visão Aérea</p>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${showTraffic ? 'bg-red-500' : 'bg-zinc-700'}`}>
+                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${showTraffic ? 'translate-x-5' : ''}`}></div>
                         </div>
                       </div>
-                      <div className={`w-11 h-6 rounded-full relative transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]' : 'bg-zinc-700'}`}>
-                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${mapMode === 'satellite' ? 'translate-x-5' : ''}`}></div>
+
+                      <div className={`p-5 rounded-[28px] border border-white/5 flex items-center justify-between cursor-pointer transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]/10 border-[#33CCFF]/30' : innerBg}`} onClick={() => setMapMode(prev => prev === 'standard' ? 'satellite' : 'standard')}>
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mapMode === 'satellite' ? 'bg-[#33CCFF] text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
+                            <i className="fas fa-satellite"></i>
+                          </div>
+                          <div>
+                            <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Modo Satélite</h3>
+                            <p className={`text-[9px] font-bold ${textMuted}`}>Visão Aérea</p>
+                          </div>
+                        </div>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]' : 'bg-zinc-700'}`}>
+                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${mapMode === 'satellite' ? 'translate-x-5' : ''}`}></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )
+            }
+          </div >
         );
       case 'FACIAL_VERIFICATION':
         return (
@@ -2670,9 +2736,9 @@ const App: React.FC = () => {
             </div>
 
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'bg-green-500 ring-4 ring-green-500/20' : innerBg}`}>
-                <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'bg-white animate-pulse' : theme === 'dark' ? 'bg-zinc-500' : 'bg-zinc-400'}`}></div>
-                <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : textMuted}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
+              <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${!hasVerifiedSession ? 'bg-yellow-500 ring-4 ring-yellow-500/20' : status === DriverStatus.ONLINE ? 'bg-green-500 ring-4 ring-green-500/20' : innerBg}`}>
+                <div className={`w-2 h-2 rounded-full ${!hasVerifiedSession ? 'bg-white animate-pulse' : status === DriverStatus.ONLINE ? 'bg-white animate-pulse' : theme === 'dark' ? 'bg-zinc-500' : 'bg-zinc-400'}`}></div>
+                <span className={`font-black text-[10px] uppercase tracking-widest ${!hasVerifiedSession ? 'text-white' : status === DriverStatus.ONLINE ? 'text-white' : textMuted}`}>{!hasVerifiedSession ? 'Restrito' : status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
               </button>
             </div>
 
@@ -2708,6 +2774,25 @@ const App: React.FC = () => {
               </button>
             )}
           </div>
+
+          {/* Verification Banner */}
+          {!hasVerifiedSession && (
+            <div className="w-full px-6 pb-4 flex justify-center animate-in slide-in-from-top-2">
+              <button
+                onClick={() => { setVerificationStep('START'); setCurrentScreen('FACIAL_VERIFICATION'); }}
+                className={`w-full ${theme === 'dark' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-yellow-50 border-yellow-200'} border backdrop-blur-md p-3 rounded-xl flex items-center shadow-lg active:scale-95 transition-transform`}
+              >
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0 mr-3">
+                  <i className="fas fa-user-lock text-yellow-500 text-lg"></i>
+                </div>
+                <div className="text-left flex-1">
+                  <h3 className={`text-[10px] font-black uppercase tracking-wide mb-0.5 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-700'}`}>Verificação Necessária</h3>
+                  <p className={`text-[9px] font-bold leading-tight ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}`}>Toque aqui para verificar sua identidade e liberar novas entregas.</p>
+                </div>
+                <i className={`fas fa-chevron-right text-xs ${theme === 'dark' ? 'text-zinc-600' : 'text-zinc-400'}`}></i>
+              </button>
+            </div>
+          )}
         </header>
       )}
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
@@ -2794,7 +2879,7 @@ const App: React.FC = () => {
             <h2 className="text-3xl font-black italic mb-2 text-white">MUITO BEM!</h2>
             <p className="text-zinc-400 font-bold mb-8 uppercase text-xs tracking-widest">Entrega concluída com sucesso</p>
             <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(lastEarnings || 0).toFixed(2)}</p></div>
-            <button onClick={() => setShowPostDeliveryModal(false)} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
+            <button onClick={() => { setShowPostDeliveryModal(false); setVerificationStep('START'); setCurrentScreen('FACIAL_VERIFICATION'); }} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
           </div>
         </div>
       )}

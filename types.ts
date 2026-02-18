@@ -26,6 +26,7 @@ export interface DeliveryMission {
   items: string[];
   storePhone: string;
   customerPhone: string;
+  displayId?: string;
 }
 
 export interface DailySummary {
