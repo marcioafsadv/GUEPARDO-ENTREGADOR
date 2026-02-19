@@ -17,16 +17,14 @@ export const COLORS = {
 export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
 
 /**
- * Motor de cálculo de ganhos Guepardo baseado na distância
+ * Motor de cálculo de ganhos Guepardo baseado na distância (Base iFood 2025/26)
  */
 export const calculateEarnings = (distance: number): number => {
-  if (distance <= 3) return 8.00;
-  if (distance <= 5) return 10.00;
-  if (distance <= 6) return 12.00;
-  if (distance <= 7) return 14.00;
-  if (distance <= 8) return 16.00;
-  if (distance <= 9) return 18.00;
-  return 20.00; // 10km ou mais
+  const MIN_FEE = 7.50;
+  const KM_RATE = 1.50;
+
+  const calculated = distance * KM_RATE;
+  return Math.max(MIN_FEE, calculated);
 };
 
 export const MOCK_STORES = [

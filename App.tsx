@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Howl } from 'howler';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
 import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapMock } from './components/MapMock';
@@ -23,21 +24,28 @@ const SOUND_OPTIONS = [
     id: 'cheetah',
     label: 'Rugido do Guepardo',
     description: 'Alerta exclusivo da marca',
-    url: 'https://actions.google.com/sounds/v1/animals/cat_purr.ogg',
+    url: '/sounds/lion-roar.mp3',
     icon: 'fa-cat'
   },
   {
-    id: 'horn',
-    label: 'Buzina de Moto',
-    description: 'Bip duplo agudo',
-    url: 'https://actions.google.com/sounds/v1/cartoon/clown_horn.ogg',
-    icon: 'fa-bullhorn'
+    id: 'symphony',
+    label: 'Symphony',
+    description: 'Toque clássico e elegante',
+    url: '/sounds/symphony.mp3',
+    icon: 'fa-music'
+  },
+  {
+    id: 'guitar',
+    label: 'Notificação Guitarra',
+    description: 'Efeito de cordas vibrantes',
+    url: '/sounds/guitar-notification.mp3',
+    icon: 'fa-guitar'
   },
   {
     id: 'beep',
-    label: 'Notificação Clássica',
+    label: 'Beep Once',
     description: 'Toque suave padrão',
-    url: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg',
+    url: '/sounds/beep-notification.mp3',
     icon: 'fa-bell'
   }
 ];
@@ -253,7 +261,7 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationModel[]>(MOCK_NOTIFICATIONS);
   const [notificationsSeen, setNotificationsSeen] = useState(false);
 
-  const alertAudioRef = useRef<HTMLAudioElement | null>(null);
+  const alertAudioRef = useRef<Howl | null>(null);
 
   // Estatísticas e Financeiro - INICIANDO ZERADOS PARA NOVO USUÁRIO
   const [balance, setBalance] = useState(0.00);
@@ -569,20 +577,39 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const soundUrl = SOUND_OPTIONS.find(s => s.id === selectedSoundId)?.url || SOUND_OPTIONS[0].url;
-    const audio = new Audio(soundUrl);
-    audio.loop = true;
-    alertAudioRef.current = audio;
+
+    // Clean up previous instance
+    if (alertAudioRef.current) {
+      alertAudioRef.current.unload();
+    }
+
+    const howl = new Howl({
+      src: [soundUrl],
+      loop: true,
+      volume: 0.8,
+      html5: true, // Use HTML5 Audio for better mobile support with long files
+      preload: true
+    });
+
+    alertAudioRef.current = howl;
+
+    return () => {
+      if (alertAudioRef.current) {
+        alertAudioRef.current.unload();
+      }
+    };
   }, [selectedSoundId]);
 
   useEffect(() => {
     if (status === DriverStatus.ALERTING && soundEnabled && alertAudioRef.current) {
-      alertAudioRef.current.play().catch(e => console.error(e));
+      if (!alertAudioRef.current.playing()) {
+        alertAudioRef.current.play();
+      }
       if (autoAccept) {
         setTimeout(() => setStatus(DriverStatus.GOING_TO_STORE), 1500);
       }
     } else if (alertAudioRef.current) {
-      alertAudioRef.current.pause();
-      alertAudioRef.current.currentTime = 0;
+      alertAudioRef.current.stop();
     }
   }, [status, soundEnabled, autoAccept]);
 
@@ -1091,8 +1118,7 @@ const App: React.FC = () => {
 
       // Stop the sound
       if (alertAudioRef.current) {
-        alertAudioRef.current.pause();
-        alertAudioRef.current.currentTime = 0;
+        alertAudioRef.current.stop();
       }
     } catch (error: any) {
       console.error('❌ Error accepting mission:', error);
@@ -1123,8 +1149,7 @@ const App: React.FC = () => {
 
     // Stop the sound
     if (alertAudioRef.current) {
-      alertAudioRef.current.pause();
-      alertAudioRef.current.currentTime = 0;
+      alertAudioRef.current.stop();
     }
   };
 
@@ -2653,9 +2678,12 @@ const App: React.FC = () => {
                       key={sound.id}
                       onClick={() => {
                         setSelectedSoundId(sound.id);
-                        const audio = new Audio(sound.url);
-                        audio.volume = 0.5;
-                        audio.play().catch(e => console.log("Audio play error", e));
+                        const previewSound = new Howl({
+                          src: [sound.url],
+                          volume: 0.6,
+                          html5: true
+                        });
+                        previewSound.play();
                       }}
                       className={`p-5 rounded-[32px] border-2 cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${selectedSoundId === sound.id
                         ? 'border-[#FF6B00] bg-[#FF6B00]/10 shadow-lg shadow-orange-900/20'
