@@ -179,6 +179,8 @@ export const MapMock: React.FC<MapMockProps> = ({
             if (legs.length > 1) {
               const firstLegEnd = legs[0].end_location;
               setPickupLocation({ lat: firstLegEnd.lat(), lng: firstLegEnd.lng() });
+            } else {
+              setPickupLocation(null);
             }
           }
         }

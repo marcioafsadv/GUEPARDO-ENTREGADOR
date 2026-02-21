@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
 import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
-import { MapMock } from './components/MapMock';
+import { MapLeaflet } from './components/MapLeaflet';
 
 import { HoldToFillButton } from './components/HoldToFillButton';
 import { Logo } from './components/Logo';
@@ -161,7 +161,24 @@ const App: React.FC = () => {
 
   // Estados Globais
   const [status, setStatus] = useState<DriverStatus>(DriverStatus.OFFLINE);
-  const [mission, setMission] = useState<DeliveryMission | null>(null);
+  const [activeMissions, setActiveMissions] = useState<DeliveryMission[]>([]);
+  const mission = React.useMemo(() => {
+    if (activeMissions.length === 0) return null;
+
+    // Priority: If we haven't picked up all orders, focus on the first one that needs pickup
+    // In our simplified workflow, GOING_TO_STORE means we are heading to the store for ALL of them.
+    // Once we are picking up, we focus on the first one.
+    return activeMissions[0];
+  }, [activeMissions]);
+
+  const setMission = (m: DeliveryMission | null) => {
+    if (m === null) setActiveMissions([]);
+    else setActiveMissions(prev => {
+      const alreadyExists = prev.some(existing => existing.id === m.id);
+      if (alreadyExists) return prev;
+      return [...prev, m];
+    });
+  };
   const [alertCountdown, setAlertCountdown] = useState(30);
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [settingsView, setSettingsView] = useState<SettingsView>('MAIN');
@@ -452,11 +469,7 @@ const App: React.FC = () => {
 
   const toggleOnlineStatus = () => {
     // Priority Check: Verification
-    if (!hasVerifiedSession) {
-      setVerificationStep('START');
-      setCurrentScreen('FACIAL_VERIFICATION');
-      return;
-    }
+
 
     if (status === DriverStatus.ONLINE) {
       setStatus(DriverStatus.OFFLINE);
@@ -602,14 +615,20 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (status === DriverStatus.ALERTING && soundEnabled && alertAudioRef.current) {
+      console.log("🔊 Playing alert sound...");
       if (!alertAudioRef.current.playing()) {
         alertAudioRef.current.play();
       }
       if (autoAccept) {
         setTimeout(() => setStatus(DriverStatus.GOING_TO_STORE), 1500);
       }
-    } else if (alertAudioRef.current) {
-      alertAudioRef.current.stop();
+    } else {
+      if (alertAudioRef.current) {
+        console.log("🔇 Stopping alert sound (Status: " + status + ")");
+        alertAudioRef.current.stop();
+        // Force stop if it's being stubborn
+        try { alertAudioRef.current.pause(); } catch (e) { }
+      }
     }
   }, [status, soundEnabled, autoAccept]);
 
@@ -763,57 +782,90 @@ const App: React.FC = () => {
   }, [status, mission, rejectedMissions]);
 
 
-  // PERIODIC POLLING: Check for pending deliveries every 10 seconds while ONLINE
+  // PERIODIC POLLING: Check for pending or assigned deliveries
   useEffect(() => {
     let pollingInterval: any;
 
-    if (status === DriverStatus.ONLINE && !mission && currentUser) {
-      console.log("🔄 Starting periodic polling for pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
-
-      const checkForPendingDeliveries = async () => {
+    if (status !== DriverStatus.OFFLINE && userId && currentUser) {
+      const checkForDeliveries = async () => {
         try {
-          const { data: pendingDeliveries, error } = await supabaseClient.supabase
+          // 1. Check for orders DIRECTLY ASSIGNED to this driver (Batching)
+          const { data: assignedOrders } = await supabaseClient.supabase
             .from('deliveries')
             .select('*')
-            .eq('status', 'pending')
-            .is('driver_id', null)
-            .order('created_at', { ascending: true })
-            .limit(10); // Fetch a few to filter locally if needed
+            .eq('driver_id', userId)
+            .in('status', ['accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer']);
 
-          if (error) {
-            console.error("❌ Polling error:", error);
-            return;
+          if (assignedOrders && assignedOrders.length > 0) {
+            const syncMissions: DeliveryMission[] = assignedOrders.map(d => ({
+              id: d.id,
+              storeName: d.store_name || 'Loja',
+              storeAddress: d.store_address || '',
+              customerName: d.customer_name || 'Cliente',
+              customerAddress: d.customer_address || '',
+              customerPhoneSuffix: d.customer_phone_suffix || '',
+              items: d.items || [],
+              collectionCode: d.collection_code || '0000',
+              distanceToStore: d.distance_to_store || 1.5,
+              deliveryDistance: d.delivery_distance || 2.0,
+              totalDistance: d.total_distance || 3.5,
+              earnings: parseFloat(d.earnings || '0'),
+              timeLimit: 25,
+              storePhone: '',
+              customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
+              displayId: d.items?.displayId || undefined
+            }));
+
+            setActiveMissions(prev => {
+              // Merge lists without duplicates
+              const prevIds = new Set(prev.map(m => m.id));
+              const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
+              if (newOnly.length === 0) return prev;
+
+              // If we were ONLINE and suddenly have missions, transition status
+              if (status === DriverStatus.ONLINE && (prev.length === 0)) {
+                setStatus(DriverStatus.GOING_TO_STORE);
+              }
+
+              return [...prev, ...newOnly];
+            });
           }
 
-          if (pendingDeliveries && pendingDeliveries.length > 0) {
-            // Find the first pending delivery that hasn't been rejected
-            // Use String comparison to be safe
-            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
+          // 2. Check for PENDING BROADCAST deliveries (only if ONLINE and not full)
+          if (status === DriverStatus.ONLINE && activeMissions.length < 3) {
+            const { data: pendingDeliveries } = await supabaseClient.supabase
+              .from('deliveries')
+              .select('*')
+              .eq('status', 'pending')
+              .is('driver_id', null)
+              .order('created_at', { ascending: true })
+              .limit(5);
 
-            if (firstPending) {
-              console.log("✅ Polling found pending delivery:", firstPending);
-
-              const dynamicMission: DeliveryMission = {
-                id: firstPending.id,
-                storeName: firstPending.store_name || 'Loja',
-                storeAddress: firstPending.store_address || '',
-                customerName: firstPending.customer_name || 'Cliente',
-                customerAddress: firstPending.customer_address || '',
-                customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-                items: firstPending.items || [],
-                collectionCode: firstPending.collection_code || '0000',
-                distanceToStore: firstPending.distance_to_store || 1.5,
-                deliveryDistance: firstPending.delivery_distance || 2.0,
-                totalDistance: firstPending.total_distance || 3.5,
-                earnings: parseFloat(firstPending.earnings || '0'),
-                timeLimit: 25,
-                storePhone: '',
-                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
-              };
-
-              setMission(dynamicMission);
-              setStatus(DriverStatus.ALERTING);
-              setAlertCountdown(30);
+            if (pendingDeliveries && pendingDeliveries.length > 0) {
+              const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
+              if (firstPending) {
+                const dynamicMission: DeliveryMission = {
+                  id: firstPending.id,
+                  // ... mapping same as above
+                  storeName: firstPending.store_name || 'Loja',
+                  storeAddress: firstPending.store_address || '',
+                  customerName: firstPending.customer_name || 'Cliente',
+                  customerAddress: firstPending.customer_address || '',
+                  customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+                  items: firstPending.items || [],
+                  collectionCode: firstPending.collection_code || '0000',
+                  distanceToStore: firstPending.distance_to_store || 1.5,
+                  deliveryDistance: firstPending.delivery_distance || 2.0,
+                  totalDistance: firstPending.total_distance || 3.5,
+                  earnings: parseFloat(firstPending.earnings || '0'),
+                  timeLimit: 25,
+                  storePhone: '',
+                  customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+                };
+                setMission(dynamicMission);
+                setStatus(DriverStatus.ALERTING);
+                setAlertCountdown(30);
+              }
             }
           }
         } catch (err) {
@@ -821,18 +873,12 @@ const App: React.FC = () => {
         }
       };
 
-      // Check immediately, then every 10 seconds
-      checkForPendingDeliveries();
-      pollingInterval = setInterval(checkForPendingDeliveries, 10000);
+      checkForDeliveries();
+      pollingInterval = setInterval(checkForDeliveries, 5000); // Poll every 5s for batching agility
     }
 
-    return () => {
-      if (pollingInterval) {
-        console.log("🛑 Stopping periodic polling");
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [status, mission, currentUser, rejectedMissions]);
+    return () => clearInterval(pollingInterval);
+  }, [status, activeMissions.length, currentUser, rejectedMissions, userId]);
 
 
   useEffect(() => {
@@ -949,10 +995,35 @@ const App: React.FC = () => {
       setDailyEarnings(prev => prev + earned);
       setLastEarnings(earned);
       setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
-      setStatus(DriverStatus.ONLINE);
-      setHasVerifiedSession(false);
-      setMission(null);
-      setShowPostDeliveryModal(true);
+
+      // Update activeMissions: Remove completed mission
+      // IMPORTANT: Calculate remaining missions BEFORE state update to avoid side effects in setter
+      const remaining = activeMissions.filter(m => m.id !== mission.id);
+      setActiveMissions(remaining);
+
+      if (remaining.length === 0) {
+        setStatus(DriverStatus.ONLINE);
+        setHasVerifiedSession(false);
+        setMission(null); // Clear mission when all done
+        setShowPostDeliveryModal(true); // Show modal ONLY at the end
+      } else {
+        // AUTOMATIC SEQUENCING: 
+        // If the next mission is from the SAME STORE, it means we already picked it up (Batch).
+        // So we go directly to GOING_TO_CUSTOMER.
+        const nextMission = remaining[0];
+
+        // Ensure mission state updates immediately
+        setMission(nextMission);
+
+        if (nextMission && nextMission.storeName === mission.storeName) {
+          setStatus(DriverStatus.GOING_TO_CUSTOMER);
+          setShowPostDeliveryModal(false); // Do NOT show success modal for intermediate steps
+        } else {
+          // Different store? We need to go pick it up.
+          setStatus(DriverStatus.GOING_TO_STORE);
+          setShowPostDeliveryModal(false);
+        }
+      }
       setHistory(prev => [newTransaction, ...prev]);
 
     } catch (error: any) {
@@ -1116,8 +1187,12 @@ const App: React.FC = () => {
       setDailyStats(s => ({ ...s, accepted: s.accepted + 1 }));
       setStatus(DriverStatus.GOING_TO_STORE);
 
-      // Stop the sound
+      // Ensure we are tracking all active missions
+      // This will trigger the logistics cascade
+
+      // Stop the sound immediately
       if (alertAudioRef.current) {
+        console.log("🔇 Manual stop in handleAcceptMission");
         alertAudioRef.current.stop();
       }
     } catch (error: any) {
@@ -1566,7 +1641,7 @@ const App: React.FC = () => {
         return (
           <div className="flex flex-col h-full relative overflow-hidden">
             <div className="flex-1 relative">
-              <MapMock
+              <MapLeaflet
                 key={mapCenterKey}
                 status={status}
                 theme={theme}
@@ -1720,8 +1795,12 @@ const App: React.FC = () => {
                             <p className={`text-xs font-bold ${textMuted} truncate`}>{mission?.storeAddress?.split(',')[0]}</p>
                             <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Qtd.</p>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Itens</p>
                                 <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length > 1 ? mission.items.length : '1'}</p>
+                              </div>
+                              <div>
+                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Total</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>{activeMissions.filter(m => m.storeName === mission.storeName).length} Pedidos</p>
                               </div>
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Pedido</p>
@@ -1734,18 +1813,22 @@ const App: React.FC = () => {
                             </div>
                           </div>
 
-
-                          {/* Customer Details */}
-                          <div className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
-                            <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted} mb-1`}>Entregar para</p>
-                            <p className={`text-sm font-black ${textPrimary} truncate`}>{mission?.customerName}</p>
-                            <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
-                              <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Qtd.</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length > 1 ? mission.items.length : '1'}</p>
+                          {/* Customer Details - LOOP for Batch */}
+                          {activeMissions.filter(m => m.storeName === mission?.storeName).map((batchMission, idx) => (
+                            <div key={batchMission.id} className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
+                              <div className="flex justify-between items-center mb-1">
+                                <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Entregar para ({idx + 1})</p>
+                                <span className="text-[10px] font-mono text-zinc-500">#{batchMission.displayId || batchMission.id.slice(-4)}</span>
+                              </div>
+                              <p className={`text-sm font-black ${textPrimary} truncate`}>{batchMission.customerName}</p>
+                              <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
+                                <div>
+                                  <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Itens</p>
+                                  <p className={`text-sm font-black ${textPrimary}`}>{batchMission.items?.length > 1 ? batchMission.items.length : '1'}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -1806,13 +1889,20 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="px-1">
-                      <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-                        {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeName : mission.customerName}
-                      </h3>
-                      <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-                        {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeAddress : mission.customerAddress}
-                      </p>
+                    <div className="px-1 flex justify-between items-start">
+                      <div>
+                        <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
+                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeName : mission.customerName}
+                        </h3>
+                        <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
+                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeAddress : mission.customerAddress}
+                        </p>
+                      </div>
+                      {activeMissions.length > 1 && (
+                        <div className="bg-[#FF6B00] text-white text-[10px] font-black px-2 py-1 rounded-lg animate-bounce">
+                          +{activeMissions.length - 1} Pedidos
+                        </div>
+                      )}
                     </div>
 
                     {status === DriverStatus.ARRIVED_AT_STORE && (
