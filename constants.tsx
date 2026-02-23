@@ -20,11 +20,18 @@ export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=F
  * Motor de cálculo de ganhos Guepardo baseado na distância (Base iFood 2025/26)
  */
 export const calculateEarnings = (distance: number): number => {
-  const MIN_FEE = 7.50;
-  const KM_RATE = 1.50;
-
-  const calculated = distance * KM_RATE;
-  return Math.max(MIN_FEE, calculated);
+  if (distance <= 2) return 7.50;
+  if (distance <= 3) return 8.00;
+  if (distance <= 3.5) return 8.50;
+  if (distance <= 4) return 9.00;
+  if (distance <= 4.5) return 10.00;
+  if (distance <= 5) return 12.00;
+  if (distance <= 6) return 14.00;
+  if (distance <= 7) return 16.00;
+  if (distance <= 8) return 18.00;
+  if (distance <= 9) return 20.00;
+  if (distance <= 10) return 22.00;
+  return 22.00 + (Math.ceil(distance - 10) * 2.00);
 };
 
 export const MOCK_STORES = [

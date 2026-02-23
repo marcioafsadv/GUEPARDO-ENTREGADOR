@@ -13,7 +13,7 @@ import CitySelection from './components/onboarding/CitySelection';
 import { processWizardRegistration } from './utils/wizardProcessor';
 
 
-type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'FACIAL_VERIFICATION';
+type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
@@ -190,12 +190,13 @@ const App: React.FC = () => {
   const [showBalance, setShowBalance] = useState(true);
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
 
-  // Estado de Sessão e Segurança
-  const [hasVerifiedSession, setHasVerifiedSession] = useState(true);
-  const [verificationStep, setVerificationStep] = useState<'START' | 'CAMERA' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('START');
-  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Pre-geocoded coords for instant route switching (store → customer)
+  const [preloadedCoords, setPreloadedCoords] = useState<{
+    store: { lat: number; lng: number } | null;
+    customer: { lat: number; lng: number } | null;
+  }>({ store: null, customer: null });
+
+
 
   // Estado Heatmap e Camadas
   const [showHeatMap, setShowHeatMap] = useState(true);
@@ -326,13 +327,8 @@ const App: React.FC = () => {
     }).catch(() => { });
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [videoStream]);
+
+
 
   // Restore Session on Mount
   useEffect(() => {
@@ -666,13 +662,18 @@ const App: React.FC = () => {
       const fetchPendingDeliveries = async () => {
         try {
           console.log("🔍 Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
-          const { data: pendingDeliveries, error } = await supabaseClient.supabase
+          const { data: allPending, error } = await supabaseClient.supabase
             .from('deliveries')
             .select('*')
             .eq('status', 'pending')
-            .is('driver_id', null)
             .order('created_at', { ascending: true })
-            .limit(20); // Fetch more to allow for local filtering of rejected missions
+            .limit(20);
+
+          let pendingDeliveries = allPending;
+          if (allPending) {
+            // Filter locally: Only public OR targeted to ME
+            pendingDeliveries = allPending.filter(d => !d.driver_id || d.driver_id === userId);
+          }
 
           if (error) {
             console.error("❌ Error fetching pending deliveries:", error);
@@ -703,6 +704,7 @@ const App: React.FC = () => {
                 timeLimit: 25,
                 storePhone: '', // Not in DB yet
                 customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
+                status: firstPending.status || 'pending',
                 displayId: !Array.isArray(firstPending.items) && firstPending.items?.displayId ? firstPending.items.displayId : undefined
               };
 
@@ -737,9 +739,14 @@ const App: React.FC = () => {
           }
 
           // Ignore if this mission was previously rejected locally
-          // Convert both to string to be safe
           if (rejectedMissions.includes(String(newMissionPayload.id))) {
             console.log("🚫 Ignoring rejected mission (Subscription):", newMissionPayload.id);
+            return;
+          }
+
+          // SECURITY: If it's targeted, ensure it's targeted to ME (or is public)
+          if (newMissionPayload.driver_id && newMissionPayload.driver_id !== userId) {
+            console.log("🤫 Mission targeted to someone else:", newMissionPayload.driver_id);
             return;
           }
 
@@ -760,6 +767,7 @@ const App: React.FC = () => {
             timeLimit: 25,
             storePhone: newMissionPayload.store_phone || '',
             customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
+            status: newMissionPayload.status || 'pending',
             displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined
           };
 
@@ -794,10 +802,13 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer']);
+            .in('status', ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer']);
 
           if (assignedOrders && assignedOrders.length > 0) {
-            const syncMissions: DeliveryMission[] = assignedOrders.map(d => ({
+            // Filter out missions the driver has already rejected locally
+            const filteredAssigned = assignedOrders.filter(d => !rejectedMissions.includes(String(d.id)));
+
+            const syncMissions: DeliveryMission[] = filteredAssigned.map(d => ({
               id: d.id,
               storeName: d.store_name || 'Loja',
               storeAddress: d.store_address || '',
@@ -813,40 +824,51 @@ const App: React.FC = () => {
               timeLimit: 25,
               storePhone: '',
               customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
+              status: d.status || 'pending',
               displayId: d.items?.displayId || undefined
             }));
 
-            setActiveMissions(prev => {
-              // Merge lists without duplicates
-              const prevIds = new Set(prev.map(m => m.id));
-              const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
-              if (newOnly.length === 0) return prev;
+            if (syncMissions.length > 0) {
+              setActiveMissions(prev => {
+                // Merge lists without duplicates
+                const prevIds = new Set(prev.map(m => m.id));
+                const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
+                if (newOnly.length === 0) return prev;
 
-              // If we were ONLINE and suddenly have missions, transition status
-              if (status === DriverStatus.ONLINE && (prev.length === 0)) {
-                setStatus(DriverStatus.GOING_TO_STORE);
-              }
+                // If we were ONLINE and suddenly have missions, transition status
+                if (status === DriverStatus.ONLINE && (prev.length === 0) && !mission) {
+                  // If the new mission is PENDING, trigger the ALERTING state
+                  const firstNew = newOnly[0];
+                  if (firstNew.status === 'pending') {
+                    setMission(firstNew);
+                    setStatus(DriverStatus.ALERTING);
+                  } else {
+                    setStatus(DriverStatus.GOING_TO_STORE);
+                  }
+                }
 
-              return [...prev, ...newOnly];
-            });
+                return [...prev, ...newOnly];
+              });
+            }
           }
 
           // 2. Check for PENDING BROADCAST deliveries (only if ONLINE and not full)
           if (status === DriverStatus.ONLINE && activeMissions.length < 3) {
-            const { data: pendingDeliveries } = await supabaseClient.supabase
+            const { data: allPending } = await supabaseClient.supabase
               .from('deliveries')
               .select('*')
               .eq('status', 'pending')
-              .is('driver_id', null)
               .order('created_at', { ascending: true })
-              .limit(5);
+              .limit(10);
 
-            if (pendingDeliveries && pendingDeliveries.length > 0) {
-              const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
+            if (allPending && allPending.length > 0) {
+              // Filter locally: Only public OR targeted to ME
+              const availablePending = allPending.filter(d => (!d.driver_id || d.driver_id === userId) && !rejectedMissions.includes(String(d.id)));
+
+              const firstPending = availablePending[0];
               if (firstPending) {
                 const dynamicMission: DeliveryMission = {
                   id: firstPending.id,
-                  // ... mapping same as above
                   storeName: firstPending.store_name || 'Loja',
                   storeAddress: firstPending.store_address || '',
                   customerName: firstPending.customer_name || 'Cliente',
@@ -859,6 +881,7 @@ const App: React.FC = () => {
                   totalDistance: firstPending.total_distance || 3.5,
                   earnings: parseFloat(firstPending.earnings || '0'),
                   timeLimit: 25,
+                  status: firstPending.status || 'pending',
                   storePhone: '',
                   customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
                 };
@@ -1003,7 +1026,8 @@ const App: React.FC = () => {
 
       if (remaining.length === 0) {
         setStatus(DriverStatus.ONLINE);
-        setHasVerifiedSession(false);
+
+
         setMission(null); // Clear mission when all done
         setShowPostDeliveryModal(true); // Show modal ONLY at the end
       } else {
@@ -1046,48 +1070,6 @@ const App: React.FC = () => {
     processDeliverySuccess();
   };
 
-  const startCamera = async () => {
-    setVerificationStep('CAMERA');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      setVideoStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setTimeout(() => {
-        const instruction = document.getElementById('camera-instruction');
-        if (instruction) instruction.innerText = "Agora, dê um sorriso!";
-        setTimeout(() => captureAndVerify(), 2000);
-      }, 2500);
-    } catch (err) {
-      console.error("Camera Error: ", err);
-      alert("Erro ao acessar a câmera.");
-      setVerificationStep('START');
-    }
-  };
-
-  const captureAndVerify = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
-      if (context) {
-        context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        if (videoStream) {
-          videoStream.getTracks().forEach(track => track.stop());
-          setVideoStream(null);
-        }
-        setVerificationStep('PROCESSING');
-        setTimeout(() => {
-          setVerificationStep('SUCCESS');
-          setHasVerifiedSession(true);
-          setTimeout(() => {
-            setCurrentScreen('HOME');
-            setStatus(DriverStatus.ONLINE);
-          }, 1500);
-        }, 2000);
-      }
-    }
-  };
 
   const handleAnticipateRequest = () => {
     if (balance <= ANTICIPATION_FEE) return;
@@ -1177,6 +1159,20 @@ const App: React.FC = () => {
   const isFilterActive = backHome || maxDistance < 30 || minPrice > 0;
 
 
+
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch (e) {
+      console.error('Geocoding error:', e);
+    }
+    return null;
+  };
+
   const handleAcceptMission = async () => {
     if (!mission || !userId) return;
     try {
@@ -1187,13 +1183,20 @@ const App: React.FC = () => {
       setDailyStats(s => ({ ...s, accepted: s.accepted + 1 }));
       setStatus(DriverStatus.GOING_TO_STORE);
 
-      // Ensure we are tracking all active missions
-      // This will trigger the logistics cascade
-
       // Stop the sound immediately
       if (alertAudioRef.current) {
         console.log("🔇 Manual stop in handleAcceptMission");
         alertAudioRef.current.stop();
+      }
+
+      // Pre-geocode both addresses in parallel for instant route switching
+      if (mission.storeAddress || mission.customerAddress) {
+        const [storeCoords, customerCoords] = await Promise.all([
+          mission.storeAddress ? geocodeAddress(mission.storeAddress) : Promise.resolve(null),
+          mission.customerAddress ? geocodeAddress(mission.customerAddress) : Promise.resolve(null),
+        ]);
+        console.log('📍 Pre-geocoded store:', storeCoords, '| customer:', customerCoords);
+        setPreloadedCoords({ store: storeCoords, customer: customerCoords });
       }
     } catch (error: any) {
       console.error('❌ Error accepting mission:', error);
@@ -1206,6 +1209,7 @@ const App: React.FC = () => {
       alert('Esta entrega já foi aceita por outro entregador ou não está mais disponível.');
       setStatus(DriverStatus.ONLINE);
       setMission(null);
+      setPreloadedCoords({ store: null, customer: null }); // Clear preloaded coords on error
     }
   };
 
@@ -1311,7 +1315,6 @@ const App: React.FC = () => {
       if (user) {
         setUserId(user.id);
         setIsAuthenticated(true);
-        setHasVerifiedSession(false);
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -1656,6 +1659,21 @@ const App: React.FC = () => {
                         : null
                 }
                 pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
+                // Pass pre-geocoded coords for instant route switch (no geocoding delay)
+                preloadedDestinationLat={
+                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    ? preloadedCoords.store?.lat
+                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                      ? preloadedCoords.customer?.lat
+                      : null
+                }
+                preloadedDestinationLng={
+                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    ? preloadedCoords.store?.lng
+                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                      ? preloadedCoords.customer?.lng
+                      : null
+                }
                 showHeatMap={showHeatMap}
                 mapMode={mapMode}
                 showTraffic={showTraffic}
@@ -2048,95 +2066,11 @@ const App: React.FC = () => {
             }
           </div >
         );
-      case 'FACIAL_VERIFICATION':
-        return (
-          <div className={`h-full w-full relative overflow-hidden flex flex-col items-center justify-center p-6 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-900'}`}>
 
-            <div className="absolute top-6 left-0 right-0 text-center z-20">
-              <i className="fas fa-shield-halved text-[#FF6B00] text-3xl mb-2"></i>
-              <h1 className="text-xl font-black text-white italic uppercase tracking-wider">Verificação de Identidade</h1>
-              <p className="text-zinc-400 text-xs font-bold mt-1">Check de Segurança Obrigatório</p>
-            </div>
 
-            <div className="relative w-full max-w-sm flex flex-col items-center z-10">
-
-              {verificationStep === 'START' && (
-                <div className="text-center animate-in fade-in zoom-in duration-300">
-                  <div className="w-64 h-64 rounded-full border-4 border-dashed border-zinc-700 flex items-center justify-center mb-8 mx-auto bg-zinc-800/50">
-                    <i className="fas fa-user-lock text-6xl text-zinc-500"></i>
-                  </div>
-                  <p className="text-zinc-300 text-sm font-bold leading-relaxed mb-8 px-4">
-                    Para sua segurança e evitar fraudes, precisamos confirmar que é você realizando as entregas.
-                  </p>
-                  <button
-                    onClick={startCamera}
-                    className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-900/30 active:scale-95 transition-transform flex items-center justify-center space-x-3"
-                  >
-                    <i className="fas fa-camera"></i>
-                    <span>Iniciar Verificação</span>
-                  </button>
-                </div>
-              )}
-
-              {verificationStep === 'CAMERA' && (
-                <div className="flex flex-col items-center w-full animate-in fade-in duration-300">
-                  <div className="relative w-72 h-72 rounded-full overflow-hidden border-4 border-[#FF6B00] shadow-[0_0_50px_rgba(255,107,0,0.3)] mb-8 bg-black">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover transform scale-x-[-1]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FF6B00]/20 to-transparent animate-[pulse_2s_infinite] pointer-events-none"></div>
-                    <canvas ref={canvasRef} className="hidden w-full h-full"></canvas>
-                  </div>
-
-                  <div className="text-center space-y-2">
-                    <div className="inline-flex items-center justify-center px-4 py-2 bg-zinc-800 rounded-full border border-zinc-700">
-                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">Ao Vivo</span>
-                    </div>
-                    <h3 id="camera-instruction" className="text-2xl font-black text-white italic mt-4 min-h-[40px]">
-                      Centralize seu rosto
-                    </h3>
-                  </div>
-                </div>
-              )}
-
-              {verificationStep === 'PROCESSING' && (
-                <div className="text-center animate-in fade-in duration-300">
-                  <div className="w-72 h-72 rounded-full border-4 border-zinc-800 flex flex-col items-center justify-center mb-8 mx-auto relative overflow-hidden bg-black">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <i className="fas fa-fingerprint text-8xl text-zinc-800 animate-pulse"></i>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#FF6B00]/20 to-transparent animate-[spin_3s_linear_infinite]"></div>
-                  </div>
-                  <h3 className="text-xl font-black text-white italic mb-2">Validando Biometria...</h3>
-                  <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Não feche o aplicativo</p>
-                </div>
-              )}
-
-              {verificationStep === 'SUCCESS' && (
-                <div className="text-center animate-in zoom-in duration-300">
-                  <div className="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center mb-6 mx-auto shadow-2xl shadow-green-900/50">
-                    <i className="fas fa-check text-5xl text-white"></i>
-                  </div>
-                  <h3 className="text-2xl font-black text-white italic mb-2">Identidade Confirmada!</h3>
-                  <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-8">Sessão validada com sucesso.</p>
-                </div>
-              )}
-
-            </div>
-
-            <div className="absolute inset-0 pointer-events-none opacity-20">
-              <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-[#FF6B00]/20 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent"></div>
-            </div>
-          </div>
-        );
       case 'WALLET':
         const filteredHistory = history.filter(item => item.weekId === activeWeekId);
+
         const weeklyEarningsTotal = filteredHistory.reduce((acc, item) => acc + (item.amount > 0 ? item.amount : 0), 0);
         const activeWeekLabel = MOCK_WEEKS.find(w => w.id === activeWeekId)?.range || 'Semana Atual';
 
@@ -2844,84 +2778,65 @@ const App: React.FC = () => {
 
   return (
     <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-white' : 'bg-zinc-50 text-zinc-900'}`}>
-      {currentScreen !== 'FACIAL_VERIFICATION' && (
-        <header className={`z-[1002] flex flex-col items-center justify-between backdrop-blur-2xl border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
-          <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
-            <div className="flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
-                <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
-              </div>
+      <header className={`z-[1002] flex flex-col items-center justify-between backdrop-blur-2xl border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
+        <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
+          <div className="flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
+              <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
             </div>
+          </div>
 
-            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${!hasVerifiedSession ? 'bg-yellow-500 ring-4 ring-yellow-500/20' : status === DriverStatus.ONLINE ? 'bg-green-500 ring-4 ring-green-500/20' : innerBg}`}>
-                <div className={`w-2 h-2 rounded-full ${!hasVerifiedSession ? 'bg-white animate-pulse' : status === DriverStatus.ONLINE ? 'bg-white animate-pulse' : theme === 'dark' ? 'bg-zinc-500' : 'bg-zinc-400'}`}></div>
-                <span className={`font-black text-[10px] uppercase tracking-widest ${!hasVerifiedSession ? 'text-white' : status === DriverStatus.ONLINE ? 'text-white' : textMuted}`}>{!hasVerifiedSession ? 'Restrito' : status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
-              </button>
-            </div>
-
-            <button
-              onClick={handleOpenNotifications}
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
-            >
-              <div className="relative">
-                <i className={`fas fa-bell text-lg ${textPrimary}`}></i>
-                {unreadCount > 0 && !notificationsSeen && (
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
-                    <span className="text-[9px] font-black text-white">{unreadCount}</span>
-                  </div>
-                )}
-              </div>
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'bg-green-500 ring-4 ring-green-500/20' : innerBg}`}>
+              <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'bg-white animate-pulse' : theme === 'dark' ? 'bg-zinc-500' : 'bg-zinc-400'}`}></div>
+              <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : textMuted}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
             </button>
           </div>
 
-          <div className="w-full px-6 pb-4 flex justify-center">
-            {!gpsEnabled && (
-              <button
-                onClick={handleActivateGPS}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl border active:scale-95 transition-all w-full justify-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200 shadow-sm'}`}
-              >
-                {isGpsLoading ? (
-                  <i className="fas fa-circle-notch fa-spin text-red-500 text-[10px]"></i>
-                ) : (
-                  <i className="fas fa-satellite-dish text-red-500 text-[10px] animate-pulse"></i>
-                )}
-                <span className={`text-[9px] font-bold uppercase tracking-wide ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
-                  {isGpsLoading ? 'Ativando localização...' : 'Ative a localização por GPS p/ evitar restrições'}
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* Verification Banner */}
-          {!hasVerifiedSession && (
-            <div className="w-full px-6 pb-4 flex justify-center animate-in slide-in-from-top-2">
-              <button
-                onClick={() => { setVerificationStep('START'); setCurrentScreen('FACIAL_VERIFICATION'); }}
-                className={`w-full ${theme === 'dark' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-yellow-50 border-yellow-200'} border backdrop-blur-md p-3 rounded-xl flex items-center shadow-lg active:scale-95 transition-transform`}
-              >
-                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0 mr-3">
-                  <i className="fas fa-user-lock text-yellow-500 text-lg"></i>
+          <button
+            onClick={handleOpenNotifications}
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
+          >
+            <div className="relative">
+              <i className={`fas fa-bell text-lg ${textPrimary}`}></i>
+              {unreadCount > 0 && !notificationsSeen && (
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
+                  <span className="text-[9px] font-black text-white">{unreadCount}</span>
                 </div>
-                <div className="text-left flex-1">
-                  <h3 className={`text-[10px] font-black uppercase tracking-wide mb-0.5 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-700'}`}>Verificação Necessária</h3>
-                  <p className={`text-[9px] font-bold leading-tight ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}`}>Toque aqui para verificar sua identidade e liberar novas entregas.</p>
-                </div>
-                <i className={`fas fa-chevron-right text-xs ${theme === 'dark' ? 'text-zinc-600' : 'text-zinc-400'}`}></i>
-              </button>
+              )}
             </div>
+          </button>
+        </div>
+
+        <div className="w-full px-6 pb-4 flex justify-center">
+          {!gpsEnabled && (
+            <button
+              onClick={handleActivateGPS}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border active:scale-95 transition-all w-full justify-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200 shadow-sm'}`}
+            >
+              {isGpsLoading ? (
+                <i className="fas fa-circle-notch fa-spin text-red-500 text-[10px]"></i>
+              ) : (
+                <i className="fas fa-satellite-dish text-red-500 text-[10px] animate-pulse"></i>
+              )}
+              <span className={`text-[9px] font-bold uppercase tracking-wide ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                {isGpsLoading ? 'Ativando localização...' : 'Ative a localização por GPS p/ evitar restrições'}
+              </span>
+            </button>
           )}
-        </header>
-      )}
+        </div>
+
+
+      </header>
+
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
-      {currentScreen !== 'FACIAL_VERIFICATION' && (
-        <nav className={`h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
-          <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
-          <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
-          <button onClick={() => setCurrentScreen('ORDERS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
-          <button onClick={() => setCurrentScreen('SETTINGS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
-        </nav>
-      )}
+      <nav className={`h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
+        <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
+        <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
+        <button onClick={() => setCurrentScreen('ORDERS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
+        <button onClick={() => setCurrentScreen('SETTINGS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
+      </nav>
+
 
       {showSOSModal && (
         <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end justify-center backdrop-blur-xl animate-in fade-in duration-300">
@@ -2997,7 +2912,7 @@ const App: React.FC = () => {
             <h2 className="text-3xl font-black italic mb-2 text-white">MUITO BEM!</h2>
             <p className="text-zinc-400 font-bold mb-8 uppercase text-xs tracking-widest">Entrega concluída com sucesso</p>
             <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(lastEarnings || 0).toFixed(2)}</p></div>
-            <button onClick={() => { setShowPostDeliveryModal(false); setVerificationStep('START'); setCurrentScreen('FACIAL_VERIFICATION'); }} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
+            <button onClick={() => { setShowPostDeliveryModal(false); }} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
           </div>
         </div>
       )}

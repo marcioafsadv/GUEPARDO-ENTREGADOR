@@ -24,6 +24,11 @@ interface MapLeafletProps {
     showTraffic?: boolean;
     destinationAddress?: string | null;
     pickupAddress?: string | null;
+    // Preloaded coords (optional, skips geocoding for faster route switch)
+    preloadedDestinationLat?: number | null;
+    preloadedDestinationLng?: number | null;
+    preloadedPickupLat?: number | null;
+    preloadedPickupLng?: number | null;
     reCenterTrigger?: number;
 }
 
@@ -68,6 +73,9 @@ const MapUpdater: React.FC<{ points: [number, number][], reCenterTrigger?: numbe
     return null;
 };
 
+// In-memory geocoding cache to avoid repeated API calls
+const geocodeCache = new Map<string, { lat: number; lng: number }>();
+
 export const MapLeaflet: React.FC<MapLeafletProps> = ({
     status,
     showRoute = false,
@@ -77,6 +85,10 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     showTraffic = false,
     destinationAddress,
     pickupAddress,
+    preloadedDestinationLat,
+    preloadedDestinationLng,
+    preloadedPickupLat,
+    preloadedPickupLng,
     reCenterTrigger
 }) => {
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -101,13 +113,18 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         }
     }, []);
 
-    // Geocoding helper
-    const geocode = async (address: string) => {
+    // Geocoding helper with cache
+    const geocode = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+        if (geocodeCache.has(address)) {
+            return geocodeCache.get(address)!;
+        }
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) {
-                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                geocodeCache.set(address, result);
+                return result;
             }
         } catch (e) {
             console.error("Geocoding Error:", e);
@@ -115,25 +132,34 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         return null;
     };
 
-    // Geocode addresses
+    // Resolve destination location: use preloaded coords first, then geocode
     useEffect(() => {
-        const performGeocoding = async () => {
-            if (destinationAddress) {
-                const loc = await geocode(destinationAddress);
+        if (preloadedDestinationLat != null && preloadedDestinationLng != null &&
+            !isNaN(preloadedDestinationLat) && !isNaN(preloadedDestinationLng)) {
+            setDestinationLocation({ lat: preloadedDestinationLat, lng: preloadedDestinationLng });
+        } else if (destinationAddress) {
+            // Also cache under address key if preloaded coords were provided before
+            geocode(destinationAddress).then(loc => {
                 if (loc) setDestinationLocation(loc);
-            } else {
-                setDestinationLocation(null);
-            }
+            });
+        } else {
+            setDestinationLocation(null);
+        }
+    }, [destinationAddress, preloadedDestinationLat, preloadedDestinationLng]);
 
-            if (pickupAddress) {
-                const loc = await geocode(pickupAddress);
+    // Resolve pickup location: use preloaded coords first, then geocode
+    useEffect(() => {
+        if (preloadedPickupLat != null && preloadedPickupLng != null &&
+            !isNaN(preloadedPickupLat) && !isNaN(preloadedPickupLng)) {
+            setPickupLocation({ lat: preloadedPickupLat, lng: preloadedPickupLng });
+        } else if (pickupAddress) {
+            geocode(pickupAddress).then(loc => {
                 if (loc) setPickupLocation(loc);
-            } else {
-                setPickupLocation(null);
-            }
-        };
-        performGeocoding();
-    }, [destinationAddress, pickupAddress]);
+            });
+        } else {
+            setPickupLocation(null);
+        }
+    }, [pickupAddress, preloadedPickupLat, preloadedPickupLng]);
 
     // OSRM Routing
     useEffect(() => {

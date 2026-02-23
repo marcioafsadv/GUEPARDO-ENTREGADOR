@@ -256,12 +256,21 @@ export const completeMission = async (missionId: string, driverId: string) => {
 };
 
 export const rejectMission = async (missionId: string, driverId: string) => {
-  // Optional: Log rejection or just ignore locally
-  // For now, we might not need to update the DB if we just want to hide it locally
-  // But if we want to prevent showing it again, we might need a 'rejected_deliveries' table or similar
-  // Or just update status if that's the business logic (e.g. 'rejected' -> returns to pool? or 'cancelled'?)
-  // For this MVP, we'll just log it.
   console.log(`Driver ${driverId} rejected mission ${missionId}`);
+  try {
+    const { error } = await supabase
+      .from('deliveries')
+      .update({ driver_id: null })
+      .eq('id', missionId)
+      .eq('driver_id', driverId); // Ensure we only clear if it was assigned to us
+
+    if (error) {
+      console.error('Error rejecting mission:', error);
+      throw error;
+    }
+  } catch (err) {
+    console.error('Critical error in rejectMission:', err);
+  }
 };
 
 
