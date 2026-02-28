@@ -7,7 +7,8 @@ export enum DriverStatus {
   ARRIVED_AT_STORE = 'ARRIVED_AT_STORE',
   PICKING_UP = 'PICKING_UP',
   GOING_TO_CUSTOMER = 'GOING_TO_CUSTOMER',
-  ARRIVED_AT_CUSTOMER = 'ARRIVED_AT_CUSTOMER'
+  ARRIVED_AT_CUSTOMER = 'ARRIVED_AT_CUSTOMER',
+  RETURNING = 'RETURNING'
 }
 
 export interface DeliveryMission {
@@ -27,6 +28,7 @@ export interface DeliveryMission {
   storePhone: string;
   customerPhone: string;
   status: string;
+  isReturnRequired?: boolean;
   displayId?: string;
 }
 
