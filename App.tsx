@@ -487,6 +487,7 @@ const App: React.FC = () => {
       case DriverStatus.PICKING_UP: return 'CONFIRMAÇÃO DE COLETA';
       case DriverStatus.GOING_TO_CUSTOMER: return 'INDO PARA O CLIENTE';
       case DriverStatus.ARRIVED_AT_CUSTOMER: return 'LOCAL DE ENTREGA';
+      case DriverStatus.RETURNING: return 'RETORNANDO À LOJA';
       default: return status.replace(/_/g, ' ');
     }
   };
@@ -768,6 +769,7 @@ const App: React.FC = () => {
             storePhone: newMissionPayload.store_phone || '',
             customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
             status: newMissionPayload.status || 'pending',
+            isReturnRequired: newMissionPayload.is_return_required || (newMissionPayload.items?.isReturnRequired) || false,
             displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined
           };
 
@@ -825,6 +827,7 @@ const App: React.FC = () => {
               storePhone: '',
               customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
               status: d.status || 'pending',
+              isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
               displayId: d.items?.displayId || undefined
             }));
 
@@ -882,6 +885,7 @@ const App: React.FC = () => {
                   earnings: parseFloat(firstPending.earnings || '0'),
                   timeLimit: 25,
                   status: firstPending.status || 'pending',
+                  isReturnRequired: firstPending.is_return_required || (firstPending.items?.isReturnRequired) || false,
                   storePhone: '',
                   customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
                 };
@@ -1299,7 +1303,30 @@ const App: React.FC = () => {
       }
       setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
     }
-    else if (status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) handleFinishDelivery();
+    else if (status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
+      if (mission.isReturnRequired) {
+        console.log('🔄 Return trip required. Redirecting to store...');
+        try {
+          await supabaseClient.supabase
+            .from('deliveries')
+            .update({ status: 'returning' })
+            .eq('id', mission.id);
+          setStatus(DriverStatus.RETURNING);
+        } catch (error) {
+          console.error('❌ Error updating to returning status:', error);
+          // Fallback: finalize anyway if DB fails? No, better stay or show error.
+          alert("Erro ao iniciar retorno. Verifique sua conexão.");
+        }
+      } else {
+        handleFinishDelivery();
+      }
+    }
+    else if (status === DriverStatus.RETURNING) {
+      // In returning state, the driver has reached the store
+      // But we wait for the Lojista to confirm.
+      // However, we can also let the driver "claim" they arrived at store to notify lojista.
+      alert("Aguardando confirmação do lojista para encerrar o pedido.");
+    }
   };
 
 
@@ -1990,10 +2017,11 @@ const App: React.FC = () => {
                           status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
                             status === DriverStatus.PICKING_UP ? 'Segure p/ Confirmar Coleta' :
                               status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
-                                'Segure p/ Finalizar Entrega'
+                                status === DriverStatus.RETURNING ? 'Aguardando Lojista (Retorno)' :
+                                  'Segure p/ Finalizar Entrega'
                       }
-                      disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
-                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00'}
+                      disabled={((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()) || status === DriverStatus.RETURNING}
+                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER || status === DriverStatus.RETURNING ? '#FFD700' : '#FF6B00'}
                       icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP ? 'fa-check' : 'fa-chevron-right'}
                       fillDuration={1500}
                     />
