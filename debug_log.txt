@@ -1,0 +1,7 @@
+Found 1 online drivers (Total count: 1).
+--------------------------------------------------
+Driver: null (ID: 3924743f-6be5-4d68-ad18-ccf75487d252)
+Vehicle: null
+Location: -23.2664399, -47.3117027
+Last Update: 2026-02-14T15:41:05.049+00:00
+Time since update: 2.32 minutes

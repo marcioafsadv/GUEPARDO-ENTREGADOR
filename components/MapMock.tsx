@@ -1,5 +1,5 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer, TrafficLayer, Circle } from '@react-google-maps/api';
 import { DriverStatus } from '../types';
 
 interface MapMockProps {
@@ -9,235 +9,353 @@ interface MapMockProps {
   showHeatMap?: boolean;
   mapMode?: 'standard' | 'satellite';
   showTraffic?: boolean;
+  destinationAddress?: string | null;
+  pickupAddress?: string | null;
+  reCenterTrigger?: number;
 }
 
-export const MapMock: React.FC<MapMockProps> = ({ 
-  status, 
-  showRoute = false, 
+const containerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
+const LIBRARIES: ("places" | "geometry")[] = ["geometry"];
+
+// --- MAP STYLES ---
+const darkMapStyle = [
+  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+  {
+    featureType: "administrative.locality",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#d59563" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#d59563" }],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "geometry",
+    stylers: [{ color: "#263c3f" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#38414e" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#746855" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#17263c" }],
+  }
+];
+
+export const MapMock: React.FC<MapMockProps> = ({
+  status,
+  showRoute = false,
   theme = 'dark',
   showHeatMap = false,
   mapMode = 'standard',
-  showTraffic = false
+  showTraffic = false,
+  destinationAddress,
+  pickupAddress,
+  reCenterTrigger
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const tileLayerRef = useRef<any>(null);
-  const driverMarkerRef = useRef<any>(null);
-  const destinationMarkerRef = useRef<any>(null);
-  const heatMapLayerRef = useRef<any>(null); // LayerGroup for heat circles
-  const trafficLayerRef = useRef<any>(null); // LayerGroup for traffic lines
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    language: 'pt-BR',
+    libraries: LIBRARIES
+  });
 
-  // Tile Provider URLs
-  const getTileUrl = (t: string, mode: string) => {
-    if (mode === 'satellite') {
-       // Esri World Imagery (Satellite)
-       return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    }
-    
-    // Standard Mode (Dark or Voyager)
-    return t === 'dark' 
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  };
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
 
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+  // Directions State
+  const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+  const [distance, setDistance] = useState<string>('');
+  const [duration, setDuration] = useState<string>('');
 
-    const L = (window as any).L;
-    if (!L) return;
+  // Prevent infinite loop in callback
+  const countRef = useRef(0);
 
-    mapRef.current = L.map(mapContainerRef.current, {
-      zoomControl: false,
-      attributionControl: false,
-    }).setView([-23.5505, -46.6333], 15);
-
-    tileLayerRef.current = L.tileLayer(getTileUrl(theme, mapMode), {
-      maxZoom: 19
-    }).addTo(mapRef.current);
-
-    navigator.geolocation.getCurrentPosition((position) => {
-      if (!mapRef.current) return;
-      
-      const { latitude, longitude } = position.coords;
-      mapRef.current.setView([latitude, longitude], 16);
-      
-      const driverIcon = L.divIcon({
-        className: 'driver-marker-icon',
-        html: `
-          <div class="relative flex items-center justify-center">
-            <div class="w-10 h-10 bg-[#FF6B00] rounded-full border-2 border-white flex items-center justify-center shadow-lg relative z-10">
-              <i class="fas fa-motorcycle text-white text-sm"></i>
-            </div>
-            <div class="absolute w-12 h-12 bg-[#FF6B00] rounded-full opacity-30 animate-ping"></div>
-          </div>
-        `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-      });
-
-      driverMarkerRef.current = L.marker([latitude, longitude], { icon: driverIcon }).addTo(mapRef.current);
-    });
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
+  const onLoad = useCallback(function callback(map: google.maps.Map) {
+    setMap(map);
   }, []);
 
-  // Update Base Tile Layer when theme or mode changes
+  const onUnmount = useCallback(function callback(map: google.maps.Map) {
+    setMap(null);
+  }, []);
+
+  // Sync Location
   useEffect(() => {
-    if (tileLayerRef.current && mapRef.current) {
-      tileLayerRef.current.setUrl(getTileUrl(theme, mapMode));
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error("Error watching position:", error);
+        },
+        { enableHighAccuracy: true }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
-  }, [theme, mapMode]);
+  }, []);
 
-  // Handle Heatmap Visualization
+  // Reset states when addresses change
   useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    
-    // Clear existing heat layer
-    if (heatMapLayerRef.current) {
-      mapRef.current.removeLayer(heatMapLayerRef.current);
-      heatMapLayerRef.current = null;
+    if (!destinationAddress && !pickupAddress) {
+      setDestinationLocation(null);
+      setPickupLocation(null);
+      setDirectionsResponse(null);
+      setDistance('');
+      setDuration('');
+      setIsUserInteracting(false);
     }
+  }, [destinationAddress, pickupAddress]);
 
-    if (showHeatMap) {
-      // Simulate High Demand Zones with Circles
-      const center = mapRef.current.getCenter();
-      const circles = [];
-      
-      // Create 5 random "hotspots" near the center
-      for (let i = 0; i < 5; i++) {
-        const lat = center.lat + (Math.random() - 0.5) * 0.02;
-        const lng = center.lng + (Math.random() - 0.5) * 0.02;
-        
-        circles.push(
-           L.circle([lat, lng], {
-             color: 'transparent',
-             fillColor: '#FF6B00',
-             fillOpacity: 0.3,
-             radius: 300 + Math.random() * 200
-           })
-        );
-         circles.push(
-           L.circle([lat, lng], {
-             color: 'transparent',
-             fillColor: '#FFD700',
-             fillOpacity: 0.4,
-             radius: 100 + Math.random() * 50
-           })
-        );
-      }
-      
-      heatMapLayerRef.current = L.layerGroup(circles).addTo(mapRef.current);
-    }
-  }, [showHeatMap, mapRef.current]);
-
-  // Handle Traffic Visualization
+  // Handle auto-panning with interaction check
   useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    
-    // Clear existing traffic layer
-    if (trafficLayerRef.current) {
-      mapRef.current.removeLayer(trafficLayerRef.current);
-      trafficLayerRef.current = null;
+    if (map && currentLocation && !directionsResponse && !isUserInteracting) {
+      map.panTo(currentLocation);
+      map.setZoom(16);
     }
+  }, [map, currentLocation, directionsResponse, isUserInteracting]);
 
-    if (showTraffic) {
-      // Simulate Traffic with Polylines (Mocking congested streets)
-      const center = mapRef.current.getCenter();
-      const lines = [];
-
-      // Create random "streets"
-      for(let i=0; i<8; i++) {
-         const startLat = center.lat + (Math.random() - 0.5) * 0.03;
-         const startLng = center.lng + (Math.random() - 0.5) * 0.03;
-         const endLat = startLat + (Math.random() - 0.5) * 0.01;
-         const endLng = startLng + (Math.random() - 0.5) * 0.01;
-
-         lines.push(
-            L.polyline([[startLat, startLng], [endLat, endLng]], {
-               color: 'red',
-               weight: 5,
-               opacity: 0.6,
-               smoothFactor: 1
-            })
-         );
-      }
-
-      trafficLayerRef.current = L.layerGroup(lines).addTo(mapRef.current);
-    }
-  }, [showTraffic, mapRef.current]);
-
-
-  // Handle Route and Markers Logic (Existing)
+  // Global Re-center Trigger (from Sidebar Button)
   useEffect(() => {
-    if (!mapRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
-
-    if (destinationMarkerRef.current) {
-      mapRef.current.removeLayer(destinationMarkerRef.current);
-      destinationMarkerRef.current = null;
+    if (reCenterTrigger && map && currentLocation) {
+      console.log("Global re-center triggered");
+      setIsUserInteracting(false);
+      map.panTo(currentLocation);
+      map.setZoom(16);
     }
+  }, [reCenterTrigger]);
 
-    if (showRoute) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        if (!mapRef.current) return;
-        
-        const { latitude, longitude } = pos.coords;
-        let destCoords: [number, number];
-        let iconHtml = '';
-        
-        if (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE) {
-          destCoords = [latitude + 0.005, longitude + 0.005];
-          iconHtml = `
-            <div class="w-10 h-10 bg-white rounded-full border-4 border-[#FF6B00] flex items-center justify-center shadow-lg">
-              <i class="fas fa-store text-[#FF6B00]"></i>
-            </div>
-          `;
-        } else {
-          destCoords = [latitude - 0.003, longitude - 0.003];
-          iconHtml = `
-            <div class="w-10 h-10 bg-[#FFD700] rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-              <i class="fas fa-home text-black"></i>
-            </div>
-          `;
+  // Styles & Options
+  const mapOptions = useMemo(() => ({
+    disableDefaultUI: true,
+    mapTypeId: mapMode === 'satellite' ? 'satellite' : 'roadmap',
+    styles: (theme === 'dark' && mapMode !== 'satellite') ? darkMapStyle : []
+  }), [theme, mapMode]);
+
+  // Directions Callback
+  const directionsCallback = useCallback((result: google.maps.DirectionsResult | null, status: google.maps.DirectionsStatus) => {
+    if (status === 'OK' && result) {
+      if (countRef.current === 0 || !directionsResponse) {
+        setDirectionsResponse(result);
+
+        if (result.routes[0]?.legs) {
+          // Sum up total stats if multiple legs
+          let totalDist = 0;
+          let totalDur = 0;
+          result.routes[0].legs.forEach(leg => {
+            totalDist += leg.distance?.value || 0;
+            totalDur += leg.duration?.value || 0;
+          });
+
+          setDistance(`${(totalDist / 1000).toFixed(1)} km`);
+          setDuration(`${Math.ceil(totalDur / 60)} min`);
+
+          // Extract locations for markers
+          const legs = result.routes[0].legs;
+          if (legs.length > 0) {
+            const lastLegEnd = legs[legs.length - 1].end_location;
+            setDestinationLocation({ lat: lastLegEnd.lat(), lng: lastLegEnd.lng() });
+
+            if (legs.length > 1) {
+              const firstLegEnd = legs[0].end_location;
+              setPickupLocation({ lat: firstLegEnd.lat(), lng: firstLegEnd.lng() });
+            } else {
+              setPickupLocation(null);
+            }
+          }
         }
+      }
+    }
+  }, [directionsResponse]);
 
-        const destIcon = L.divIcon({
-          className: 'dest-marker-icon',
-          html: iconHtml,
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
-        });
+  // Reset count when route points change
+  useEffect(() => {
+    countRef.current = 0;
+    setDirectionsResponse(null);
+  }, [currentLocation?.lat, currentLocation?.lng, destinationLocation?.lat, destinationLocation?.lng, pickupLocation?.lat, pickupLocation?.lng, destinationAddress, pickupAddress]);
 
-        destinationMarkerRef.current = L.marker(destCoords, { icon: destIcon }).addTo(mapRef.current);
-        
-        const markers = [];
-        if (driverMarkerRef.current) markers.push(driverMarkerRef.current);
-        if (destinationMarkerRef.current) markers.push(destinationMarkerRef.current);
-        
-        if (markers.length > 0) {
-          const group = L.featureGroup(markers);
-          mapRef.current.fitBounds(group.getBounds(), { padding: [100, 100] });
-        }
+  // Heatmap Data (Stabilized Mock Circles)
+  const heatmapItems = useMemo(() => {
+    if (!showHeatMap || !currentLocation) return [];
+
+    // Stabilize by rounding coordinates to avoid flickering on micro-movements
+    const stableLat = Math.round(currentLocation.lat * 1000) / 1000;
+    const stableLng = Math.round(currentLocation.lng * 1000) / 1000;
+
+    // Use a deterministic seed based on stable location
+    const seed = stableLat + stableLng;
+    const pseudoRandom = (n: number) => {
+      const x = Math.sin(seed + n) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const items = [];
+    for (let i = 0; i < 5; i++) {
+      const lat = stableLat + (pseudoRandom(i) - 0.5) * 0.02;
+      const lng = stableLng + (pseudoRandom(i + 10) - 0.5) * 0.02;
+      items.push({
+        id: `heat-${i}`,
+        center: { lat, lng },
+        radius: 300 + pseudoRandom(i + 20) * 200,
+        fillColor: i % 2 === 0 ? '#FF6B00' : '#FFD700'
       });
-    } else {
-       if (driverMarkerRef.current && mapRef.current) {
-         mapRef.current.setView(driverMarkerRef.current.getLatLng(), 16);
-       }
     }
-  }, [status, showRoute]);
+    return items;
+  }, [showHeatMap, currentLocation?.lat, currentLocation?.lng]);
+
+  const renderHeatmap = () => {
+    return heatmapItems.map(item => (
+      <Circle
+        key={item.id}
+        center={item.center}
+        radius={item.radius}
+        options={{
+          strokeColor: 'transparent',
+          fillColor: item.fillColor,
+          fillOpacity: 0.3
+        }}
+      />
+    ));
+  };
+
+  // Initial center state to avoid snapping when currentLocation updates
+  const [initialCenter] = useState(currentLocation || { lat: -23.5505, lng: -46.6333 });
+
+  // Interaction Handlers
+  const handleInteraction = useCallback(() => {
+    if (!isUserInteracting) {
+      console.log("Map interaction detected - stopping auto-centering");
+      setIsUserInteracting(true);
+    }
+  }, [isUserInteracting]);
+
+  if (!isLoaded) return <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white">Carregando Mapa...</div>;
 
   return (
-    <div className="absolute inset-0 w-full h-full">
-      <div ref={mapContainerRef} className="w-full h-full" />
-      <div className="leaflet-vignette absolute inset-0 pointer-events-none"></div>
+    <div className="relative w-full h-full">
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        // Use initialCenter to avoid snapping back when currentLocation updates
+        center={initialCenter}
+        zoom={15}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        options={mapOptions}
+        onDragStart={handleInteraction}
+        onDrag={handleInteraction}
+        onMouseDown={handleInteraction}
+        onZoomChanged={() => {
+          if (map) handleInteraction();
+        }}
+      >
+        {/* DRIVER MARKER */}
+        {currentLocation && (
+          <Marker
+            position={currentLocation}
+            icon={{
+              url: '/cheetah-icon.png',
+              scaledSize: new google.maps.Size(60, 48),
+              anchor: new google.maps.Point(30, 24)
+            }}
+            zIndex={10}
+          />
+        )}
+
+        {/* PICKUP MARKER */}
+        {pickupLocation && (
+          <Marker
+            position={pickupLocation}
+            icon={{
+              url: 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png', // Store
+              scaledSize: new google.maps.Size(40, 40)
+            }}
+            zIndex={5}
+          />
+        )}
+
+        {/* DESTINATION MARKER */}
+        {destinationLocation && (
+          <Marker
+            position={destinationLocation}
+            icon={{
+              url: 'https://cdn-icons-png.flaticon.com/512/25/25694.png', // Home
+              scaledSize: new google.maps.Size(40, 40)
+            }}
+            zIndex={5}
+          />
+        )}
+
+        {/* REAL DIRECTIONS ROUTE */}
+        {currentLocation && (destinationAddress || pickupAddress) && showRoute && (
+          <DirectionsService
+            options={{
+              origin: currentLocation,
+              destination: destinationAddress || pickupAddress || currentLocation,
+              waypoints: (pickupAddress && destinationAddress) ? [
+                { location: pickupAddress, stopover: true }
+              ] : [],
+              travelMode: 'DRIVING' as google.maps.TravelMode
+            }}
+            callback={directionsCallback}
+          />
+        )}
+
+        {directionsResponse && (
+          <DirectionsRenderer
+            options={{
+              directions: directionsResponse,
+              suppressMarkers: true,
+              polylineOptions: {
+                strokeColor: '#FF6B00',
+                strokeOpacity: 0.8,
+                strokeWeight: 6
+              }
+            }}
+          />
+        )}
+
+        {/* TRAFFIC */}
+        {showTraffic && <TrafficLayer />}
+
+        {/* HEATMAP */}
+        {renderHeatmap()}
+
+      </GoogleMap>
+
+      {/* NAVIGATION INFO OVERLAY */}
+      {directionsResponse && (distance || duration) && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-3 shadow-xl flex items-center gap-4 z-10 animate-in slide-in-from-top-4 duration-500">
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tempo</span>
+            <span className="text-xl font-black text-white">{duration}</span>
+          </div>
+          <div className="w-px h-8 bg-white/10"></div>
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Distância</span>
+            <span className="text-xl font-black text-orange-500">{distance}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

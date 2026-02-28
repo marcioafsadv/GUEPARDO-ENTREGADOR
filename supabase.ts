@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase configuration with fallback values
+const supabaseUrl = 'https://eviukbluwrwcblwhkzwz.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2aXVrYmx1d3J3Y2Jsd2hrend6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDg4MjAsImV4cCI6MjA4NTIyNDgyMH0.HcF64H4gAp932vPkK5ILv8Q85IQBK3-g0OyrxykxS_E';
+
+
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -150,6 +153,7 @@ export const createDelivery = async (deliveryData: any) => {
   return data;
 };
 
+
 export const getDeliveries = async (userId: string) => {
   const { data, error } = await supabase
     .from('deliveries')
@@ -160,6 +164,115 @@ export const getDeliveries = async (userId: string) => {
   if (error) throw error;
   return data;
 };
+
+export const subscribeToAvailableMissions = (
+  onNewMission: (mission: any) => void,
+  onMissionUnavailable: (missionId: string) => void
+) => {
+  return supabase
+    .channel('public:deliveries:available')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'deliveries',
+        filter: 'status=eq.pending'
+      },
+      (payload) => {
+        onNewMission(payload.new);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'deliveries'
+      },
+      (payload) => {
+        // If a delivery is no longer pending (accepted, cancelled, etc.), notify
+        if (payload.new.status !== 'pending') {
+          onMissionUnavailable(payload.new.id);
+        }
+      }
+    )
+    .subscribe();
+};
+
+export const subscribeToActiveMission = (
+  missionId: string,
+  onStatusChange: (status: string) => void
+) => {
+  return supabase
+    .channel(`public:deliveries:${missionId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'deliveries',
+        filter: `id=eq.${missionId}`
+      },
+      (payload) => {
+        onStatusChange(payload.new.status);
+      }
+    )
+    .subscribe();
+};
+
+export const acceptMission = async (missionId: string, driverId: string) => {
+  const { data, error } = await supabase
+    .from('deliveries')
+    .update({
+      status: 'accepted',
+      driver_id: driverId,
+      accepted_at: new Date().toISOString()
+    })
+    .eq('id', missionId)
+    .eq('status', 'pending') // Ensure it's still pending
+    .select()
+    .single();
+
+
+  if (error) throw error;
+  return data;
+};
+
+export const completeMission = async (missionId: string, driverId: string) => {
+  const { data, error } = await supabase
+    .from('deliveries')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', missionId)
+    .eq('driver_id', driverId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const rejectMission = async (missionId: string, driverId: string) => {
+  console.log(`Driver ${driverId} rejected mission ${missionId}`);
+  try {
+    const { error } = await supabase
+      .from('deliveries')
+      .update({ driver_id: null })
+      .eq('id', missionId)
+      .eq('driver_id', driverId); // Ensure we only clear if it was assigned to us
+
+    if (error) {
+      console.error('Error rejecting mission:', error);
+      throw error;
+    }
+  } catch (err) {
+    console.error('Critical error in rejectMission:', err);
+  }
+};
+
 
 // ============ TRANSACTIONS ============
 
@@ -522,18 +635,24 @@ export const submitCompleteRegistration = async (
   registrationData: any
 ) => {
   try {
-    // 1. Update profile
-    await updateProfile(userId, {
-      full_name: registrationData.personal.fullName,
-      birth_date: registrationData.personal.birthDate,
-      cpf: registrationData.personal.cpf,
-      phone: registrationData.personal.phone,
-      gender: registrationData.personal.gender,
-      pix_key: registrationData.personal.pixKey,
-      avatar_url: registrationData.photoUrl,
-      work_city: registrationData.workCity,
-      status: 'pending'
-    });
+    // 1. Update/Create profile (Upsert to ensure it works even without auth trigger)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        full_name: registrationData.personal.fullName,
+        birth_date: registrationData.personal.birthDate,
+        cpf: registrationData.personal.cpf,
+        phone: registrationData.personal.phone,
+        gender: registrationData.personal.gender,
+        pix_key: registrationData.personal.pixKey,
+        avatar_url: registrationData.photoUrl,
+        work_city: registrationData.workCity,
+        status: 'pending',
+        updated_at: new Date().toISOString()
+      });
+
+    if (profileError) throw profileError;
 
     // 2. Create address
     await upsertAddress(userId, {
@@ -566,8 +685,12 @@ export const submitCompleteRegistration = async (
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting registration:', error);
+    // Enhanced error for debugging
+    if (error.code || error.details || error.hint) {
+      throw new Error(`DB Error: ${error.message} (Code: ${error.code}) - ${error.details || ''} ${error.hint || ''}`);
+    }
     throw error;
   }
 };

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Papaléguas Delivery - Entregador</title>
+    <!-- Mantemos Tailwind via CDN para simplicidade na migração, mas o JS será compilado -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        @keyframes pulse-orange {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); 
+            }
+            30% {
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(255, 107, 0, 0.5);
+            }
+            60% {
+                transform: scale(0.98);
+                box-shadow: 0 5px 15px rgba(255, 107, 0, 0.2);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); 
+            }
+        }
+        @keyframes blink-soft {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+        }
+        .pulse-orange {
+            animation: pulse-orange 2s infinite cubic-bezier(0.68, -0.6, 0.32, 1.6);
+            will-change: transform, box-shadow;
+        }
+        .blink-soft {
+            animation: blink-soft 1.5s infinite ease-in-out;
+        }
+        /* Leaflet Dark Theme Adjustments */
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+        }
+        .leaflet-vignette {
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.3);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        /* Custom Marker Styles */
+        .driver-marker-icon {
+            background: none;
+            border: none;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+    <!-- Entry point para o Vite -->
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

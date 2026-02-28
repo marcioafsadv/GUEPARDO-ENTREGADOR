@@ -14,17 +14,24 @@ export const COLORS = {
   danger: '#EF4444'
 };
 
+export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+
 /**
- * Motor de cálculo de ganhos Guepardo baseado na distância
+ * Motor de cálculo de ganhos Guepardo baseado na distância (Base iFood 2025/26)
  */
 export const calculateEarnings = (distance: number): number => {
+  if (distance <= 2) return 7.50;
   if (distance <= 3) return 8.00;
-  if (distance <= 5) return 10.00;
-  if (distance <= 6) return 12.00;
-  if (distance <= 7) return 14.00;
-  if (distance <= 8) return 16.00;
-  if (distance <= 9) return 18.00;
-  return 20.00; // 10km ou mais
+  if (distance <= 3.5) return 8.50;
+  if (distance <= 4) return 9.00;
+  if (distance <= 4.5) return 10.00;
+  if (distance <= 5) return 12.00;
+  if (distance <= 6) return 14.00;
+  if (distance <= 7) return 16.00;
+  if (distance <= 8) return 18.00;
+  if (distance <= 9) return 20.00;
+  if (distance <= 10) return 22.00;
+  return 22.00 + (Math.ceil(distance - 10) * 2.00);
 };
 
 export const MOCK_STORES = [
