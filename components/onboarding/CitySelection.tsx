@@ -42,8 +42,8 @@ const CitySelection: React.FC<CitySelectionProps> = ({ onCitySelect, onBack, the
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
     return (
-        <div className={`h-screen w-screen flex flex-col items-center justify-center p-6 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
-            <div className={`w-full max-w-md rounded-3xl border p-8 ${cardBg} space-y-6`}>
+        <div className={`h-full w-full flex flex-col items-center justify-center p-6 bg-transparent`}>
+            <div className={`w-full rounded-3xl border p-8 ${cardBg} space-y-6`}>
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <button
@@ -92,8 +92,8 @@ const CitySelection: React.FC<CitySelectionProps> = ({ onCitySelect, onBack, the
                                     key={fullCityName}
                                     onClick={() => handleCityClick(city.name, city.state)}
                                     className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${isSelected
-                                            ? 'bg-[#FF6B00] text-white'
-                                            : `${innerBg} ${textPrimary} hover:border-[#FF6B00]`
+                                        ? 'bg-[#FF6B00] text-white'
+                                        : `${innerBg} ${textPrimary} hover:border-[#FF6B00]`
                                         } border ${isSelected ? 'border-[#FF6B00]' : 'border-transparent'}`}
                                 >
                                     <div className="flex items-center space-x-3">

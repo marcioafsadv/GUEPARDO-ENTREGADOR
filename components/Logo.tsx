@@ -17,10 +17,9 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
   return (
     <div className={`flex items-center justify-center select-none ${sizeClasses[size]} ${className}`}>
       <img
-        src="/logo-guepardo.jpg"
+        src="/guepardo-loading.png"
         alt="Guepardo Delivery"
         className="w-full h-auto drop-shadow-2xl"
-        style={{ filter: 'brightness(1.1) contrast(1.05)' }}
       />
     </div>
   );

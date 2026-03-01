@@ -4,7 +4,7 @@ import { Howl } from 'howler';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
 import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapLeaflet } from './components/MapLeaflet';
-
+import { SplashScreen } from './components/SplashScreen';
 import { HoldToFillButton } from './components/HoldToFillButton';
 import { Logo } from './components/Logo';
 import * as supabaseClient from './supabase';
@@ -108,6 +108,13 @@ const generateTimeline = (endTime: string) => {
 };
 
 const App: React.FC = () => {
+  // Splash Screen
+  const [showSplash, setShowSplash] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authScreen, setAuthScreen] = useState<AuthScreen>('LOGIN');
@@ -203,6 +210,7 @@ const App: React.FC = () => {
   const [showLayersModal, setShowLayersModal] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('standard');
   const [showTraffic, setShowTraffic] = useState(false);
+  const [mapTheme, setMapTheme] = useState<'dark' | 'light'>('light');
 
   // Estado para Tabs da Wallet e Filtros
   const [walletTab, setWalletTab] = useState<'ENTRIES' | 'PAYOUTS'>('ENTRIES');
@@ -1303,7 +1311,7 @@ const App: React.FC = () => {
       }
       setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
     }
-    else if (status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
+    else if (mission && status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
       if (mission.isReturnRequired) {
         console.log('🔄 Return trip required. Redirecting to store...');
         try {
@@ -1459,214 +1467,256 @@ const App: React.FC = () => {
   };
 
   const renderAuthScreen = () => {
+    const inputStyle: React.CSSProperties = {
+      background: 'rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,140,40,0.2)',
+      backdropFilter: 'blur(8px)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+    };
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = 'rgba(255,140,40,0.6)'; };
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = 'rgba(255,140,40,0.2)'; };
+
     return (
-      <div className={`h-screen w-screen flex flex-col items-center justify-center p-6 overflow-hidden relative ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <div className="absolute -top-[20%] -right-[20%] w-[80%] h-[80%] bg-[#FF6B00] rounded-full blur-[120px]"></div>
-          <div className="absolute top-[40%] -left-[20%] w-[60%] h-[60%] bg-[#FFD700] rounded-full blur-[100px]"></div>
+      <div
+        className="min-h-full w-full flex flex-col relative overflow-hidden bg-transparent"
+      >
+        {/* ── WATERMARK: logo 60% tela, canto superior direito, desfocado ── */}
+        <div
+          className="absolute -top-16 -right-20 w-[65vw] max-w-[380px] pointer-events-none select-none"
+          style={{ opacity: 0.11, filter: 'blur(2px) saturate(0.5)' }}
+          aria-hidden
+        >
+          <img src="/guepardo-loading.png" alt="" className="w-full h-auto object-contain" draggable={false} />
         </div>
 
-        <div className="relative z-10 w-full max-w-sm flex flex-col items-center">
-          <div className="mb-8 w-full flex justify-center">
-            <Logo size="lg" />
+        {/* ── Textura de grão sutil ── */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")`,
+            mixBlendMode: 'overlay', opacity: 0.5,
+          }}
+        />
+
+        {/* ── Ambient glow ── */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(200,80,10,0.22) 0%, transparent 65%)' }}
+        />
+
+        {/* ── CONTEÚDO PRINCIPAL ── */}
+        <div className="relative z-10 flex flex-col h-full overflow-y-auto px-6">
+
+          {/* Hero Logo */}
+          <div className="flex flex-col items-center pt-14 pb-5 shrink-0">
+            <img
+              src="/cheetah-icon.png"
+              alt="Guepardo Delivery"
+              className="w-56 object-contain"
+              style={{ filter: 'drop-shadow(0 16px 48px rgba(200,80,10,0.65)) drop-shadow(0 4px 12px rgba(0,0,0,0.7))' }}
+            />
+            <p className="mt-2 text-2xl font-black uppercase tracking-wider" style={{ color: 'white', textShadow: '0 2px 12px rgba(200,80,10,0.7)' }}>
+              Guepardo <span style={{ color: '#FF8C28' }}>Delivery</span>
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.6em] mt-0.5" style={{ color: 'rgba(255,190,80,0.6)' }}>
+              ENTREGADOR
+            </p>
           </div>
 
-          <div className={`w-full p-8 rounded-[40px] border shadow-2xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom duration-500 ${cardBg}`}>
-            {/* Login */}
-            {authScreen === 'LOGIN' && (
-              <div className="space-y-6">
-                <h2 className={`text-2xl font-black italic text-center ${textPrimary}`}>Bem-vindo de volta!</h2>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className={`text-[10px] font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>E-mail</label>
-                    <div className={`flex items-center px-4 h-14 rounded-2xl border transition-colors ${innerBg} border-white/5 focus-within:border-[#FF6B00]`}>
-                      <i className={`fas fa-envelope mr-3 ${textMuted}`}></i>
-                      <input
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        className={`w-full bg-transparent outline-none font-bold ${textPrimary} placeholder:text-zinc-600`}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className={`text-[10px] font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>Senha</label>
-                    <div className={`flex items-center px-4 h-14 rounded-2xl border transition-colors ${innerBg} border-white/5 focus-within:border-[#FF6B00]`}>
-                      <i className={`fas fa-lock mr-3 ${textMuted}`}></i>
-                      <input
-                        type="password"
-                        placeholder="••••••"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className={`w-full bg-transparent outline-none font-bold ${textPrimary} placeholder:text-zinc-600`}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleLogin}
-                  disabled={isLoadingAuth}
-                  className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center"
-                >
-                  {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Entrar"}
-                </button>
-
-                <div className="flex flex-col items-center space-y-4 pt-2">
-                  <button onClick={() => setAuthScreen('RECOVERY')} className={`text-xs font-bold ${textMuted} hover:text-[#FF6B00] transition-colors`}>Esqueci minha senha</button>
-                  <div className={`w-full h-px ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                  <button onClick={() => setOnboardingScreen('CITY_SELECTION')} className={`text-xs font-black uppercase tracking-wide ${textPrimary}`}>
-                    Não tem conta? <span className="text-[#FF6B00]">Cadastre-se</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Register */}
-            {authScreen === 'REGISTER' && (
-              <form onSubmit={handleRegister} className="space-y-5">
-                <div className="flex items-center justify-between mb-2">
-                  <button type="button" onClick={() => setAuthScreen('LOGIN')} className={`w-8 h-8 rounded-full flex items-center justify-center ${innerBg} ${textMuted}`}>
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  <h2 className={`text-xl font-black italic ${textPrimary}`}>Criar Conta</h2>
-                  <div className="w-8"></div>
-                </div>
-                <div className="space-y-3 h-64 overflow-y-auto pr-2 custom-scrollbar">
-                  <input type="text" value={registerData.name} onChange={e => setRegisterData({ ...registerData, name: e.target.value })} placeholder="Nome Completo" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                  <input type="text" value={registerData.cpf} onChange={e => setRegisterData({ ...registerData, cpf: applyCpfMask(e.target.value) })} maxLength={14} placeholder="CPF" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                  <input type="email" value={registerData.email} onChange={e => setRegisterData({ ...registerData, email: e.target.value })} placeholder="E-mail" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                  <input type="tel" value={registerData.phone} onChange={e => setRegisterData({ ...registerData, phone: e.target.value })} placeholder="Celular" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                  <input type="password" value={registerData.password} onChange={e => setRegisterData({ ...registerData, password: e.target.value })} placeholder="Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                  <input type="password" value={registerData.confirmPassword} onChange={e => setRegisterData({ ...registerData, confirmPassword: e.target.value })} placeholder="Confirmar Senha" className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold placeholder:text-zinc-600`} required />
-                </div>
-
-                {/* Privacy Policy Acceptance */}
-                <div className={`p-3 rounded-xl ${innerBg} border border-white/5`}>
-                  <p className={`text-[10px] ${textMuted} leading-relaxed text-center`}>
-                    Ao criar sua conta, você concorda com nossos{' '}
-                    <a
-                      href="https://guepardodelivery.com.br/termos"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#FF6B00] font-bold hover:underline"
-                    >
-                      Termos de Uso
-                    </a>
-                    {' '}e{' '}
-                    <a
-                      href="https://guepardodelivery.com.br/privacidade"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#FF6B00] font-bold hover:underline"
-                    >
-                      Política de Privacidade
-                    </a>
-                  </p>
-                </div>
-
-                <button type="submit" disabled={isLoadingAuth} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center">
-                  {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Continuar"}
-                </button>
-              </form>
-            )}
-
-            {/* Verification OTP */}
-            {authScreen === 'VERIFICATION' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-2">
-                  <button type="button" onClick={() => setAuthScreen('REGISTER')} className={`w-8 h-8 rounded-full flex items-center justify-center ${innerBg} ${textMuted}`}>
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  <h2 className={`text-xl font-black italic ${textPrimary}`}>Verificar E-mail</h2>
-                  <div className="w-8"></div>
-                </div>
-
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-[#FF6B00]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FF6B00]/30">
-                    <i className="fas fa-envelope-open-text text-2xl text-[#FF6B00]"></i>
-                  </div>
-                  <p className={`text-sm font-bold ${textMuted} leading-relaxed`}>
-                    Enviamos um código para <br />
-                    <span className={textPrimary}>{pendingUser?.email}</span>
-                  </p>
-                  <p className={`text-xs ${textMuted} mt-2`}>Digite abaixo para ativar sua conta.</p>
-                </div>
-
-                <div className="flex justify-center space-x-2">
-                  {otp.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={otpInputRefs[index]}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleOtpChange(index, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                      className={`w-10 h-14 rounded-xl text-center text-xl font-black transition-all outline-none border-2 ${digit ? 'border-[#FF6B00] text-[#FF6B00]' : `${innerBg} border-white/10 ${textPrimary} focus:border-[#FF6B00]`}`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={handleVerifyCode}
-                  disabled={isLoadingAuth || otp.some(d => !d)}
-                  className={`w-full h-16 rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center ${otp.some(d => !d) ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00]'}`}
-                >
-                  {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Confirmar Código"}
-                </button>
-
-                <div className="text-center">
-                  <button
-                    onClick={handleResendCode}
-                    disabled={otpTimer > 0}
-                    className={`text-[10px] font-black uppercase tracking-widest ${otpTimer > 0 ? textMuted : 'text-[#FF6B00]'}`}
-                  >
-                    {otpTimer > 0 ? `Reenviar código em ${otpTimer}s` : "Reenviar Código"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Recovery */}
-            {authScreen === 'RECOVERY' && (
-              <form onSubmit={handleRecovery} className="space-y-6">
-                <div className="flex items-center justify-between mb-4">
-                  <button type="button" onClick={() => setAuthScreen('LOGIN')} className={`w-8 h-8 rounded-full flex items-center justify-center ${innerBg} ${textMuted}`}>
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  <h2 className={`text-xl font-black italic ${textPrimary}`}>Recuperar</h2>
-                  <div className="w-8"></div>
-                </div>
-                <p className={`text-xs text-center leading-relaxed ${textMuted}`}>Informe seus dados para receber um link de redefinição de senha.</p>
-                <div className={`p-1 rounded-xl flex mb-4 ${innerBg}`}>
-                  <button type="button" onClick={() => setRecoveryMethod('cpf')} className={`flex-1 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${recoveryMethod === 'cpf' ? 'bg-[#FF6B00] text-white shadow' : textMuted}`}>Via CPF</button>
-                  <button type="button" onClick={() => setRecoveryMethod('email')} className={`flex-1 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${recoveryMethod === 'email' ? 'bg-[#FF6B00] text-white shadow' : textMuted}`}>Via E-mail</button>
-                </div>
-                <div>
-                  <label className={`text-[10px] font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>{recoveryMethod === 'cpf' ? 'Seu CPF' : 'Seu E-mail'}</label>
-                  <input type={recoveryMethod === 'cpf' ? 'text' : 'email'} value={recoveryInput} onChange={(e) => setRecoveryInput(e.target.value)} placeholder={recoveryMethod === 'cpf' ? '000.000.000-00' : 'exemplo@email.com'} className={`w-full h-14 rounded-2xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`} required />
-                </div>
-                <button type="submit" disabled={isLoadingAuth} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-transform flex items-center justify-center">
-                  {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin"></i> : "Enviar Link"}
-                </button>
-              </form>
-            )}
+          {/* Divider */}
+          <div className="w-full flex items-center gap-3 mb-6 shrink-0">
+            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,140,40,0.35))' }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF8C28', boxShadow: '0 0 8px 2px rgba(255,140,40,0.6)' }} />
+            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(255,140,40,0.35))' }} />
           </div>
 
-          <div className="mt-8 text-center opacity-40">
-            <p className={`text-[10px] font-bold uppercase tracking-widest ${textMuted}`}>Guepardo Delivery © 2024</p>
+          {/* ── TELA DE LOGIN ── */}
+          {authScreen === 'LOGIN' && (
+            <div className="flex flex-col gap-4">
+              <div className="mb-2">
+                <h1 className="text-3xl font-black text-white tracking-tight leading-tight">
+                  Bem-vindo<br /><span style={{ color: '#FF8C28' }}>de volta!</span>
+                </h1>
+                <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Acesse o app do entregador.</p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>E-mail</label>
+                <input
+                  type="email" placeholder="seu@email.com"
+                  value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+                  className="w-full h-14 rounded-2xl px-5 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                  style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Senha</label>
+                <input
+                  type="password" placeholder="••••••••"
+                  value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                  className="w-full h-14 rounded-2xl px-5 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                  style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
+                />
+              </div>
+
+              <button
+                onClick={handleLogin} disabled={isLoadingAuth}
+                className="w-full h-14 rounded-2xl font-black text-white text-base uppercase tracking-widest mt-1 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)',
+                  boxShadow: '0 8px 32px rgba(229,91,0,0.4), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)',
+                }}
+              >
+                {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Entrar'}
+              </button>
+
+              <div className="flex items-center justify-between pt-1">
+                <button onClick={() => setAuthScreen('RECOVERY')} className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Esqueci minha senha
+                </button>
+                <button onClick={() => setOnboardingScreen('CITY_SELECTION')} className="text-xs font-bold" style={{ color: '#FF8C28', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Cadastre-se →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── TELA DE CADASTRO ── */}
+          {authScreen === 'REGISTER' && (
+            <form onSubmit={handleRegister} className="flex flex-col gap-3">
+              <div className="flex items-center justify-between mb-2">
+                <button type="button" onClick={() => setAuthScreen('LOGIN')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+                  <i className="fas fa-chevron-left text-sm" />
+                </button>
+                <h2 className="text-xl font-black text-white italic">Criar Conta</h2>
+                <div className="w-8" />
+              </div>
+              <div className="flex flex-col gap-3 max-h-72 overflow-y-auto pr-1">
+                {[
+                  { placeholder: 'Nome Completo', type: 'text', value: registerData.name, field: 'name' },
+                  { placeholder: 'CPF', type: 'text', value: registerData.cpf, field: 'cpf' },
+                  { placeholder: 'E-mail', type: 'email', value: registerData.email, field: 'email' },
+                  { placeholder: 'Celular', type: 'tel', value: registerData.phone, field: 'phone' },
+                  { placeholder: 'Senha', type: 'password', value: registerData.password, field: 'password' },
+                  { placeholder: 'Confirmar Senha', type: 'password', value: registerData.confirmPassword, field: 'confirmPassword' },
+                ].map(f => (
+                  <input
+                    key={f.field} type={f.type} placeholder={f.placeholder} value={f.value}
+                    onChange={e => setRegisterData({ ...registerData, [f.field]: f.field === 'cpf' ? applyCpfMask(e.target.value) : e.target.value })}
+                    className="w-full h-12 rounded-xl px-4 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                    style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} required
+                  />
+                ))}
+              </div>
+              <div className="px-3 py-2 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,140,40,0.12)' }}>
+                <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Ao criar sua conta, você concorda com os{' '}
+                  <a href="https://guepardodelivery.com.br/termos" target="_blank" rel="noopener noreferrer" style={{ color: '#FF8C28' }}>Termos de Uso</a>{' '}e{' '}
+                  <a href="https://guepardodelivery.com.br/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: '#FF8C28' }}>Política de Privacidade</a>.
+                </p>
+              </div>
+              <button type="submit" disabled={isLoadingAuth}
+                className="w-full h-14 rounded-2xl font-black text-white uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)', boxShadow: '0 8px 32px rgba(229,91,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)' }}
+              >
+                {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Continuar'}
+              </button>
+            </form>
+          )}
+
+          {/* ── VERIFICAÇÃO OTP ── */}
+          {authScreen === 'VERIFICATION' && (
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <button type="button" onClick={() => setAuthScreen('REGISTER')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+                  <i className="fas fa-chevron-left text-sm" />
+                </button>
+                <h2 className="text-xl font-black text-white italic">Verificar E-mail</h2>
+                <div className="w-8" />
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'rgba(255,107,0,0.12)', border: '1px solid rgba(255,107,0,0.3)' }}>
+                  <i className="fas fa-envelope-open-text text-2xl text-[#FF6B00]" />
+                </div>
+                <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>Enviamos um código para<br /><span className="text-white">{pendingUser?.email}</span></p>
+              </div>
+              <div className="flex justify-center space-x-2">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index} ref={otpInputRefs[index]}
+                    type="text" inputMode="numeric" maxLength={1} value={digit}
+                    onChange={e => handleOtpChange(index, e.target.value)}
+                    onKeyDown={e => handleOtpKeyDown(index, e)}
+                    className="w-12 h-14 rounded-xl text-center text-xl font-black outline-none transition-all"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: `2px solid ${digit ? '#FF6B00' : 'rgba(255,140,40,0.2)'}`, color: digit ? '#FF8C28' : 'white' }}
+                  />
+                ))}
+              </div>
+              <button onClick={handleVerifyCode} disabled={isLoadingAuth || otp.some(d => !d)}
+                className="w-full h-14 rounded-2xl font-black text-white uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)', boxShadow: '0 8px 32px rgba(229,91,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)' }}
+              >
+                {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Confirmar Código'}
+              </button>
+              <div className="text-center">
+                <button onClick={handleResendCode} disabled={otpTimer > 0} className="text-[11px] font-black uppercase tracking-widest" style={{ color: otpTimer > 0 ? 'rgba(255,255,255,0.3)' : '#FF8C28', background: 'none', border: 'none', cursor: otpTimer > 0 ? 'default' : 'pointer' }}>
+                  {otpTimer > 0 ? `Reenviar em ${otpTimer}s` : 'Reenviar Código'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── RECUPERAÇÃO DE SENHA ── */}
+          {authScreen === 'RECOVERY' && (
+            <form onSubmit={handleRecovery} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between mb-1">
+                <button type="button" onClick={() => setAuthScreen('LOGIN')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+                  <i className="fas fa-chevron-left text-sm" />
+                </button>
+                <h2 className="text-xl font-black text-white italic">Recuperar Senha</h2>
+                <div className="w-8" />
+              </div>
+              <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>Informe seus dados para receber um link de redefinição.</p>
+              <div className="flex rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,140,40,0.15)' }}>
+                <button type="button" onClick={() => setRecoveryMethod('cpf')} className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl"
+                  style={{ background: recoveryMethod === 'cpf' ? 'linear-gradient(135deg,#FF7A20,#E55B00)' : 'transparent', color: recoveryMethod === 'cpf' ? 'white' : 'rgba(255,255,255,0.4)' }}>Via CPF</button>
+                <button type="button" onClick={() => setRecoveryMethod('email')} className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl"
+                  style={{ background: recoveryMethod === 'email' ? 'linear-gradient(135deg,#FF7A20,#E55B00)' : 'transparent', color: recoveryMethod === 'email' ? 'white' : 'rgba(255,255,255,0.4)' }}>Via E-mail</button>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>{recoveryMethod === 'cpf' ? 'Seu CPF' : 'Seu E-mail'}</label>
+                <input type={recoveryMethod === 'cpf' ? 'text' : 'email'} value={recoveryInput}
+                  onChange={e => setRecoveryInput(e.target.value)}
+                  placeholder={recoveryMethod === 'cpf' ? '000.000.000-00' : 'exemplo@email.com'}
+                  className="w-full h-14 rounded-2xl px-5 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                  style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} required
+                />
+              </div>
+              <button type="submit" disabled={isLoadingAuth}
+                className="w-full h-14 rounded-2xl font-black text-white uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)', boxShadow: '0 8px 32px rgba(229,91,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)' }}
+              >
+                {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Enviar Link'}
+              </button>
+            </form>
+          )}
+
+          {/* Rodapé */}
+          <div className="mt-auto pt-8 pb-6 text-center shrink-0">
+            <p className="text-[10px] tracking-widest" style={{ color: 'rgba(255,255,255,0.15)' }}>
+              © 2026 Guepardo Delivery · Todos os direitos reservados
+            </p>
           </div>
         </div>
       </div>
     );
   };
 
+
   const renderScreen = () => {
     switch (currentScreen) {
+
+
       case 'HOME':
         return (
           <div className="flex flex-col h-full relative overflow-hidden">
@@ -1674,7 +1724,7 @@ const App: React.FC = () => {
               <MapLeaflet
                 key={mapCenterKey}
                 status={status}
-                theme={theme}
+                theme={mapTheme}
                 showRoute={(status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE)}
                 destinationAddress={
                   status === DriverStatus.ALERTING
@@ -1726,6 +1776,17 @@ const App: React.FC = () => {
                 <button onClick={() => setReCenterTrigger(t => t + 1)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-[#FF6B00] border active:scale-90 transition-transform ${cardBg}`}>
                   <i className="fas fa-location-crosshairs text-lg"></i>
                 </button>
+
+                {/* Botão Dia/Noite */}
+                <button
+                  onClick={() => setMapTheme(t => t === 'dark' ? 'light' : 'dark')}
+                  title={mapTheme === 'dark' ? 'Mudar para Dia' : 'Mudar para Noite'}
+                  className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center border active:scale-90 transition-all duration-300 ${cardBg} ${mapTheme === 'light' ? 'text-yellow-400 border-yellow-400/30' : 'text-blue-400 border-blue-400/30'
+                    }`}
+                >
+                  <i className={`fas ${mapTheme === 'light' ? 'fa-sun' : 'fa-moon'} text-lg`}></i>
+                </button>
+
                 <button onClick={() => setShowSOSModal(true)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-red-500 border active:scale-90 transition-transform ${cardBg}`}>
                   <i className="fas fa-shield-heart text-lg"></i>
                 </button>
@@ -1841,11 +1902,11 @@ const App: React.FC = () => {
                             <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Itens</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length > 1 ? mission.items.length : '1'}</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length && mission.items.length > 1 ? mission.items.length : '1'}</p>
                               </div>
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Total</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>{activeMissions.filter(m => m.storeName === mission.storeName).length} Pedidos</p>
+                                <p className={`text-sm font-black ${textPrimary}`}>{activeMissions.filter(m => m.storeName === mission?.storeName).length} Pedidos</p>
                               </div>
                               <div>
                                 <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Pedido</p>
@@ -1937,10 +1998,10 @@ const App: React.FC = () => {
                     <div className="px-1 flex justify-between items-start">
                       <div>
                         <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeName : mission.customerName}
+                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName}
                         </h3>
                         <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeAddress : mission.customerAddress}
+                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress}
                         </p>
                       </div>
                       {activeMissions.length > 1 && (
@@ -1972,7 +2033,7 @@ const App: React.FC = () => {
                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-2">Mostre ao Atendente</p>
                           <div className="flex items-center justify-center space-x-3 mb-1">
                             <i className="fas fa-ticket text-3xl text-[#FFD700]"></i>
-                            <span className={`text-6xl font-black italic tracking-tighter ${textPrimary}`}>{mission.collectionCode}</span>
+                            <span className={`text-6xl font-black italic tracking-tighter ${textPrimary}`}>{mission?.collectionCode}</span>
                           </div>
                         </div>
 
@@ -1980,7 +2041,7 @@ const App: React.FC = () => {
 
                         <div className="flex flex-col items-center">
                           <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>Cliente</p>
-                          <h2 className={`text-2xl font-black ${textPrimary} line-clamp-1`}>{mission.customerName}</h2>
+                          <h2 className={`text-2xl font-black ${textPrimary} line-clamp-1`}>{mission?.customerName}</h2>
                         </div>
                       </div>
                     )}
@@ -2781,31 +2842,45 @@ const App: React.FC = () => {
   // Show onboarding wizard if in progress
   if (onboardingScreen === 'CITY_SELECTION') {
     return (
-      <CitySelection
-        onCitySelect={handleCitySelect}
-        onBack={handleWizardCancel}
-        theme={theme}
-      />
+      <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
+        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
+          <CitySelection
+            onCitySelect={handleCitySelect}
+            onBack={handleWizardCancel}
+            theme={theme}
+          />
+        </div>
+      </div>
     );
   }
 
   if (onboardingScreen === 'WIZARD') {
     return (
-      <WizardContainer
-        onComplete={handleWizardComplete}
-        onCancel={handleWizardCancel}
-        initialCity={selectedCity}
-        theme={theme}
-      />
+      <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
+        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
+          <WizardContainer
+            onComplete={handleWizardComplete}
+            onCancel={handleWizardCancel}
+            initialCity={selectedCity}
+            theme={theme}
+          />
+        </div>
+      </div>
     );
   }
 
   if (!isAuthenticated) {
-    return renderAuthScreen();
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
+        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
+          {renderAuthScreen()}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-white' : 'bg-zinc-50 text-zinc-900'}`}>
+    <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 bg-transparent ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
       <header className={`z-[1002] flex flex-col items-center justify-between backdrop-blur-2xl border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
         <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
           <div className="flex items-center justify-center">
@@ -3089,15 +3164,15 @@ const App: React.FC = () => {
             <div className="flex justify-between items-start mb-6 shrink-0">
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
-                  <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {mission.earnings.toFixed(2)}</h2>
+                  <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {mission?.earnings?.toFixed(2)}</h2>
                   <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
-                    {mission.totalDistance.toFixed(1)} KM TOTAL
+                    {mission?.totalDistance?.toFixed(1)} KM TOTAL
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 mt-2">
                   <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
                   <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                    {mission.distanceToStore.toFixed(1)}km até loja + {mission.deliveryDistance.toFixed(1)}km entrega
+                    {mission?.distanceToStore?.toFixed(1)}km até loja + {mission?.deliveryDistance?.toFixed(1)}km entrega
                   </span>
                 </div>
               </div>
@@ -3130,6 +3205,9 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Splash Screen — exibido por 3s ao iniciar */}
+      {showSplash && <SplashScreen />}
 
     </div>
   );
