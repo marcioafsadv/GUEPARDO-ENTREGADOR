@@ -302,6 +302,10 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<Transaction[]>([]); // Histórico Vazio
   const [payoutsList, setPayoutsList] = useState<any[]>([]); // Lista de Repasses Vazia
 
+  // Estados para Alerta de Nova Missão na Rota (Batching)
+  const [showBatchAlert, setShowBatchAlert] = useState(false);
+  const [newBatchEarnings, setNewBatchEarnings] = useState(0);
+
   // Auth Inputs
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -841,14 +845,20 @@ const App: React.FC = () => {
 
             if (syncMissions.length > 0) {
               setActiveMissions(prev => {
-                // Merge lists without duplicates
                 const prevIds = new Set(prev.map(m => m.id));
                 const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
                 if (newOnly.length === 0) return prev;
 
+                // Detect batching while already in route
+                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnly.length > 0) {
+                  const addedEarnings = newOnly.reduce((acc, m) => acc + m.earnings, 0);
+                  setNewBatchEarnings(addedEarnings);
+                  setShowBatchAlert(true);
+                  setTimeout(() => setShowBatchAlert(false), 8000);
+                }
+
                 // If we were ONLINE and suddenly have missions, transition status
                 if (status === DriverStatus.ONLINE && (prev.length === 0) && !mission) {
-                  // If the new mission is PENDING, trigger the ALERTING state
                   const firstNew = newOnly[0];
                   if (firstNew.status === 'pending') {
                     setMission(firstNew);
@@ -2931,6 +2941,29 @@ const App: React.FC = () => {
 
 
       </header>
+
+      {showBatchAlert && (
+        <div className="absolute top-24 left-6 right-6 z-[1005] animate-in slide-in-from-top duration-500">
+          <div className="bg-orange-600/90 backdrop-blur-xl rounded-[28px] p-5 shadow-2xl border border-white/20 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white">
+                <i className="fas fa-route text-xl"></i>
+              </div>
+              <div>
+                <p className="text-white text-[10px] font-black uppercase tracking-widest leading-none mb-1">Nova Missão na Rota!</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-white font-black text-lg">+ R$ {newBatchEarnings.toFixed(2)}</span>
+                  <div className="h-4 w-px bg-white/30"></div>
+                  <span className="text-white/80 text-[10px] font-bold">Total: R$ {activeMissions.reduce((acc, m) => acc + m.earnings, 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setShowBatchAlert(false)} className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center text-white/50 active:scale-90 transition-transform">
+              <i className="fas fa-times text-xs"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
       <nav className={`h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
