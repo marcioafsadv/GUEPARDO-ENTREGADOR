@@ -17,21 +17,30 @@ export const COLORS = {
 export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
 
 /**
- * Motor de cálculo de ganhos Guepardo baseado na distância (Base iFood 2025/26)
+ * Motor de cálculo de ganhos Guepardo baseado na distância (75% do valor do lojista)
  */
 export const calculateEarnings = (distance: number): number => {
-  if (distance <= 2) return 7.50;
-  if (distance <= 3) return 8.00;
-  if (distance <= 3.5) return 8.50;
-  if (distance <= 4) return 9.00;
-  if (distance <= 4.5) return 10.00;
-  if (distance <= 5) return 12.00;
-  if (distance <= 6) return 14.00;
-  if (distance <= 7) return 16.00;
-  if (distance <= 8) return 18.00;
-  if (distance <= 9) return 20.00;
-  if (distance <= 10) return 22.00;
-  return 22.00 + (Math.ceil(distance - 10) * 2.00);
+  let storeFee = 7.50;
+
+  if (distance <= 1) storeFee = 7.50;
+  else if (distance <= 2) storeFee = 9.50;
+  else if (distance <= 3) storeFee = 12.00;
+  else if (distance <= 4) storeFee = 14.50;
+  else if (distance <= 5) storeFee = 15.75;
+  else if (distance <= 6) storeFee = 17.00;
+  else if (distance <= 7) storeFee = 20.00;
+  else if (distance <= 8) storeFee = 21.50;
+  else if (distance <= 9) storeFee = 23.00;
+  else if (distance <= 10) storeFee = 27.00;
+  else if (distance <= 11) storeFee = 30.00;
+  else if (distance <= 12) storeFee = 33.00;
+  else {
+    const extraKm = Math.ceil(distance - 12);
+    storeFee = 33.00 + (extraKm * 3.00);
+  }
+
+  // Repasse de 75% para o entregador
+  return Number((storeFee * 0.75).toFixed(2));
 };
 
 export const MOCK_STORES = [
