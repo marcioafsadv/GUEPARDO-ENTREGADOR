@@ -751,12 +751,12 @@ const App: React.FC = () => {
       // THEN SUBSCRIBE TO NEW DELIVERIES AND UPDATES
       subscription = supabaseClient.subscribeToAvailableMissions(
         // Callback for new missions (INSERT)
-        (newMissionPayload) => {
+        (newMissionPayload: any) => {
           console.log("📥 New mission received:", newMissionPayload, "| Rejected list:", rejectedMissions);
 
           // Only show if not already showing a mission
-          if (mission) {
-            console.log("⚠️ Already showing a mission, ignoring new one");
+          if ((mission as any) && (!(mission as any).batch_id || (mission as any).batch_id !== newMissionPayload.batch_id)) {
+            console.log("⚠️ Already showing a different mission or batch, ignoring new one");
             return;
           }
 
@@ -791,10 +791,16 @@ const App: React.FC = () => {
             customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
             status: newMissionPayload.status || 'pending',
             isReturnRequired: newMissionPayload.is_return_required || (newMissionPayload.items?.isReturnRequired) || false,
-            displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined
+            displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined,
+            batch_id: newMissionPayload.batch_id
           };
 
           setMission(dynamicMission);
+          setActiveMissions(prev => {
+            const exists = prev.some(m => m.id === dynamicMission.id);
+            if (exists) return prev;
+            return [...prev, dynamicMission];
+          });
           setStatus(DriverStatus.ALERTING);
           setAlertCountdown(30);
         },
@@ -849,7 +855,8 @@ const App: React.FC = () => {
               customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
               status: d.status || 'pending',
               isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-              displayId: d.items?.displayId || undefined
+              displayId: d.items?.displayId || undefined,
+              batch_id: d.batch_id
             }));
 
             if (syncMissions.length > 0) {
@@ -1210,14 +1217,19 @@ const App: React.FC = () => {
   };
 
   const handleAcceptMission = async () => {
-    if (!mission || !userId) return;
+    if ((!mission && activeMissions.length === 0) || !userId) return;
     try {
-      console.log('🎯 Attempting to accept mission:', { missionId: mission.id, userId });
-      const result = await supabaseClient.acceptMission(mission.id, userId);
-      console.log('✅ Mission accepted successfully:', result);
+      const missionsToAccept = activeMissions.length > 0 ? activeMissions : (mission ? [mission] : []);
+      console.log(`🎯 Attempting to accept ${missionsToAccept.length} missions in batch:`, missionsToAccept.map(m => m.id));
 
-      setDailyStats(s => ({ ...s, accepted: s.accepted + 1 }));
+      await Promise.all(missionsToAccept.map(m => supabaseClient.acceptMission(m.id, userId)));
+      console.log('✅ Missions accepted successfully');
+
+      setDailyStats(s => ({ ...s, accepted: s.accepted + missionsToAccept.length }));
       setStatus(DriverStatus.GOING_TO_STORE);
+
+      const targetMission = mission || missionsToAccept[0];
+      if (!mission) setMission(targetMission);
 
       // Stop the sound immediately
       if (alertAudioRef.current) {
@@ -1226,10 +1238,10 @@ const App: React.FC = () => {
       }
 
       // Pre-geocode both addresses in parallel for instant route switching
-      if (mission.storeAddress || mission.customerAddress) {
+      if (targetMission && (targetMission.storeAddress || targetMission.customerAddress)) {
         const [storeCoords, customerCoords] = await Promise.all([
-          mission.storeAddress ? geocodeAddress(mission.storeAddress) : Promise.resolve(null),
-          mission.customerAddress ? geocodeAddress(mission.customerAddress) : Promise.resolve(null),
+          targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null),
+          targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null),
         ]);
         console.log('📍 Pre-geocoded store:', storeCoords, '| customer:', customerCoords);
         setPreloadedCoords({ store: storeCoords, customer: customerCoords });
@@ -1250,17 +1262,21 @@ const App: React.FC = () => {
   };
 
   const handleRejectMission = async () => {
-    if (!mission || !userId) return;
+    if ((!mission && activeMissions.length === 0) || !userId) return;
+
+    const missionsToReject = activeMissions.length > 0 ? activeMissions : (mission ? [mission] : []);
+    const rejectedIds = missionsToReject.map(m => m.id);
 
     // Add to local rejected list and persist to localStorage
-    const newRejectedList = [...rejectedMissions, mission.id];
+    const newRejectedList = [...rejectedMissions, ...rejectedIds];
     setRejectedMissions(newRejectedList);
     localStorage.setItem('rejectedMissions', JSON.stringify(newRejectedList));
 
-    await supabaseClient.rejectMission(mission.id, userId);
-    setDailyStats(prev => ({ ...prev, rejected: prev.rejected + 1 }));
+    await Promise.all(missionsToReject.map(m => supabaseClient.rejectMission(m.id, userId)));
+    setDailyStats(prev => ({ ...prev, rejected: prev.rejected + missionsToReject.length }));
     setStatus(DriverStatus.ONLINE);
     setMission(null);
+    setActiveMissions([]);
 
     // Stop the sound
     if (alertAudioRef.current) {
@@ -3210,18 +3226,29 @@ const App: React.FC = () => {
             </div>
             <div className="flex justify-between items-start mb-6 shrink-0">
               <div className="flex-1">
-                <div className="flex items-center space-x-3">
-                  <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {mission?.earnings?.toFixed(2)}</h2>
-                  <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
-                    {mission?.totalDistance?.toFixed(1)} KM TOTAL
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
-                  <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                    {mission?.distanceToStore?.toFixed(1)}km até loja + {mission?.deliveryDistance?.toFixed(1)}km entrega
-                  </span>
-                </div>
+                {(() => {
+                  const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
+                  const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
+                  const totalD = mToShow.reduce((acc, m) => acc + (m?.totalDistance || 0), 0);
+                  const isB = mToShow.length > 1;
+
+                  return (
+                    <>
+                      <div className="flex items-center space-x-3">
+                        <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {totalE.toFixed(2)}</h2>
+                        <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
+                          {totalD.toFixed(1)} KM TOTAL
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
+                        <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                          {isB ? `${mToShow.length} entregas em lote` : `${mission?.distanceToStore?.toFixed(1)}km até loja + ${mission?.deliveryDistance?.toFixed(1)}km entrega`}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div className="flex-1 space-y-4 mb-8">
@@ -3240,7 +3267,9 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Entrega</span>
-                  <span className="text-sm font-bold truncate">{mission.customerAddress}</span>
+                  <span className="text-sm font-bold truncate">
+                    {activeMissions.length > 1 ? `${activeMissions.length} destinos diferentes` : mission.customerAddress}
+                  </span>
                 </div>
               </div>
             </div>

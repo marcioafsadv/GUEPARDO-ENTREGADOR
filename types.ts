@@ -30,6 +30,7 @@ export interface DeliveryMission {
   status: string;
   isReturnRequired?: boolean;
   displayId?: string;
+  batch_id?: string;
 }
 
 export interface DailySummary {
