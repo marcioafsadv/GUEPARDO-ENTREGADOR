@@ -222,7 +222,7 @@ const App: React.FC = () => {
   const [isOrderReady, setIsOrderReady] = useState(false);
 
   const [showMissionMapPicker, setShowMissionMapPicker] = useState(false);
-  const [typedCode, setTypedCode] = useState('');
+  const [typedCode, setTypedCode] = useState<string[]>(['', '', '', '']);
   const codeInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
   // OTP Verification
@@ -315,7 +315,7 @@ const App: React.FC = () => {
   const [recoveryInput, setRecoveryInput] = useState('');
 
   useEffect(() => {
-    setTypedCode('');
+    setTypedCode(['', '', '', '']);
   }, [status]);
 
   useEffect(() => {
@@ -408,9 +408,18 @@ const App: React.FC = () => {
         // Carregar transações
         const transactions = await supabaseClient.getTransactions(userId);
         if (transactions) {
-          // Filtrar duplicatas
+          // Filtrar duplicatas e mapear campos do banco para o frontend
           const uniqueTransactions = new Map();
-          transactions.forEach((t: any) => uniqueTransactions.set(t.id, t));
+          transactions.forEach((t: any) => {
+            const createdAt = new Date(t.created_at);
+            const mapped = {
+              ...t,
+              weekId: t.week_id || 'current', // Garantir mapeamento para o filtro
+              date: createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+              time: createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            };
+            uniqueTransactions.set(t.id, mapped);
+          });
           const filteredTransactions = Array.from(uniqueTransactions.values());
           setHistory(filteredTransactions as Transaction[]);
         }
@@ -659,7 +668,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (status === DriverStatus.ONLINE || status === DriverStatus.OFFLINE) {
       setShowMissionMapPicker(false);
-      setTypedCode('');
+      setTypedCode(['', '', '', '']);
     }
   }, [status]);
 
@@ -850,7 +859,7 @@ const App: React.FC = () => {
                 if (newOnly.length === 0) return prev;
 
                 // Detect batching while already in route
-                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnly.length > 0) {
+                if ((status as any) !== DriverStatus.ONLINE && (status as any) !== DriverStatus.OFFLINE && (status as any) !== DriverStatus.ALERTING && newOnly.length > 0) {
                   const addedEarnings = newOnly.reduce((acc, m) => acc + m.earnings, 0);
                   setNewBatchEarnings(addedEarnings);
                   setShowBatchAlert(true);
@@ -1024,7 +1033,8 @@ const App: React.FC = () => {
         amount: newTransaction.amount,
         status: newTransaction.status,
         week_id: newTransaction.weekId, // Map to snake_case
-        user_id: userId
+        user_id: userId,
+        details: newTransaction.details // Added details persistence
       });
       console.log('✅ Step 2: Transaction created successfully');
 
@@ -1124,16 +1134,12 @@ const App: React.FC = () => {
     }, 2000);
   };
 
-  const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newCode = typedCode.split('');
-    while (newCode.length <= index) newCode.push('');
-    newCode[index] = value;
-    const combined = newCode.join('');
-    setTypedCode(combined);
-    if (value && index < 3) {
-      codeInputRefs[index + 1].current?.focus();
-    }
+  const handleCodeChange = (index: number, val: string) => {
+    if (val.length > 1) val = val.slice(-1);
+    const newCode = [...typedCode];
+    newCode[index] = val;
+    setTypedCode(newCode);
+    if (val && index < 3) codeInputRefs[index + 1].current?.focus();
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -1159,9 +1165,17 @@ const App: React.FC = () => {
   };
 
   const isCodeValid = () => {
-    if (!mission) return false;
-    if (status === DriverStatus.PICKING_UP) return true;
-    if (status === DriverStatus.ARRIVED_AT_CUSTOMER) return typedCode === mission.customerPhoneSuffix;
+    if (status === DriverStatus.ARRIVED_AT_CUSTOMER) {
+      if (!mission) return false;
+      const cleanedSuffix = String(mission.customerPhoneSuffix || '').replace(/\D/g, '').slice(-4);
+      const codeStr = typedCode.join('');
+      const isMatch = codeStr === cleanedSuffix;
+
+      if (codeStr.length === 4 && !isMatch) {
+        console.log("Validation mismatch:", { entered: codeStr, expected: cleanedSuffix, raw: mission.customerPhoneSuffix });
+      }
+      return isMatch;
+    }
     return true;
   };
 
@@ -3123,7 +3137,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {selectedTransaction && selectedTransaction.details && (
+      {selectedTransaction && (
         <div className="absolute inset-0 z-[7000] bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200">
           <div className={`w-full max-w-md h-[90%] sm:h-auto rounded-t-[40px] sm:rounded-[40px] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 border-t border-white/10 shadow-2xl ${cardBg}`}>
             <div className="p-8 pb-4 flex justify-between items-start shrink-0">
@@ -3152,12 +3166,12 @@ const App: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className={`p-4 rounded-[24px] border border-white/5 ${innerBg} flex flex-col items-center justify-center space-y-1`}>
                   <i className="far fa-clock text-[#FF6B00] mb-1"></i>
-                  <span className={`text-xl font-black ${textPrimary}`}>{selectedTransaction.details.duration}</span>
+                  <span className={`text-xl font-black ${textPrimary}`}>{selectedTransaction.details?.duration || '15 min'}</span>
                   <span className={`text-[8px] font-black uppercase tracking-widest ${textMuted}`}>Em Rota</span>
                 </div>
                 <div className={`p-4 rounded-[24px] border border-white/5 ${innerBg} flex flex-col items-center justify-center space-y-1`}>
                   <i className="fas fa-map-marker-alt text-[#FFD700] mb-1"></i>
-                  <span className={`text-xl font-black ${textPrimary}`}>{selectedTransaction.details.stops}</span>
+                  <span className={`text-xl font-black ${textPrimary}`}>{selectedTransaction.details?.stops || 2}</span>
                   <span className={`text-[8px] font-black uppercase tracking-widest ${textMuted}`}>Paradas</span>
                 </div>
               </div>
@@ -3165,7 +3179,7 @@ const App: React.FC = () => {
               <div>
                 <h3 className={`text-sm font-black uppercase tracking-[0.2em] italic mb-6 ${textPrimary}`}>Histórico da Rota</h3>
                 <div className="relative pl-4 space-y-8 border-l-2 border-dashed border-zinc-700 ml-2">
-                  {selectedTransaction.details.timeline.map((event, i) => (
+                  {(selectedTransaction.details?.timeline || generateTimeline(selectedTransaction.time)).map((event: any, i: number) => (
                     <div key={i} className="relative pl-6">
                       <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-[#1E1E1E] ${i === 0 ? 'bg-green-500' : 'bg-zinc-600'}`}></div>
                       <div className="flex flex-col">
