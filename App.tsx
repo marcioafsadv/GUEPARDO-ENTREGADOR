@@ -795,14 +795,49 @@ const App: React.FC = () => {
             batch_id: newMissionPayload.batch_id
           };
 
-          setMission(dynamicMission);
-          setActiveMissions(prev => {
-            const exists = prev.some(m => m.id === dynamicMission.id);
-            if (exists) return prev;
-            return [...prev, dynamicMission];
-          });
-          setStatus(DriverStatus.ALERTING);
-          setAlertCountdown(30);
+          // If it's a batch, fetch all stops to ensure we accept/reject them together
+          if (newMissionPayload.batch_id) {
+            console.log("📦 Multiple stops detected (Batch ID:", newMissionPayload.batch_id, "). Fetching all stops...");
+            supabaseClient.supabase
+              .from('deliveries')
+              .select('*')
+              .eq('batch_id', newMissionPayload.batch_id)
+              .eq('status', 'pending')
+              .then(({ data: batchMissions }) => {
+                if (batchMissions && batchMissions.length > 0) {
+                  const mappedBatch = batchMissions.map((d: any) => ({
+                    id: d.id,
+                    storeName: d.store_name || 'Loja',
+                    storeAddress: d.store_address || '',
+                    customerName: d.customer_name || 'Cliente',
+                    customerAddress: d.customer_address || '',
+                    customerPhoneSuffix: d.customer_phone_suffix || '',
+                    items: d.items || [],
+                    collectionCode: d.collection_code || '0000',
+                    distanceToStore: d.distance_to_store || 1.5,
+                    deliveryDistance: d.delivery_distance || 2.0,
+                    totalDistance: d.total_distance || 3.5,
+                    earnings: parseFloat(d.earnings || '0'),
+                    timeLimit: 25,
+                    status: d.status || 'pending',
+                    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+                    displayId: d.items?.displayId || undefined,
+                    batch_id: d.batch_id,
+                    stopNumber: d.stop_number || 1
+                  })).sort((a, b) => a.stopNumber - b.stopNumber);
+
+                  setActiveMissions(mappedBatch);
+                  setMission(mappedBatch[0]);
+                  setStatus(DriverStatus.ALERTING);
+                  setAlertCountdown(30);
+                }
+              });
+          } else {
+            setMission(dynamicMission);
+            setActiveMissions([dynamicMission]);
+            setStatus(DriverStatus.ALERTING);
+            setAlertCountdown(30);
+          }
         },
         // Callback for mission changes (UPDATE) - mostly irrelevant here as we unsubscribe when mission is set
         (unavailableMissionId) => {
@@ -904,26 +939,55 @@ const App: React.FC = () => {
 
               const firstPending = availablePending[0];
               if (firstPending) {
-                const dynamicMission: DeliveryMission = {
-                  id: firstPending.id,
-                  storeName: firstPending.store_name || 'Loja',
-                  storeAddress: firstPending.store_address || '',
-                  customerName: firstPending.customer_name || 'Cliente',
-                  customerAddress: firstPending.customer_address || '',
-                  customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-                  items: firstPending.items || [],
-                  collectionCode: firstPending.collection_code || '0000',
-                  distanceToStore: firstPending.distance_to_store || 1.5,
-                  deliveryDistance: firstPending.delivery_distance || 2.0,
-                  totalDistance: firstPending.total_distance || 3.5,
-                  earnings: parseFloat(firstPending.earnings || '0'),
-                  timeLimit: 25,
-                  status: firstPending.status || 'pending',
-                  isReturnRequired: firstPending.is_return_required || (firstPending.items?.isReturnRequired) || false,
-                  storePhone: '',
-                  customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
-                };
-                setMission(dynamicMission);
+                // If it's a batch, get all missions of that batch
+                let missionsToAlert: DeliveryMission[] = [];
+
+                if (firstPending.batch_id) {
+                  const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
+                  missionsToAlert = batchItems.map(d => ({
+                    id: d.id,
+                    storeName: d.store_name || 'Loja',
+                    storeAddress: d.store_address || '',
+                    customerName: d.customer_name || 'Cliente',
+                    customerAddress: d.customer_address || '',
+                    customerPhoneSuffix: d.customer_phone_suffix || '',
+                    items: d.items || [],
+                    collectionCode: d.collection_code || '0000',
+                    distanceToStore: d.distance_to_store || 1.5,
+                    deliveryDistance: d.delivery_distance || 2.0,
+                    totalDistance: d.total_distance || 3.5,
+                    earnings: parseFloat(d.earnings || '0'),
+                    timeLimit: 25,
+                    status: d.status || 'pending',
+                    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+                    displayId: d.items?.displayId || undefined,
+                    batch_id: d.batch_id,
+                    stopNumber: d.stop_number || 1
+                  })).sort((a, b) => a.stopNumber - b.stopNumber);
+                } else {
+                  missionsToAlert = [{
+                    id: firstPending.id,
+                    storeName: firstPending.store_name || 'Loja',
+                    storeAddress: firstPending.store_address || '',
+                    customerName: firstPending.customer_name || 'Cliente',
+                    customerAddress: firstPending.customer_address || '',
+                    customerPhoneSuffix: firstPending.customer_phone_suffix || '',
+                    items: firstPending.items || [],
+                    collectionCode: firstPending.collection_code || '0000',
+                    distanceToStore: firstPending.distance_to_store || 1.5,
+                    deliveryDistance: firstPending.delivery_distance || 2.0,
+                    totalDistance: firstPending.total_distance || 3.5,
+                    earnings: parseFloat(firstPending.earnings || '0'),
+                    timeLimit: 25,
+                    status: firstPending.status || 'pending',
+                    isReturnRequired: firstPending.is_return_required || (firstPending.items?.isReturnRequired) || false,
+                    storePhone: '',
+                    customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+                  }];
+                }
+
+                setActiveMissions(missionsToAlert);
+                setMission(missionsToAlert[0]);
                 setStatus(DriverStatus.ALERTING);
                 setAlertCountdown(30);
               }
