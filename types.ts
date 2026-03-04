@@ -31,6 +31,8 @@ export interface DeliveryMission {
   isReturnRequired?: boolean;
   displayId?: string;
   batch_id?: string;
+  destinationLat?: number;
+  destinationLng?: number;
   stopNumber?: number;
 }
 

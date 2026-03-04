@@ -15,6 +15,9 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// --- MAPBOX CONFIGURATION ---
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
 interface MapLeafletProps {
     status: string;
     showRoute?: boolean;
@@ -96,7 +99,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [route, setRoute] = useState<[number, number][] | null>(null);
 
-    // Sync Location
+    // Sync Location via GPS
     useEffect(() => {
         if (navigator.geolocation) {
             const watchId = navigator.geolocation.watchPosition(
@@ -113,11 +116,29 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         }
     }, []);
 
-    // Geocoding helper with cache
+    // Geocoding helper with cache — uses Mapbox if token available, fallback to Nominatim
     const geocode = async (address: string): Promise<{ lat: number; lng: number } | null> => {
         if (geocodeCache.has(address)) {
             return geocodeCache.get(address)!;
         }
+
+        if (MAPBOX_TOKEN) {
+            try {
+                const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&language=pt&autocomplete=false&routing=true&country=BR&limit=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.features && data.features.length > 0) {
+                    const [lng, lat] = data.features[0].geometry.coordinates;
+                    const result = { lat, lng };
+                    geocodeCache.set(address, result);
+                    return result;
+                }
+            } catch (e) {
+                console.error("Mapbox Geocoding Error:", e);
+            }
+        }
+
+        // Fallback: Nominatim
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
             const data = await res.json();
@@ -127,7 +148,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                 return result;
             }
         } catch (e) {
-            console.error("Geocoding Error:", e);
+            console.error("Nominatim Fallback Error:", e);
         }
         return null;
     };
@@ -138,7 +159,6 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             !isNaN(preloadedDestinationLat) && !isNaN(preloadedDestinationLng)) {
             setDestinationLocation({ lat: preloadedDestinationLat, lng: preloadedDestinationLng });
         } else if (destinationAddress) {
-            // Also cache under address key if preloaded coords were provided before
             geocode(destinationAddress).then(loc => {
                 if (loc) setDestinationLocation(loc);
             });
@@ -161,12 +181,11 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         }
     }, [pickupAddress, preloadedPickupLat, preloadedPickupLng]);
 
-    // OSRM Routing
+    // --- Routing: Mapbox Directions API (with OSRM fallback) ---
     useEffect(() => {
         if (!currentLocation) return;
 
         const fetchRoute = async () => {
-            const start = [currentLocation.lng, currentLocation.lat];
             let end: { lat: number, lng: number } | null = null;
 
             if (destinationLocation) {
@@ -180,15 +199,33 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                 return;
             }
 
+            const start = currentLocation;
+
+            if (MAPBOX_TOKEN) {
+                try {
+                    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.routes && data.routes.length > 0) {
+                        const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+                        setRoute(coords);
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Mapbox Directions Error:", e);
+                }
+            }
+
+            // Fallback to OSRM
             try {
-                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${end.lng},${end.lat}?overview=full&geometries=geojson`);
+                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`);
                 const data = await res.json();
                 if (data.routes && data.routes.length > 0) {
                     const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
                     setRoute(coords);
                 }
             } catch (e) {
-                console.error("OSRM Error:", e);
+                console.error("OSRM Fallback Error:", e);
             }
         };
 
@@ -203,9 +240,23 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         return pts;
     }, [currentLocation, pickupLocation, destinationLocation]);
 
-    const tileUrl = theme === 'dark' || mapMode === 'satellite'
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    // --- Tile Layer: Mapbox (with OSM/CartoDB fallback) ---
+    const isDark = theme === 'dark';
+    const isSatellite = mapMode === 'satellite';
+
+    const tileUrl = MAPBOX_TOKEN
+        ? (isSatellite
+            ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`
+            : isDark
+                ? `https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`
+                : `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`)
+        : (isDark
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+    const tileProps = MAPBOX_TOKEN
+        ? { tileSize: 512 as number, zoomOffset: -1, maxZoom: 22, attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>' }
+        : { attribution: '&copy; OpenStreetMap' };
 
     // Heatmap simulation
     const heatmapItems = useMemo(() => {
@@ -229,7 +280,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                 style={{ width: '100%', height: '100%' }}
                 zoomControl={false}
             >
-                <TileLayer url={tileUrl} attribution='&copy; OpenStreetMap' />
+                <TileLayer url={tileUrl} {...tileProps} />
                 <MapUpdater points={fitPoints} reCenterTrigger={reCenterTrigger} />
 
                 {currentLocation && (
@@ -256,7 +307,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                         pathOptions={{
                             color: COLORS.orange,
                             weight: 5,
-                            opacity: 0.8
+                            opacity: 0.9
                         }}
                     />
                 )}

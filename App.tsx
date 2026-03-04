@@ -194,6 +194,7 @@ const App: React.FC = () => {
   const [isResumoExpanded, setIsResumoExpanded] = useState(false);
   const [mapCenterKey, setMapCenterKey] = useState(0);
   const [lastEarnings, setLastEarnings] = useState(0);
+  const [batchEarnings, setBatchEarnings] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
 
@@ -805,7 +806,7 @@ const App: React.FC = () => {
               .eq('status', 'pending')
               .then(({ data: batchMissions }) => {
                 if (batchMissions && batchMissions.length > 0) {
-                  const mappedBatch = batchMissions.map((d: any) => ({
+                  const mappedBatch: DeliveryMission[] = batchMissions.map((d: any) => ({
                     id: d.id,
                     storeName: d.store_name || 'Loja',
                     storeAddress: d.store_address || '',
@@ -823,8 +824,12 @@ const App: React.FC = () => {
                     isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
                     displayId: d.items?.displayId || undefined,
                     batch_id: d.batch_id,
-                    stopNumber: d.stop_number || 1
-                  })).sort((a, b) => a.stopNumber - b.stopNumber);
+                    destinationLat: d.destination_lat,
+                    destinationLng: d.destination_lng,
+                    stopNumber: d.stop_number || 1,
+                    storePhone: d.store_phone || '',
+                    customerPhone: d.customer_phone || ''
+                  })).sort((a: any, b: any) => a.stopNumber - b.stopNumber);
 
                   setActiveMissions(mappedBatch);
                   setMission(mappedBatch[0]);
@@ -891,7 +896,9 @@ const App: React.FC = () => {
               status: d.status || 'pending',
               isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
               displayId: d.items?.displayId || undefined,
-              batch_id: d.batch_id
+              batch_id: d.batch_id,
+              destinationLat: d.destination_lat,
+              destinationLng: d.destination_lng
             }));
 
             if (syncMissions.length > 0) {
@@ -944,7 +951,7 @@ const App: React.FC = () => {
 
                 if (firstPending.batch_id) {
                   const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
-                  missionsToAlert = batchItems.map(d => ({
+                  missionsToAlert = batchItems.map((d: any) => ({
                     id: d.id,
                     storeName: d.store_name || 'Loja',
                     storeAddress: d.store_address || '',
@@ -962,7 +969,11 @@ const App: React.FC = () => {
                     isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
                     displayId: d.items?.displayId || undefined,
                     batch_id: d.batch_id,
-                    stopNumber: d.stop_number || 1
+                    destinationLat: d.destination_lat,
+                    destinationLng: d.destination_lng,
+                    stopNumber: d.stop_number || 1,
+                    storePhone: d.store_phone || '',
+                    customerPhone: d.customer_phone || ''
                   })).sort((a, b) => a.stopNumber - b.stopNumber);
                 } else {
                   missionsToAlert = [{
@@ -982,7 +993,9 @@ const App: React.FC = () => {
                     status: firstPending.status || 'pending',
                     isReturnRequired: firstPending.is_return_required || (firstPending.items?.isReturnRequired) || false,
                     storePhone: '',
-                    customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : ''
+                    customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
+                    destinationLat: firstPending.destination_lat,
+                    destinationLng: firstPending.destination_lng
                   }];
                 }
 
@@ -1120,6 +1133,7 @@ const App: React.FC = () => {
       setBalance(prev => prev + earned);
       setDailyEarnings(prev => prev + earned);
       setLastEarnings(earned);
+      setBatchEarnings(prev => prev + earned);
       setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
 
       // Update activeMissions: Remove completed mission
@@ -1282,6 +1296,7 @@ const App: React.FC = () => {
 
   const handleAcceptMission = async () => {
     if ((!mission && activeMissions.length === 0) || !userId) return;
+    setBatchEarnings(0); // Reset batch earnings total
     try {
       const missionsToAccept = activeMissions.length > 0 ? activeMissions : (mission ? [mission] : []);
       console.log(`🎯 Attempting to accept ${missionsToAccept.length} missions in batch:`, missionsToAccept.map(m => m.id));
@@ -1302,12 +1317,14 @@ const App: React.FC = () => {
       }
 
       // Pre-geocode both addresses in parallel for instant route switching
-      if (targetMission && (targetMission.storeAddress || targetMission.customerAddress)) {
+      if (targetMission) {
         const [storeCoords, customerCoords] = await Promise.all([
           targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null),
-          targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null),
+          (targetMission.destinationLat && targetMission.destinationLng)
+            ? Promise.resolve({ lat: targetMission.destinationLat, lng: targetMission.destinationLng })
+            : (targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null))
         ]);
-        console.log('📍 Pre-geocoded store:', storeCoords, '| customer:', customerCoords);
+        console.log('📍 Precise/Geocoded store:', storeCoords, '| customer:', customerCoords);
         setPreloadedCoords({ store: storeCoords, customer: customerCoords });
       }
     } catch (error: any) {
@@ -3141,7 +3158,7 @@ const App: React.FC = () => {
             <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-900/40"><i className="fas fa-check text-4xl text-white"></i></div>
             <h2 className="text-3xl font-black italic mb-2 text-white">MUITO BEM!</h2>
             <p className="text-zinc-400 font-bold mb-8 uppercase text-xs tracking-widest">Entrega concluída com sucesso</p>
-            <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(lastEarnings || 0).toFixed(2)}</p></div>
+            <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(batchEarnings || 0).toFixed(2)}</p></div>
             <button onClick={() => { setShowPostDeliveryModal(false); }} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
           </div>
         </div>
