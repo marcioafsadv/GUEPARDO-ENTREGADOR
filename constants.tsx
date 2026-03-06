@@ -17,30 +17,19 @@ export const COLORS = {
 export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
 
 /**
- * Motor de cálculo de ganhos Guepardo baseado na distância (75% do valor do lojista)
+ * Motor de cálculo de ganhos Guepardo baseado na distância
+ * 
+ * Modelo: R$ 7,00 (Fixo Entregador) + (Distância * R$ 1,32 * 87,5%)
  */
-export const calculateEarnings = (distance: number): number => {
-  let storeFee = 7.50;
+export const calculateEarnings = (distanceKm: number): number => {
+  const baseCourier = 7.00;
+  const ratePerKm = 1.32;
+  const courierShareVariable = 0.875;
 
-  if (distance <= 1) storeFee = 7.50;
-  else if (distance <= 2) storeFee = 9.50;
-  else if (distance <= 3) storeFee = 12.00;
-  else if (distance <= 4) storeFee = 14.50;
-  else if (distance <= 5) storeFee = 15.75;
-  else if (distance <= 6) storeFee = 17.00;
-  else if (distance <= 7) storeFee = 20.00;
-  else if (distance <= 8) storeFee = 21.50;
-  else if (distance <= 9) storeFee = 23.00;
-  else if (distance <= 10) storeFee = 27.00;
-  else if (distance <= 11) storeFee = 30.00;
-  else if (distance <= 12) storeFee = 33.00;
-  else {
-    const extraKm = Math.ceil(distance - 12);
-    storeFee = 33.00 + (extraKm * 3.00);
-  }
+  const variablePart = distanceKm * ratePerKm;
+  const courierVariablePart = variablePart * courierShareVariable;
 
-  // Repasse de 75% para o entregador
-  return Number((storeFee * 0.75).toFixed(2));
+  return Number((baseCourier + courierVariablePart).toFixed(2));
 };
 
 export const MOCK_STORES = [
