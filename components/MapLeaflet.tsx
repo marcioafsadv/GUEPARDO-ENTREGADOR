@@ -244,18 +244,20 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     const isDark = theme === 'dark';
     const isSatellite = mapMode === 'satellite';
 
+    // Mapbox Styles Tiles API requires tile size in the URL path.
+    // Using 256px tiles is simpler and doesn't require zoomOffset adjustment.
     const tileUrl = MAPBOX_TOKEN
         ? (isSatellite
-            ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`
+            ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
             : isDark
-                ? `https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`
-                : `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`)
+                ? `https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
+                : `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`)
         : (isDark
             ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
             : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
     const tileProps = MAPBOX_TOKEN
-        ? { tileSize: 512 as number, zoomOffset: -1, maxZoom: 22, attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>' }
+        ? { tileSize: 256 as number, maxZoom: 22, attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>' }
         : { attribution: '&copy; OpenStreetMap' };
 
     // Heatmap simulation
