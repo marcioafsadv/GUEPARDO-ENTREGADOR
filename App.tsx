@@ -172,9 +172,11 @@ const App: React.FC = () => {
   const mission = React.useMemo(() => {
     if (activeMissions.length === 0) return null;
 
-    // Priority: If we haven't picked up all orders, focus on the first one that needs pickup
-    // In our simplified workflow, GOING_TO_STORE means we are heading to the store for ALL of them.
-    // Once we are picking up, we focus on the first one.
+    // Priority: Focus on deliveries that are NOT in "returning" status
+    const pendingMission = activeMissions.find(m => m.status !== 'returning');
+    if (pendingMission) return pendingMission;
+
+    // If all are returning, focus on the first one
     return activeMissions[0];
   }, [activeMissions]);
 
@@ -197,6 +199,7 @@ const App: React.FC = () => {
   const [batchEarnings, setBatchEarnings] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
+  const [batchHasReturn, setBatchHasReturn] = useState(false);
 
   // Pre-geocoded coords for instant route switching (store → customer)
   const [preloadedCoords, setPreloadedCoords] = useState<{
@@ -498,6 +501,7 @@ const App: React.FC = () => {
       } else {
         setStatus(DriverStatus.ONLINE);
         setMission(null);
+        setBatchHasReturn(false);
       }
     }
   };
@@ -540,18 +544,36 @@ const App: React.FC = () => {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          // Throttle updates? For now, we update on every change Supabase can handle it, 
-          // or we can debounce. React state might debounce a bit if we put it in state, 
-          // but here we call DB directly.
-          // Let's rely on the watchPosition frequency (usually moves only when distance changes significantly if configured)
 
-          // To save DB writes, maybe we only write every 10s?
-          // For MVP, direct write is fine for small scale.
+          // Update profile for real-time head-up display
           supabaseClient.updateProfile(userId, {
             current_lat: latitude,
             current_lng: longitude,
             last_location_update: new Date().toISOString()
           }).catch(e => console.error("Location update failed", e));
+
+          // LOG HISTORY: If there's an active mission, log the percurso
+          const activeStates = [
+            DriverStatus.GOING_TO_STORE,
+            DriverStatus.ARRIVED_AT_STORE,
+            DriverStatus.PICKING_UP,
+            DriverStatus.GOING_TO_CUSTOMER,
+            DriverStatus.ARRIVED_AT_CUSTOMER,
+            DriverStatus.RETURNING
+          ];
+
+          if (mission && activeStates.includes(status)) {
+            supabaseClient.supabase
+              .from('delivery_tracking')
+              .insert([{
+                delivery_id: mission.id,
+                latitude,
+                longitude
+              }])
+              .then(({ error }) => {
+                if (error) console.error("Error logging percurso:", error.message);
+              });
+          }
         },
         (err) => console.error("Location watch error", err),
         {
@@ -833,6 +855,7 @@ const App: React.FC = () => {
 
                   setActiveMissions(mappedBatch);
                   setMission(mappedBatch[0]);
+                  setBatchHasReturn(mappedBatch.some(m => m.isReturnRequired));
                   setStatus(DriverStatus.ALERTING);
                   setAlertCountdown(30);
                 }
@@ -840,6 +863,7 @@ const App: React.FC = () => {
           } else {
             setMission(dynamicMission);
             setActiveMissions([dynamicMission]);
+            setBatchHasReturn(dynamicMission.isReturnRequired || false);
             setStatus(DriverStatus.ALERTING);
             setAlertCountdown(30);
           }
@@ -871,7 +895,7 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer']);
+            .in('status', ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'returning']);
 
           if (assignedOrders && assignedOrders.length > 0) {
             // Filter out missions the driver has already rejected locally
@@ -903,9 +927,28 @@ const App: React.FC = () => {
 
             if (syncMissions.length > 0) {
               setActiveMissions(prev => {
+                const syncIds = new Set(syncMissions.map(m => m.id));
+                
+                // 1. Update existing missions with new data (status, etc.)
+                const updatedPrev = prev.map(oldMission => {
+                  const serverMission = syncMissions.find(m => m.id === oldMission.id);
+                  if (serverMission) {
+                    // Update relevant fields while keeping local state if needed
+                    return { ...oldMission, ...serverMission };
+                  }
+                  return oldMission;
+                });
+
+                // 2. Filter out missions that were finished/cancelled on server but are still in our local state
+                // Note: Only remove if we aren't in a state that requires keeping them (like RETURNING)
+                // but usually the server status 'completed' or 'cancelled' handles this.
+                const filteredPrev = updatedPrev.filter(m => syncIds.has(m.id));
+
+                // 3. Find truly new missions
                 const prevIds = new Set(prev.map(m => m.id));
                 const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
-                if (newOnly.length === 0) return prev;
+                
+                if (newOnly.length === 0 && filteredPrev.length === prev.length) return prev;
 
                 // Detect batching while already in route
                 if ((status as any) !== DriverStatus.ONLINE && (status as any) !== DriverStatus.OFFLINE && (status as any) !== DriverStatus.ALERTING && newOnly.length > 0) {
@@ -916,7 +959,7 @@ const App: React.FC = () => {
                 }
 
                 // If we were ONLINE and suddenly have missions, transition status
-                if (status === DriverStatus.ONLINE && (prev.length === 0) && !mission) {
+                if (status === DriverStatus.ONLINE && (filteredPrev.length === 0 && newOnly.length > 0) && !mission) {
                   const firstNew = newOnly[0];
                   if (firstNew.status === 'pending') {
                     setMission(firstNew);
@@ -926,7 +969,7 @@ const App: React.FC = () => {
                   }
                 }
 
-                return [...prev, ...newOnly];
+                return [...filteredPrev, ...newOnly];
               });
             }
           }
@@ -1001,6 +1044,7 @@ const App: React.FC = () => {
 
                 setActiveMissions(missionsToAlert);
                 setMission(missionsToAlert[0]);
+                setBatchHasReturn(missionsToAlert.some(m => m.isReturnRequired));
                 setStatus(DriverStatus.ALERTING);
                 setAlertCountdown(30);
               }
@@ -1060,7 +1104,10 @@ const App: React.FC = () => {
             alert('Pedido cancelado pelo lojista. Você não está mais em rota.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
-            // Optionally redirect to home or stop navigation
+          } else if (newStatus === 'completed' && status === DriverStatus.RETURNING) {
+            console.log("✅ Return confirmed by merchant.");
+            // When a return is confirmed, we can finalize this mission locally
+             processDeliverySuccess();
           }
         }
       });
@@ -1085,9 +1132,19 @@ const App: React.FC = () => {
 
     try {
       // 1. Complete mission in Supabase
-      console.log('🎯 Step 1: Completing mission in database...', { missionId: mission.id, userId });
-      await supabaseClient.completeMission(mission.id, userId);
-      console.log('✅ Step 1: Mission completed successfully');
+      console.log('🎯 Step 1: Updating mission status in database...', { missionId: mission.id, userId, isReturnRequired: mission.isReturnRequired });
+      
+      if (mission.isReturnRequired) {
+        await supabaseClient.supabase
+          .from('deliveries')
+          .update({ status: 'returning' })
+          .eq('id', mission.id)
+          .eq('driver_id', userId);
+        console.log('✅ Step 1: Mission set to returning (awaiting end of batch)');
+      } else {
+        await supabaseClient.completeMission(mission.id, userId);
+        console.log('✅ Step 1: Mission completed successfully');
+      }
 
       const earned = mission.earnings;
 
@@ -1136,35 +1193,62 @@ const App: React.FC = () => {
       setBatchEarnings(prev => prev + earned);
       setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
 
-      // Update activeMissions: Remove completed mission
-      // IMPORTANT: Calculate remaining missions BEFORE state update to avoid side effects in setter
-      const remaining = activeMissions.filter(m => m.id !== mission.id);
-      setActiveMissions(remaining);
+      // 4. Update local state
+      setBalance(prev => prev + earned);
+      setDailyEarnings(prev => prev + earned);
+      setLastEarnings(earned);
+      setBatchEarnings(prev => prev + earned);
+      setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
 
-      if (remaining.length === 0) {
-        setStatus(DriverStatus.ONLINE);
+      let nextToMove: DeliveryMission | null = null;
+      let targetStatus: DriverStatus | null = null;
 
+      setActiveMissions(prev => {
+        const updated = prev.map(m => 
+          m.id === mission.id 
+            ? { ...m, status: mission.isReturnRequired ? 'returning' : 'completed' } 
+            : m
+        ).filter(m => m.status !== 'completed');
+        
+        console.log('📝 Updated missions list:', updated.map(m => `${m.id.slice(-4)}:${m.status}`));
 
-        setMission(null); // Clear mission when all done
-        setShowPostDeliveryModal(true); // Show modal ONLY at the end
-      } else {
-        // AUTOMATIC SEQUENCING: 
-        // If the next mission is from the SAME STORE, it means we already picked it up (Batch).
-        // So we go directly to GOING_TO_CUSTOMER.
-        const nextMission = remaining[0];
+        const pendingOrTransit = updated.filter(m => m.status !== 'returning');
+        console.log('📑 Pending/Transit missions remaining:', pendingOrTransit.length);
 
-        // Ensure mission state updates immediately
-        setMission(nextMission);
-
-        if (nextMission && nextMission.storeName === mission.storeName) {
-          setStatus(DriverStatus.GOING_TO_CUSTOMER);
-          setShowPostDeliveryModal(false); // Do NOT show success modal for intermediate steps
+        if (pendingOrTransit.length > 0) {
+          // Move to next delivery
+          nextToMove = pendingOrTransit[0];
+          targetStatus = nextToMove.storeName === mission.storeName 
+            ? DriverStatus.GOING_TO_CUSTOMER 
+            : DriverStatus.GOING_TO_STORE;
+          console.log(`➡️ Sequencing to next delivery: ${nextToMove.id.slice(-4)}`);
+        } else if (updated.length > 0) {
+          // All delivered but returns pending
+          targetStatus = DriverStatus.RETURNING;
+          nextToMove = updated.find(m => m.isReturnRequired) || updated[0];
+          console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
         } else {
-          // Different store? We need to go pick it up.
-          setStatus(DriverStatus.GOING_TO_STORE);
+          // All done
+          targetStatus = DriverStatus.ONLINE;
+          nextToMove = null;
+          console.log('✨ All missions including returns finished.');
+        }
+
+        return updated;
+      });
+
+      // Apply side effects outside the state updater
+      if (targetStatus) {
+        setStatus(targetStatus);
+        setMission(nextToMove);
+        if (targetStatus === DriverStatus.ONLINE) {
+          setBatchHasReturn(false);
+          setShowPostDeliveryModal(true);
+        } else {
           setShowPostDeliveryModal(false);
         }
       }
+      
       setHistory(prev => [newTransaction, ...prev]);
 
     } catch (error: any) {
@@ -1304,6 +1388,7 @@ const App: React.FC = () => {
       await Promise.all(missionsToAccept.map(m => supabaseClient.acceptMission(m.id, userId)));
       console.log('✅ Missions accepted successfully');
 
+      setBatchHasReturn(missionsToAccept.some(m => m.isReturnRequired));
       setDailyStats(s => ({ ...s, accepted: s.accepted + missionsToAccept.length }));
       setStatus(DriverStatus.GOING_TO_STORE);
 
@@ -1433,22 +1518,7 @@ const App: React.FC = () => {
       setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
     }
     else if (mission && status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
-      if (mission.isReturnRequired) {
-        console.log('🔄 Return trip required. Redirecting to store...');
-        try {
-          await supabaseClient.supabase
-            .from('deliveries')
-            .update({ status: 'returning' })
-            .eq('id', mission.id);
-          setStatus(DriverStatus.RETURNING);
-        } catch (error) {
-          console.error('❌ Error updating to returning status:', error);
-          // Fallback: finalize anyway if DB fails? No, better stay or show error.
-          alert("Erro ao iniciar retorno. Verifique sua conexão.");
-        }
-      } else {
-        handleFinishDelivery();
-      }
+      handleFinishDelivery();
     }
     else if (status === DriverStatus.RETURNING) {
       // In returning state, the driver has reached the store
@@ -2118,12 +2188,12 @@ const App: React.FC = () => {
 
                     <div className="px-1 flex justify-between items-start">
                       <div>
-                        <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName}
-                        </h3>
-                        <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress}
-                        </p>
+                         <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
++                          {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName)}
+                         </h3>
+                         <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
++                          {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress)}
+                         </p>
                       </div>
                       {activeMissions.length > 1 && (
                         <div className="bg-[#FF6B00] text-white text-[10px] font-black px-2 py-1 rounded-lg animate-bounce">
