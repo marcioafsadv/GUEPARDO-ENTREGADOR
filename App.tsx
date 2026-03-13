@@ -4,6 +4,7 @@ import { Howl } from 'howler';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType } from './types';
 import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapLeaflet } from './components/MapLeaflet';
+import { MapNavigation } from './components/MapNavigation';
 import { SplashScreen } from './components/SplashScreen';
 import { HoldToFillButton } from './components/HoldToFillButton';
 import { Logo } from './components/Logo';
@@ -206,6 +207,9 @@ const App: React.FC = () => {
     store: { lat: number; lng: number } | null;
     customer: { lat: number; lng: number } | null;
   }>({ store: null, customer: null });
+
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
 
 
@@ -574,6 +578,8 @@ const App: React.FC = () => {
                 if (error) console.error("Error logging percurso:", error.message);
               });
           }
+
+          setCurrentLocation({ lat: latitude, lng: longitude });
         },
         (err) => console.error("Location watch error", err),
         {
@@ -1126,109 +1132,121 @@ const App: React.FC = () => {
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
 
-    // Prevent duplicate processing
     const missionId = `Entrega #${mission.displayId || mission.id.slice(-4)}`;
-    if (history.some(h => h.type === missionId)) return;
+    
+    // ⚠️ Transaction & Earnings logic: Only run if NOT already in history
+    const alreadyProcessed = history.some(h => h.type === missionId);
 
     try {
-      // 1. Complete mission in Supabase
-      console.log('🎯 Step 1: Updating mission status in database...', { missionId: mission.id, userId, isReturnRequired: mission.isReturnRequired });
+      if (!alreadyProcessed) {
+        const earned = mission.earnings;
+
+        // 2. Prepare transaction data
+        const newTransaction: Transaction = {
+          id: Math.random().toString(36).substr(2, 9),
+          type: missionId,
+          amount: earned,
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Hoje',
+          weekId: 'current',
+          status: 'COMPLETED',
+          details: {
+            duration: '15 min',
+            stops: 2,
+            timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+          }
+        };
+
+        // 3. Save to Supabase (Transaction & Stats)
+        console.log('💰 Creating transaction...', newTransaction);
+        await supabaseClient.createTransaction({
+          id: newTransaction.id,
+          type: newTransaction.type,
+          amount: newTransaction.amount,
+          status: newTransaction.status,
+          week_id: newTransaction.weekId,
+          user_id: userId,
+          details: newTransaction.details
+        });
+
+        console.log('📊 Updating daily stats...', { userId, earnings: earned });
+        await supabaseClient.updateDailyStats(userId, {
+          finished: 1,
+          earnings: earned
+        });
+
+        // 4. Update local earnings state
+        setBalance(prev => prev + earned);
+        setDailyEarnings(prev => prev + earned);
+        setLastEarnings(earned);
+        setBatchEarnings(prev => prev + earned);
+        setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
+        setHistory(prev => [newTransaction, ...prev]);
+        console.log('✅ Transaction and Earnings recorded.');
+      } else {
+        console.log('ℹ️ Mission already in history, skipping transaction creation.');
+      }
+
+      // 🎯 ALWAYS UPDATE MISSION STATUS AND CLEANUP STATE (Essential for Return Finalization)
+      console.log('🎯 Updating mission status in database...', { missionId: mission.id, status });
       
-      if (mission.isReturnRequired) {
+      if (mission.isReturnRequired && status !== DriverStatus.RETURNING) {
         await supabaseClient.supabase
           .from('deliveries')
           .update({ status: 'returning' })
           .eq('id', mission.id)
           .eq('driver_id', userId);
-        console.log('✅ Step 1: Mission set to returning (awaiting end of batch)');
+        console.log('✅ Mission set to returning (awaiting end of batch)');
       } else {
         await supabaseClient.completeMission(mission.id, userId);
-        console.log('✅ Step 1: Mission completed successfully');
+        console.log('✅ Mission completed (phase finalized)');
       }
-
-      const earned = mission.earnings;
-
-      // 2. Prepare transaction data
-      const newTransaction: Transaction = {
-        id: Math.random().toString(36).substr(2, 9),
-        type: `Entrega #${mission.displayId || mission.id.slice(-4)}`,
-        amount: earned,
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Hoje',
-        weekId: 'current',
-        status: 'COMPLETED',
-        details: {
-          duration: '15 min',
-          stops: 2,
-          timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-        }
-      };
-
-      // 3. Save to Supabase (Transaction & Stats)
-      console.log('💰 Step 2: Creating transaction...', newTransaction);
-
-      // Only send fields that exist in the database schema
-      await supabaseClient.createTransaction({
-        id: newTransaction.id,
-        type: newTransaction.type,
-        amount: newTransaction.amount,
-        status: newTransaction.status,
-        week_id: newTransaction.weekId, // Map to snake_case
-        user_id: userId,
-        details: newTransaction.details // Added details persistence
-      });
-      console.log('✅ Step 2: Transaction created successfully');
-
-      console.log('📊 Step 3: Updating daily stats...', { userId, finished: 1, earnings: earned });
-      await supabaseClient.updateDailyStats(userId, {
-        finished: 1,
-        earnings: earned
-      });
-      console.log('✅ Step 3: Daily stats updated successfully');
-
-      // 4. Update local state
-      setBalance(prev => prev + earned);
-      setDailyEarnings(prev => prev + earned);
-      setLastEarnings(earned);
-      setBatchEarnings(prev => prev + earned);
-      setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
-
-      // 4. Update local state
-      setBalance(prev => prev + earned);
-      setDailyEarnings(prev => prev + earned);
-      setLastEarnings(earned);
-      setBatchEarnings(prev => prev + earned);
-      setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
 
       let nextToMove: DeliveryMission | null = null;
       let targetStatus: DriverStatus | null = null;
 
       setActiveMissions(prev => {
-        const updated = prev.map(m => 
-          m.id === mission.id 
-            ? { ...m, status: mission.isReturnRequired ? 'returning' : 'completed' } 
-            : m
-        ).filter(m => m.status !== 'completed');
+        console.log('🔄 Current Active Missions (prev):', prev.map(m => `${m.id.slice(-4)}:${m.status}`));
         
-        console.log('📝 Updated missions list:', updated.map(m => `${m.id.slice(-4)}:${m.status}`));
+        const updated = prev.map(m => {
+          if (m.id !== mission.id) return m;
 
-        const pendingOrTransit = updated.filter(m => m.status !== 'returning');
-        console.log('📑 Pending/Transit missions remaining:', pendingOrTransit.length);
+          // If already in returning status, this success confirms the return is DONE
+          if (m.status === 'returning') {
+            console.log(`✅ Finalizing return for mission: ${m.id.slice(-4)}`);
+            return { ...m, status: 'completed' };
+          }
+
+          // Otherwise, determine if it needs to go to returning or completed
+          return { ...m, status: (mission.isReturnRequired ? 'returning' : 'completed') };
+        }).filter(m => m.status !== 'completed');
+        
+        console.log('📝 Updated Missions List:', updated.map(m => `${m.id.slice(-4)}:${m.status}`));
+
+        // 📝 ROBUST FIX: Define what states constitute "pending or in-transit"
+        const ACTIVE_DELIVERY_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'ready_for_pickup'];
+        
+        const pendingOrTransit = updated.filter(m => 
+            ACTIVE_DELIVERY_STATUSES.includes(m.status)
+        );
+        
+        console.log('📑 Pending/Transit Missions Remaining:', pendingOrTransit.length, pendingOrTransit.map(m => m.id.slice(-4)));
 
         if (pendingOrTransit.length > 0) {
-          // Move to next delivery
+          // Sequence to next delivery stop
           nextToMove = pendingOrTransit[0];
           targetStatus = nextToMove.storeName === mission.storeName 
             ? DriverStatus.GOING_TO_CUSTOMER 
             : DriverStatus.GOING_TO_STORE;
-          console.log(`➡️ Sequencing to next delivery: ${nextToMove.id.slice(-4)}`);
-        } else if (updated.length > 0) {
-          // All delivered but returns pending
+          console.log(`➡️ Sequencing to next delivery stop: ${nextToMove.id.slice(-4)}, Target Status: ${targetStatus}`);
+        } else if (updated.some(m => m.status === 'returning')) {
+          // All stops delivered, but some require return to merchant
           targetStatus = DriverStatus.RETURNING;
-          nextToMove = updated.find(m => m.isReturnRequired) || updated[0];
+          // Pick the first mission that requires return
+          nextToMove = updated.find(m => m.status === 'returning') || updated[0];
           console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
         } else {
-          // All done
+          // Everything truly finished
           targetStatus = DriverStatus.ONLINE;
           nextToMove = null;
           console.log('✨ All missions including returns finished.');
@@ -1237,19 +1255,23 @@ const App: React.FC = () => {
         return updated;
       });
 
-      // Apply side effects outside the state updater
-      if (targetStatus) {
-        setStatus(targetStatus);
-        setMission(nextToMove);
-        if (targetStatus === DriverStatus.ONLINE) {
-          setBatchHasReturn(false);
-          setShowPostDeliveryModal(true);
-        } else {
-          setShowPostDeliveryModal(false);
+      // 🔄 APPLY STATUS TRANSITION (outside the functional update for stability)
+      setTimeout(() => {
+        if (targetStatus !== null) {
+          console.log(`🔄 Applying status transition: ${targetStatus}`);
+          setStatus(targetStatus);
+          setMission(nextToMove);
+          
+          if (targetStatus === DriverStatus.ONLINE) {
+            setBatchHasReturn(false);
+            setShowPostDeliveryModal(true);
+          } else {
+            setShowPostDeliveryModal(false);
+          }
         }
-      }
-      
-      setHistory(prev => [newTransaction, ...prev]);
+      }, 100);
+
+      console.log('🚀 Success processing finished.');
 
     } catch (error: any) {
       console.error('Error completing mission:', error);
@@ -1411,6 +1433,7 @@ const App: React.FC = () => {
         ]);
         console.log('📍 Precise/Geocoded store:', storeCoords, '| customer:', customerCoords);
         setPreloadedCoords({ store: storeCoords, customer: customerCoords });
+        setIsNavigating(true);
       }
     } catch (error: any) {
       console.error('❌ Error accepting mission:', error);
@@ -1424,6 +1447,7 @@ const App: React.FC = () => {
       setStatus(DriverStatus.ONLINE);
       setMission(null);
       setPreloadedCoords({ store: null, customer: null }); // Clear preloaded coords on error
+      setIsNavigating(false);
     }
   };
 
@@ -1443,6 +1467,7 @@ const App: React.FC = () => {
     setStatus(DriverStatus.ONLINE);
     setMission(null);
     setActiveMissions([]);
+    setIsNavigating(false);
 
     // Stop the sound
     if (alertAudioRef.current) {
@@ -1912,41 +1937,58 @@ const App: React.FC = () => {
         return (
           <div className="flex flex-col h-full relative overflow-hidden">
             <div className="flex-1 relative">
-              <MapLeaflet
-                key={mapCenterKey}
-                status={status}
-                theme={mapTheme}
-                showRoute={(status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE)}
-                destinationAddress={
-                  status === DriverStatus.ALERTING
-                    ? mission?.customerAddress
-                    : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
-                      ? mission?.storeAddress
+              {isNavigating ? (
+                <MapNavigation
+                  status={status}
+                  destinationAddress={
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      ? mission?.storeAddress || null
+                      : mission?.customerAddress || null
+                  }
+                  currentLocation={currentLocation}
+                  preloadedDestination={
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      ? preloadedCoords.store
+                      : preloadedCoords.customer
+                  }
+                />
+              ) : (
+                <MapLeaflet
+                  key={mapCenterKey}
+                  status={status}
+                  theme={mapTheme}
+                  showRoute={(status !== DriverStatus.OFFLINE && status !== DriverStatus.ONLINE)}
+                  destinationAddress={
+                    status === DriverStatus.ALERTING
+                      ? mission?.customerAddress
+                      : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                        ? mission?.storeAddress
+                        : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                          ? mission?.customerAddress
+                          : null
+                  }
+                  pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
+                  // Pass pre-geocoded coords for instant route switch (no geocoding delay)
+                  preloadedDestinationLat={
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      ? preloadedCoords.store?.lat
                       : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
-                        ? mission?.customerAddress
+                        ? preloadedCoords.customer?.lat
                         : null
-                }
-                pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
-                // Pass pre-geocoded coords for instant route switch (no geocoding delay)
-                preloadedDestinationLat={
-                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
-                    ? preloadedCoords.store?.lat
-                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
-                      ? preloadedCoords.customer?.lat
-                      : null
-                }
-                preloadedDestinationLng={
-                  (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
-                    ? preloadedCoords.store?.lng
-                    : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
-                      ? preloadedCoords.customer?.lng
-                      : null
-                }
-                showHeatMap={showHeatMap}
-                mapMode={mapMode}
-                showTraffic={showTraffic}
-                reCenterTrigger={reCenterTrigger}
-              />
+                  }
+                  preloadedDestinationLng={
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      ? preloadedCoords.store?.lng
+                      : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
+                        ? preloadedCoords.customer?.lng
+                        : null
+                  }
+                  showHeatMap={showHeatMap}
+                  mapMode={mapMode}
+                  showTraffic={showTraffic}
+                  reCenterTrigger={reCenterTrigger}
+                />
+              )}
 
               <div className="absolute right-4 bottom-24 flex flex-col space-y-3 z-[1001]">
                 <button
