@@ -201,6 +201,11 @@ const App: React.FC = () => {
   const [showBalance, setShowBalance] = useState(true);
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
   const [batchHasReturn, setBatchHasReturn] = useState(false);
+  const [isMissionExpanded, setIsMissionExpanded] = useState(true);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const isDraggingRef = useRef(false);
 
   // Pre-geocoded coords for instant route switching (store → customer)
   const [preloadedCoords, setPreloadedCoords] = useState<{
@@ -210,6 +215,7 @@ const App: React.FC = () => {
 
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string } | null>(null);
 
 
 
@@ -325,6 +331,32 @@ const App: React.FC = () => {
   useEffect(() => {
     setTypedCode(['', '', '', '']);
   }, [status]);
+
+  useEffect(() => {
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      handleTouchMove(e as any);
+    };
+
+    const handleWindowMouseUp = () => {
+      if (!isDraggingRef.current) return;
+      handleTouchEnd();
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleWindowMouseMove);
+      window.addEventListener('mouseup', handleWindowMouseUp);
+      window.addEventListener('touchmove', handleWindowMouseMove, { passive: false });
+      window.addEventListener('touchend', handleWindowMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+      window.removeEventListener('touchmove', handleWindowMouseMove);
+      window.removeEventListener('touchend', handleWindowMouseUp);
+    };
+  }, [isDragging, isMissionExpanded, dragY]); 
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
@@ -509,6 +541,39 @@ const App: React.FC = () => {
         setBatchHasReturn(false);
       }
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStartY.current = clientY;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const deltaY = clientY - dragStartY.current;
+    
+    // Only allow dragging down if expanded, or up if collapsed
+    if (isMissionExpanded && deltaY > 0) {
+      setDragY(deltaY);
+    } else if (!isMissionExpanded && deltaY < 0) {
+      setDragY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+
+    if (isMissionExpanded && dragY > 100) {
+      setIsMissionExpanded(false);
+    } else if (!isMissionExpanded && dragY < -100) {
+      setIsMissionExpanded(true);
+    }
+    setDragY(0);
   };
 
   const getStatusLabel = (status: DriverStatus) => {
@@ -1942,6 +2007,8 @@ const App: React.FC = () => {
               {isNavigating ? (
                 <MapNavigation
                   status={status}
+                  theme={mapTheme}
+                  onUpdateMetrics={(m) => setNavMetrics(m)}
                   destinationAddress={
                     (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
                       ? mission?.storeAddress || null
@@ -2068,13 +2135,46 @@ const App: React.FC = () => {
 
 
             {mission && status !== DriverStatus.ALERTING && (
-              <div className="absolute bottom-0 left-0 right-0 z-[1001] flex">
-                <div className={`rounded-t-[40px] p-5 shadow-2xl border-t pb-24 transition-colors w-full flex flex-col overflow-hidden ${cardBg}`}>
+              <div 
+                className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
+                style={{ 
+                  transform: `translateY(${!isMissionExpanded ? `calc(100% - 100px + ${dragY}px)` : `${dragY}px`})`,
+                  touchAction: 'none',
+                  willChange: 'transform'
+                }}
+              >
+                <div 
+                  className={`rounded-t-[40px] p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t transition-colors w-full flex flex-col overflow-hidden ${cardBg}`}
+                >
+                  {/* Handle de Arraste */}
+                  <div 
+                    onMouseDown={handleTouchStart}
+                    onTouchStart={handleTouchStart}
+                    className="w-full py-4 cursor-grab active:cursor-grabbing mb-1 group"
+                  >
+                    <div className="w-16 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto opacity-40 group-hover:opacity-70 transition-opacity"></div>
+                  </div>
 
                   <div className="flex justify-between items-center mb-3 shrink-0">
                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
                       {getStatusLabel(status)}
                     </span>
+                    
+                    {/* Metrics Badge (Visible when navigating) */}
+                    {isNavigating && navMetrics && (
+                      <div className={`flex items-center space-x-3 px-3 py-1.5 rounded-2xl ${innerBg} border border-white/5`}>
+                        <div className="flex items-center space-x-1">
+                          <i className="fas fa-clock text-[10px] text-zinc-500"></i>
+                          <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.time}</span>
+                        </div>
+                        <div className="w-px h-3 bg-white/10"></div>
+                        <div className="flex items-center space-x-1">
+                          <i className="fas fa-route text-[10px] text-zinc-500"></i>
+                          <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.distance}</span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex space-x-2">
                       <button
                         onClick={() => setShowOrderDetails(!showOrderDetails)}
@@ -2104,7 +2204,11 @@ const App: React.FC = () => {
 
                   <div className="flex-1 space-y-3 mb-4 pr-1">
                     {showMissionMapPicker && (
-                      <div className={`p-3 rounded-[20px] border border-white/5 flex justify-center space-x-8 ${innerBg}`}>
+                      <div className={`p-3 rounded-[20px] border border-white/5 flex justify-center space-x-5 ${innerBg}`}>
+                        <button onClick={() => { setIsNavigating(true); setShowMissionMapPicker(false); }} className="flex flex-col items-center space-y-1 active:scale-90 transition-transform">
+                          <div className="w-11 h-11 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] border border-[#FF6B00]/30"><i className="fas fa-location-dot text-xl"></i></div>
+                          <span className="text-[8px] font-black text-[#FF6B00] uppercase">Guepardo</span>
+                        </button>
                         <button onClick={() => openNavigation('waze')} className="flex flex-col items-center space-y-1 active:scale-90 transition-transform">
                           <div className="w-11 h-11 rounded-xl bg-[#33CCFF]/10 flex items-center justify-center text-[#33CCFF]"><i className="fab fa-waze text-xl"></i></div>
                           <span className="text-[8px] font-black text-[#33CCFF] uppercase">Waze</span>
@@ -2716,8 +2820,8 @@ const App: React.FC = () => {
             <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
               <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Ajustes</h1>
               <div className={`flex items-center space-x-4 mb-10 p-6 rounded-[32px] border ${cardBg}`}>
-                <div className="w-16 h-16 rounded-3xl p-1 border-2 border-[#FF6B00]">
-                  <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-2xl" alt="Perfil" />
+                <div className="w-16 h-16 rounded-full p-1 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
+                  <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-full" alt="Perfil" />
                 </div>
                 <div>
                   <h2 className={`text-xl font-black ${textPrimary}`}>{currentUser.name || 'Entregador'}</h2>

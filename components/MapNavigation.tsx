@@ -20,7 +20,9 @@ interface MapNavigationProps {
     destinationAddress: string | null;
     currentLocation: { lat: number; lng: number } | null;
     onArrived?: () => void;
+    onUpdateMetrics?: (metrics: { time: string; distance: string }) => void;
     preloadedDestination?: { lat: number; lng: number } | null;
+    theme?: 'dark' | 'light';
 }
 
 export const MapNavigation: React.FC<MapNavigationProps> = ({
@@ -28,7 +30,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     destinationAddress,
     currentLocation,
     onArrived,
-    preloadedDestination
+    onUpdateMetrics,
+    preloadedDestination,
+    theme = 'dark'
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -38,6 +42,46 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [remainingDistance, setRemainingDistance] = useState<string>('-- km');
     const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
     const lastLocation = useRef<{ lat: number; lng: number } | null>(null);
+
+    // Inject custom styles for the map marker
+    useEffect(() => {
+        const styleId = 'map-navigation-styles';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
+                .navigation-marker {
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 50%;
+                    border: 3px solid #FF6B00;
+                    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.4);
+                    background: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                    transition: transform 0.3s ease;
+                    z-index: 10;
+                }
+                .navigation-marker img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                }
+                @keyframes pulse-orange {
+                    0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
+                    70% { box-shadow: 0 0 0 15px rgba(255, 107, 0, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+                }
+                .marker-pulse {
+                    animation: pulse-orange 2s infinite !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }, []);
 
     // Resolve destination
     useEffect(() => {
@@ -62,7 +106,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
+            style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
             center: currentLocation ? [currentLocation.lng, currentLocation.lat] : [-46.6333, -23.5505],
             zoom: 18,
             pitch: 60,
@@ -70,14 +114,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             antialias: true
         });
 
-        // Add 3D buildings layer
-        map.current.on('style.load', () => {
-            const layers = map.current?.getStyle()?.layers;
+        const add3DBuildings = () => {
+            if (!map.current) return;
+            const layers = map.current.getStyle()?.layers;
             const labelLayerId = layers?.find(
                 (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
             )?.id;
 
-            map.current?.addLayer(
+            if (map.current.getLayer('add-3d-buildings')) return;
+
+            map.current.addLayer(
                 {
                     'id': 'add-3d-buildings',
                     'source': 'composite',
@@ -86,7 +132,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     'type': 'fill-extrusion',
                     'minzoom': 15,
                     'paint': {
-                        'fill-extrusion-color': '#aaa',
+                        'fill-extrusion-color': theme === 'dark' ? '#444' : '#aaa',
                         'fill-extrusion-height': [
                             'interpolate',
                             ['linear'],
@@ -110,12 +156,15 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 },
                 labelLayerId
             );
-        });
+        };
+
+        map.current.on('style.load', add3DBuildings);
+        map.current.on('load', add3DBuildings);
 
         // Create marker
         const el = document.createElement('div');
-        el.className = 'navigation-marker';
-        el.innerHTML = '<img src="/guepardo-avatar.png" style="width: 60px; height: 60px; object-fit: contain; transform: rotate(0deg);" />';
+        el.className = 'navigation-marker marker-pulse';
+        el.innerHTML = '<img src="/guepardo-avatar.png" alt="Driver" />';
         
         marker.current = new mapboxgl.Marker({
             element: el,
@@ -129,7 +178,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             map.current?.remove();
             map.current = null;
         };
-    }, []);
+    }, [theme]);
 
     // Update location, bearing and route
     useEffect(() => {
@@ -183,6 +232,11 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 // Update UI Info
                 setRemainingTime(`${Math.round(route.duration / 60)} min`);
                 setRemainingDistance(`${(route.distance / 1000).toFixed(1)} km`);
+                
+                onUpdateMetrics?.({
+                    time: `${Math.round(route.duration / 60)} min`,
+                    distance: `${(route.distance / 1000).toFixed(1)} km`
+                });
 
                 // Next Step Instruction
                 if (route.legs[0].steps.length > 0) {
@@ -270,25 +324,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             </div>
 
-            {/* Footer Metrics */}
-            <div className="absolute bottom-4 left-4 right-4 z-10">
-                <div className="bg-zinc-900/95 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl flex justify-around items-center">
-                    <div className="text-center">
-                        <p className="text-zinc-500 text-xs uppercase font-bold tracking-tighter">Chegada em</p>
-                        <p className="text-white text-xl font-black">{remainingTime}</p>
-                    </div>
-                    <div className="w-px h-8 bg-white/10" />
-                    <div className="text-center">
-                        <p className="text-zinc-500 text-xs uppercase font-bold tracking-tighter">Distância</p>
-                        <p className="text-white text-xl font-black">{remainingDistance}</p>
-                    </div>
-                    <div className="w-px h-8 bg-white/10" />
-                    <div className="text-center">
-                        <p className="text-orange-500 text-xs uppercase font-bold tracking-tighter">Destino</p>
-                        <p className="text-white text-sm font-bold truncate max-w-[100px]">{destinationAddress?.split(',')[0] || 'Destino'}</p>
-                    </div>
-                </div>
-            </div>
             
             <style>{`
                 .navigation-marker {
