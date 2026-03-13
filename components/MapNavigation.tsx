@@ -115,9 +115,13 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         // Create marker
         const el = document.createElement('div');
         el.className = 'navigation-marker';
-        el.innerHTML = '<img src="/cheetah-icon.png" style="width: 50px; height: 40px; transform: rotate(0deg);" />';
+        el.innerHTML = '<img src="/guepardo-avatar.png" style="width: 60px; height: 60px; object-fit: contain; transform: rotate(0deg);" />';
         
-        marker.current = new mapboxgl.Marker(el)
+        marker.current = new mapboxgl.Marker({
+            element: el,
+            rotationAlignment: 'map',
+            pitchAlignment: 'map'
+        })
             .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : [-46.6333, -23.5505])
             .addTo(map.current);
 

@@ -499,6 +499,7 @@ const App: React.FC = () => {
     if (status === DriverStatus.ONLINE) {
       setStatus(DriverStatus.OFFLINE);
       setMission(null);
+      setIsNavigating(false);
     } else {
       if (!gpsEnabled) {
         handleActivateGPS();
@@ -1265,6 +1266,7 @@ const App: React.FC = () => {
           if (targetStatus === DriverStatus.ONLINE) {
             setBatchHasReturn(false);
             setShowPostDeliveryModal(true);
+            setIsNavigating(false);
           } else {
             setShowPostDeliveryModal(false);
           }
