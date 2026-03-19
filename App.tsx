@@ -15,7 +15,7 @@ import { processWizardRegistration } from './utils/wizardProcessor';
 
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS';
-type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS';
+type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
@@ -108,6 +108,86 @@ const generateTimeline = (endTime: string) => {
   return events as any[];
 };
 
+
+// --- CLICK SOUND: Estalo Lento (Web Audio API) ---
+let _audioCtx: AudioContext | null = null;
+
+const getAudioCtx = (): AudioContext => {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+};
+
+// Estalo Lento: dois estalos secos separados por 180ms
+const playClick = () => {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const snap = (delay: number) => {
+      const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+      o1.type = 'sawtooth'; o1.frequency.setValueAtTime(3000, t + delay);
+      g1.gain.setValueAtTime(0.13, t + delay); g1.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.01);
+      o1.connect(g1); g1.connect(ctx.destination); o1.start(t + delay); o1.stop(t + delay + 0.02);
+      const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+      o2.type = 'sawtooth'; o2.frequency.setValueAtTime(2000, t + delay);
+      o2.frequency.exponentialRampToValueAtTime(1000, t + delay + 0.025);
+      g2.gain.setValueAtTime(0.07, t + delay); g2.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.025);
+      o2.connect(g2); g2.connect(ctx.destination); o2.start(t + delay); o2.stop(t + delay + 0.03);
+    };
+    snap(0);
+    snap(0.18);
+  } catch (e) { /* silencioso */ }
+};
+
+
+const getDisplayId = (items: any) => {
+  if (!items) return undefined;
+  if (Array.isArray(items)) {
+    return items[0]?.displayId || items[0]?.id?.toString().slice(-4);
+  }
+  return items.displayId || items.id?.toString().slice(-4);
+};
+
+const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
+  switch (dbStatus) {
+    case 'accepted': return DriverStatus.GOING_TO_STORE;
+    case 'arrived_pickup': return DriverStatus.ARRIVED_AT_STORE;
+    case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
+    case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
+    case 'returning': return DriverStatus.RETURNING;
+    default: return DriverStatus.ONLINE;
+  }
+};
+
+const mapDbDeliveryToMission = (d: any): DeliveryMission => {
+  return {
+    id: d.id,
+    storeName: d.store_name || 'Loja',
+    storeAddress: d.store_address || '',
+    customerName: d.customer_name || 'Cliente',
+    customerAddress: d.customer_address || '',
+    customerPhoneSuffix: d.customer_phone_suffix || '',
+    items: d.items || [],
+    collectionCode: d.collection_code || '0000',
+    distanceToStore: d.distance_to_store || 1.5,
+    deliveryDistance: d.delivery_distance || 2.0,
+    totalDistance: d.total_distance || 3.5,
+    earnings: parseFloat(d.earnings || '0'),
+    timeLimit: 25,
+    status: d.status || 'pending',
+    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+    displayId: getDisplayId(d.items),
+    batch_id: d.batch_id,
+    destinationLat: d.destination_lat,
+    destinationLng: d.destination_lng,
+    stopNumber: d.stop_number || 1,
+    storePhone: d.store_phone || '',
+    customerPhone: d.customer_phone || ''
+  };
+};
+
 const App: React.FC = () => {
   // Splash Screen
   const [showSplash, setShowSplash] = useState(true);
@@ -148,7 +228,8 @@ const App: React.FC = () => {
       number: "",
       category: "A",
       expiry: ""
-    }
+    },
+    preferredMap: 'internal' as 'internal' | 'google' | 'waze' | 'choose'
   });
 
   // Simulação de Banco de Dados de Usuários
@@ -213,7 +294,7 @@ const App: React.FC = () => {
     customer: { lat: number; lng: number } | null;
   }>({ store: null, customer: null });
 
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string } | null>(null);
 
@@ -333,9 +414,9 @@ const App: React.FC = () => {
   }, [status]);
 
   useEffect(() => {
-    const handleWindowMouseMove = (e: MouseEvent) => {
+    const handleWindowMouseMove = (e: any) => {
       if (!isDraggingRef.current) return;
-      handleTouchMove(e as any);
+      handleTouchMove(e);
     };
 
     const handleWindowMouseUp = () => {
@@ -346,14 +427,14 @@ const App: React.FC = () => {
     if (isDragging) {
       window.addEventListener('mousemove', handleWindowMouseMove);
       window.addEventListener('mouseup', handleWindowMouseUp);
-      window.addEventListener('touchmove', handleWindowMouseMove, { passive: false });
+      window.addEventListener('touchmove', handleWindowMouseMove as any, { passive: false });
       window.addEventListener('touchend', handleWindowMouseUp);
     }
 
     return () => {
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
-      window.removeEventListener('touchmove', handleWindowMouseMove);
+      window.removeEventListener('touchmove', handleWindowMouseMove as any);
       window.removeEventListener('touchend', handleWindowMouseUp);
     };
   }, [isDragging, isMissionExpanded, dragY]); 
@@ -485,6 +566,54 @@ const App: React.FC = () => {
         const notifs = await supabaseClient.getNotifications(userId);
         if (notifs) {
           setNotifications(notifs as NotificationModel[]);
+        }
+
+        // Tenta recuperar missão ativa (State Recovery)
+        const activeDbDelivery = await supabaseClient.getActiveDelivery(userId);
+        if (activeDbDelivery) {
+          console.log('🔄 Missão ativa encontrada no banco. Recuperando estado...');
+          
+          let missionsToSet: DeliveryMission[] = [];
+          
+          if (activeDbDelivery.batch_id) {
+            // Se for parte de um lote, busca todos os pedidos do lote que não foram concluídos
+            const { data: batchData } = await supabaseClient.supabase
+              .from('deliveries')
+              .select('*')
+              .eq('batch_id', activeDbDelivery.batch_id)
+              .not('status', 'in', '("completed","cancelled")')
+              .order('stop_number', { ascending: true });
+            
+            if (batchData && batchData.length > 0) {
+              missionsToSet = batchData.map(mapDbDeliveryToMission);
+            }
+          } else {
+            missionsToSet = [mapDbDeliveryToMission(activeDbDelivery)];
+          }
+
+          if (missionsToSet.length > 0) {
+            setActiveMissions(missionsToSet);
+            setMission(missionsToSet[0]);
+            
+            const recoveredStatus = mapDbStatusToDriverStatus(activeDbDelivery.status);
+            setStatus(recoveredStatus);
+            setIsNavigating(true);
+
+            // Geocode para garantir que o mapa carregue o destino imediatamente
+            const destAddr = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP)
+              ? missionsToSet[0].storeAddress
+              : missionsToSet[0].customerAddress;
+            
+            geocodeAddress(destAddr).then(coords => {
+              if (coords) {
+                if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP) {
+                  setPreloadedCoords(prev => ({ ...prev, store: coords }));
+                } else {
+                  setPreloadedCoords(prev => ({ ...prev, customer: coords }));
+                }
+              }
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -645,7 +774,11 @@ const App: React.FC = () => {
               });
           }
 
-          setCurrentLocation({ lat: latitude, lng: longitude });
+          setCurrentLocation({ 
+            lat: latitude, 
+            lng: longitude,
+            speed: pos.coords.speed // m/s
+          });
         },
         (err) => console.error("Location watch error", err),
         {
@@ -822,7 +955,7 @@ const App: React.FC = () => {
                 storePhone: '', // Not in DB yet
                 customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
                 status: firstPending.status || 'pending',
-                displayId: !Array.isArray(firstPending.items) && firstPending.items?.displayId ? firstPending.items.displayId : undefined
+                displayId: getDisplayId(firstPending.items)
               };
 
               setMission(dynamicMission);
@@ -867,6 +1000,14 @@ const App: React.FC = () => {
             return;
           }
 
+          const getDisplayId = (items: any) => {
+            if (!items) return undefined;
+            if (Array.isArray(items)) {
+              return items[0]?.displayId || items[0]?.id?.toString().slice(-4);
+            }
+            return items.displayId || items.id?.toString().slice(-4);
+          };
+
           // Transform Supabase data to App's DeliveryMission format
           const dynamicMission: DeliveryMission = {
             id: newMissionPayload.id,
@@ -879,14 +1020,14 @@ const App: React.FC = () => {
             collectionCode: newMissionPayload.collection_code || '0000',
             distanceToStore: newMissionPayload.distance_to_store || 1.5,
             deliveryDistance: newMissionPayload.delivery_distance || 2.0,
-            totalDistance: newMissionPayload.total_distance || 3.5,
+            totalDistance: parseFloat(newMissionPayload.total_distance || '3.5'),
             earnings: parseFloat(newMissionPayload.earnings || '0'),
             timeLimit: 25,
             storePhone: newMissionPayload.store_phone || '',
             customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
             status: newMissionPayload.status || 'pending',
             isReturnRequired: newMissionPayload.is_return_required || (newMissionPayload.items?.isReturnRequired) || false,
-            displayId: !Array.isArray(newMissionPayload.items) && newMissionPayload.items?.displayId ? newMissionPayload.items.displayId : undefined,
+            displayId: getDisplayId(newMissionPayload.items),
             batch_id: newMissionPayload.batch_id
           };
 
@@ -900,6 +1041,14 @@ const App: React.FC = () => {
               .eq('status', 'pending')
               .then(({ data: batchMissions }) => {
                 if (batchMissions && batchMissions.length > 0) {
+                  const getDisplayId = (items: any) => {
+                    if (!items) return undefined;
+                    if (Array.isArray(items)) {
+                      return items[0]?.displayId || items[0]?.id?.toString().slice(-4);
+                    }
+                    return items.displayId || items.id?.toString().slice(-4);
+                  };
+
                   const mappedBatch: DeliveryMission[] = batchMissions.map((d: any) => ({
                     id: d.id,
                     storeName: d.store_name || 'Loja',
@@ -916,7 +1065,7 @@ const App: React.FC = () => {
                     timeLimit: 25,
                     status: d.status || 'pending',
                     isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                    displayId: d.items?.displayId || undefined,
+                    displayId: getDisplayId(d.items),
                     batch_id: d.batch_id,
                     destinationLat: d.destination_lat,
                     destinationLng: d.destination_lng,
@@ -962,6 +1111,14 @@ const App: React.FC = () => {
     if (status !== DriverStatus.OFFLINE && userId && currentUser) {
       const checkForDeliveries = async () => {
         try {
+          const getDisplayId = (items: any) => {
+            if (!items) return undefined;
+            if (Array.isArray(items)) {
+              return items[0]?.displayId || items[0]?.id?.toString().slice(-4);
+            }
+            return items.displayId || items.id?.toString().slice(-4);
+          };
+
           // 1. Check for orders DIRECTLY ASSIGNED to this driver (Batching)
           const { data: assignedOrders } = await supabaseClient.supabase
             .from('deliveries')
@@ -991,7 +1148,7 @@ const App: React.FC = () => {
               customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
               status: d.status || 'pending',
               isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-              displayId: d.items?.displayId || undefined,
+              displayId: getDisplayId(d.items),
               batch_id: d.batch_id,
               destinationLat: d.destination_lat,
               destinationLng: d.destination_lng
@@ -1082,7 +1239,7 @@ const App: React.FC = () => {
                     timeLimit: 25,
                     status: d.status || 'pending',
                     isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                    displayId: d.items?.displayId || undefined,
+                    displayId: getDisplayId(d.items),
                     batch_id: d.batch_id,
                     destinationLat: d.destination_lat,
                     destinationLng: d.destination_lng,
@@ -1110,7 +1267,8 @@ const App: React.FC = () => {
                     storePhone: '',
                     customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
                     destinationLat: firstPending.destination_lat,
-                    destinationLng: firstPending.destination_lng
+                    destinationLng: firstPending.destination_lng,
+                    displayId: getDisplayId(firstPending.items)
                   }];
                 }
 
@@ -1198,7 +1356,15 @@ const App: React.FC = () => {
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
 
-    const missionId = `Entrega #${mission.displayId || mission.id.slice(-4)}`;
+    const getNumericId = (m: any) => {
+      if (m.displayId) return m.displayId;
+      // Fallback robusto e numérico: usa o final do UUID convertido para número se displayId falhar
+      const suffix = m.id.slice(-4);
+      const numeric = parseInt(suffix, 16);
+      return isNaN(numeric) ? suffix : numeric;
+    };
+
+    const missionId = `Entrega #${getNumericId(mission)}`;
     
     // ⚠️ Transaction & Earnings logic: Only run if NOT already in history
     const alreadyProcessed = history.some(h => h.type === missionId);
@@ -1501,6 +1667,13 @@ const App: React.FC = () => {
         console.log('📍 Precise/Geocoded store:', storeCoords, '| customer:', customerCoords);
         setPreloadedCoords({ store: storeCoords, customer: customerCoords });
         setIsNavigating(true);
+
+        // Auto-open external map if preferred
+        if (currentUser.preferredMap === 'google') {
+          openNavigation('google');
+        } else if (currentUser.preferredMap === 'waze') {
+          openNavigation('waze');
+        }
       }
     } catch (error: any) {
       console.error('❌ Error accepting mission:', error);
@@ -1769,13 +1942,13 @@ const App: React.FC = () => {
           style={{ opacity: 0.11, filter: 'blur(2px) saturate(0.5)' }}
           aria-hidden
         >
-          <img src="/guepardo-loading.png" alt="" className="w-full h-auto object-contain" draggable={false} />
+          <img src="/guepardo-loading.png" alt="Guepardo Delivery" className="w-full h-auto object-contain" draggable={false} />
         </div>
 
         {/* ── Textura de grão sutil ── */}
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3Cfilter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")`,
             mixBlendMode: 'overlay', opacity: 0.5,
           }}
         />
@@ -1854,10 +2027,10 @@ const App: React.FC = () => {
               </button>
 
               <div className="flex items-center justify-between pt-1">
-                <button onClick={() => setAuthScreen('RECOVERY')} className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => { playClick(); setAuthScreen('RECOVERY'); }} className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Esqueci minha senha
                 </button>
-                <button onClick={() => setOnboardingScreen('CITY_SELECTION')} className="text-xs font-bold" style={{ color: '#FF8C28', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => { playClick(); setOnboardingScreen('CITY_SELECTION'); }} className="text-xs font-bold" style={{ color: '#FF8C28', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Cadastre-se →
                 </button>
               </div>
@@ -2059,6 +2232,37 @@ const App: React.FC = () => {
                 />
               )}
 
+              {/* Speedometer - bottom left, always visible when online */}
+              {(status !== DriverStatus.OFFLINE && currentLocation) && (
+                <div className="absolute left-4 bottom-32 z-[1001]">
+                  <div
+                    className="flex flex-col items-center justify-center rounded-2xl shadow-2xl border"
+                    style={{
+                      width: 72,
+                      height: 72,
+                      background: 'rgba(18,18,18,0.92)',
+                      borderColor: 'rgba(255,107,0,0.35)',
+                      boxShadow: '0 0 18px 4px rgba(255,107,0,0.18), 0 4px 16px rgba(0,0,0,0.5)',
+                      backdropFilter: 'blur(16px)'
+                    }}
+                  >
+                    <span
+                      className="font-black leading-none tabular-nums"
+                      style={{
+                        fontSize: 26,
+                        color: '#FF6B00',
+                        textShadow: '0 0 12px rgba(255,107,0,0.7)'
+                      }}
+                    >
+                      {currentLocation.speed != null
+                        ? Math.round(currentLocation.speed * 3.6)
+                        : 0}
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>km/h</span>
+                  </div>
+                </div>
+              )}
+
               <div className="absolute right-4 bottom-24 flex flex-col space-y-3 z-[1001]">
                 <button
                   onClick={() => setShowFiltersModal(true)}
@@ -2089,7 +2293,7 @@ const App: React.FC = () => {
                   <i className={`fas ${mapTheme === 'light' ? 'fa-sun' : 'fa-moon'} text-lg`}></i>
                 </button>
 
-                <button onClick={() => setShowSOSModal(true)} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-red-500 border active:scale-90 transition-transform ${cardBg}`}>
+                <button onClick={() => { playClick(); setShowSOSModal(true); }} className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center text-red-500 border active:scale-90 transition-transform ${cardBg}`}>
                   <i className="fas fa-shield-heart text-lg"></i>
                 </button>
               </div>
@@ -2177,28 +2381,38 @@ const App: React.FC = () => {
 
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setShowOrderDetails(!showOrderDetails)}
+                        onClick={() => { playClick(); setShowOrderDetails(!showOrderDetails); }}
                         className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
                       >
                         <i className="fas fa-shopping-bag text-[10px]"></i>
-                        {/* <span>Detalhes</span> Optional text, user asked for "icon of the bag" but usually buttons have labels or just icon. The existing buttons have text. I will leave it icon-only or with text? The user said "ícone da bag anexa ao lado esquerdo do GPS". I'll keep consistency with other buttons if space permits, or just icon if tight. GPS button has text. I'll add text for consistency but maybe just icon if user stressed "icon". Let's try with text "Det" or just icon. Existing: GPS, AJUDA. Let's start with just the icon to save space as requested "ícone da bag". Actually, the GPS button has `<span>GPS</span>`. I'll add `<span>PEDIDO</span>` or similar? Or just empty? User said "ícone da bag". I will add the icon and maybe existing style. */}
                         <span>PEDIDO</span>
                       </button>
                       <button
-                        onClick={() => setShowMissionMapPicker(!showMissionMapPicker)}
+                        onClick={() => {
+                          playClick();
+                          if (currentUser.preferredMap === 'internal') {
+                            setIsNavigating(true);
+                          } else if (currentUser.preferredMap === 'google') {
+                            openNavigation('google');
+                          } else if (currentUser.preferredMap === 'waze') {
+                            openNavigation('waze');
+                          } else {
+                            setShowMissionMapPicker(!showMissionMapPicker);
+                          }
+                        }}
                         className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
                       >
                         <i className="fas fa-location-arrow text-[10px]"></i>
                         <span>GPS</span>
                       </button>
                       <button
-                        onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)}
+                        onClick={() => { playClick(); setShowDeliveryHelpModal(!showDeliveryHelpModal); }}
                         className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
                       >
                         <i className="fas fa-circle-question text-[10px]"></i>
                         <span>Ajuda</span>
                       </button>
-                      <button onClick={() => setShowSOSModal(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
+                      <button onClick={() => { playClick(); setShowSOSModal(true); }} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
                     </div>
                   </div>
 
@@ -2337,10 +2551,10 @@ const App: React.FC = () => {
                     <div className="px-1 flex justify-between items-start">
                       <div>
                          <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-+                          {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName)}
+                          {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName)}
                          </h3>
                          <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-+                          {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress)}
+                          {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress)}
                          </p>
                       </div>
                       {activeMissions.length > 1 && (
@@ -2866,7 +3080,7 @@ const App: React.FC = () => {
 
                 <section>
                   <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Configurações do App</h3>
-                  <button onClick={() => setSettingsView('DELIVERY')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all mb-3 ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+                  <button onClick={() => { playClick(); setSettingsView('DELIVERY'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all mb-3 ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-motorcycle"></i></div>
                       <div>
@@ -2877,13 +3091,28 @@ const App: React.FC = () => {
                     <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
                   </button>
 
-                  <button onClick={() => setSettingsView('SOUNDS')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+                  <button onClick={() => { playClick(); setSettingsView('SOUNDS'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all mb-3 ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-volume-high"></i></div>
                       <div>
                         <p className={`text-sm font-bold ${textPrimary}`}>Alertas Sonoros</p>
                         <p className={`text-[9px] font-bold uppercase ${textMuted} mt-0.5`}>
                           {SOUND_OPTIONS.find(s => s.id === selectedSoundId)?.label || 'Padrão'}
+                        </p>
+                      </div>
+                    </div>
+                    <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                  </button>
+
+                  <button onClick={() => { playClick(); setSettingsView('MAPS'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-map-location-dot"></i></div>
+                      <div>
+                        <p className={`text-sm font-bold ${textPrimary}`}>Navegador Padrão</p>
+                        <p className={`text-[9px] font-bold uppercase ${textMuted} mt-0.5`}>
+                          {currentUser.preferredMap === 'internal' ? 'Guepardo Maps' : 
+                           currentUser.preferredMap === 'google' ? 'Google Maps' : 
+                           currentUser.preferredMap === 'waze' ? 'Waze' : 'Sempre perguntar'}
                         </p>
                       </div>
                     </div>
@@ -2930,7 +3159,8 @@ const App: React.FC = () => {
                         number: "",
                         category: "A",
                         expiry: ""
-                      }
+                      },
+                      preferredMap: 'internal'
                     });
                     setBalance(0);
                     setDailyEarnings(0);
@@ -2959,6 +3189,7 @@ const App: React.FC = () => {
                   {settingsView === 'EMERGENCY' && 'Emergência'}
                   {settingsView === 'DELIVERY' && 'Dados da Entrega'}
                   {settingsView === 'SOUNDS' && 'Escolha o Alerta'}
+                  {settingsView === 'MAPS' && 'Navegador Padrão'}
                 </h1>
               </div>
 
@@ -3170,6 +3401,56 @@ const App: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {settingsView === 'MAPS' && (
+                <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                  <p className={`${textMuted} text-[10px] font-black uppercase tracking-[0.2em] mb-6 px-2`}>
+                    Selecione como deseja navegar até o destino
+                  </p>
+                  
+                  {[
+                    { id: 'internal', label: 'Guepardo Maps', desc: 'Navegação nativa com voz e velocímetro', icon: 'fa-location-crosshairs' },
+                    { id: 'google', label: 'Google Maps', desc: 'Abrir app externo do Google', icon: 'fa-map' },
+                    { id: 'waze', label: 'Waze', desc: 'Abrir app externo do Waze', icon: 'fa-waze' },
+                    { id: 'choose', label: 'Sempre perguntar', desc: 'Escolher o mapa a cada nova entrega', icon: 'fa-layer-group' }
+                  ].map((map) => (
+                    <div
+                      key={map.id}
+                      onClick={() => setCurrentUser(prev => ({ ...prev, preferredMap: map.id as any }))}
+                      className={`p-5 rounded-[32px] border-2 cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${currentUser.preferredMap === map.id
+                        ? 'border-[#FF6B00] bg-[#FF6B00]/10 shadow-lg shadow-orange-900/20'
+                        : `border-transparent ${cardBg}`
+                        }`}
+                    >
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center space-x-5">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-colors ${currentUser.preferredMap === map.id ? 'bg-[#FF6B00] text-white shadow-md' : `${innerBg} ${textMuted}`}`}>
+                            <i className={`fas ${map.icon}`}></i>
+                          </div>
+                          <div>
+                            <h3 className={`text-base font-black ${currentUser.preferredMap === map.id ? 'text-[#FF6B00]' : textPrimary}`}>{map.label}</h3>
+                            <p className={`text-[10px] font-bold mt-1 ${textMuted}`}>{map.desc}</p>
+                          </div>
+                        </div>
+
+                        {currentUser.preferredMap === map.id && (
+                          <div className="w-8 h-8 rounded-full bg-[#FF6B00] flex items-center justify-center animate-in zoom-in duration-300">
+                            <i className="fas fa-check text-white text-sm"></i>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className={`mt-8 p-6 rounded-[24px] border border-dashed flex items-start space-x-3 ${theme === 'dark' ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-100 border-zinc-300'}`}>
+                    <i className="fas fa-magic text-[#FF6B00] mt-1"></i>
+                    <p className={`text-xs font-bold leading-relaxed ${textMuted}`}>
+                      <span className="text-[#FF6B00]">Dica:</span> O Guepardo Maps oferece alertas de chegada e controle de voz integrados ao painel.
+                    </p>
+                  </div>
+                </div>
+              )}
+
             </div>
           );
         }
@@ -3296,10 +3577,10 @@ const App: React.FC = () => {
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
       <nav className={`h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
-        <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
-        <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
-        <button onClick={() => setCurrentScreen('ORDERS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
-        <button onClick={() => setCurrentScreen('SETTINGS')} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
+        <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
+        <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
+        <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
+        <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
       </nav>
 
 

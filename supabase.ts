@@ -165,6 +165,20 @@ export const getDeliveries = async (userId: string) => {
   return data;
 };
 
+export const getActiveDelivery = async (driverId: string) => {
+  const { data, error } = await supabase
+    .from('deliveries')
+    .select('*')
+    .eq('driver_id', driverId)
+    .in('status', ['accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'returning'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
 export const subscribeToAvailableMissions = (
   onNewMission: (mission: any) => void,
   onMissionUnavailable: (missionId: string) => void

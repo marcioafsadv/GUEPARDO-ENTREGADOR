@@ -99,7 +99,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     preloadedPickupLng,
     reCenterTrigger
 }) => {
-    const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
     const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [route, setRoute] = useState<[number, number][] | null>(null);

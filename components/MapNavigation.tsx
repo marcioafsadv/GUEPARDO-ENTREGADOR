@@ -18,7 +18,7 @@ interface Instruction {
 interface MapNavigationProps {
     status: string;
     destinationAddress: string | null;
-    currentLocation: { lat: number; lng: number } | null;
+    currentLocation: { lat: number; lng: number; speed?: number | null } | null;
     onArrived?: () => void;
     onUpdateMetrics?: (metrics: { time: string; distance: string }) => void;
     preloadedDestination?: { lat: number; lng: number } | null;
@@ -42,6 +42,22 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [remainingDistance, setRemainingDistance] = useState<string>('-- km');
     const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
     const lastLocation = useRef<{ lat: number; lng: number } | null>(null);
+    const [currentSpeed, setCurrentSpeed] = useState<number>(0);
+    const [isArriving, setIsArriving] = useState<boolean>(false);
+    const lastAnnouncedText = useRef<string>('');
+    const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
+
+    const speak = (text: string) => {
+        if (!voiceEnabled || !window.speechSynthesis) return;
+        if (text === lastAnnouncedText.current) return;
+        
+        lastAnnouncedText.current = text;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.1;
+        window.speechSynthesis.speak(utterance);
+    };
 
     // Inject custom styles for the map marker
     useEffect(() => {
@@ -213,6 +229,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         }
         
         lastLocation.current = currentLocation;
+        
+        // Update Speedometer (convert m/s to km/h)
+        if (currentLocation.speed != null) {
+            setCurrentSpeed(Math.round(currentLocation.speed * 3.6));
+        } else if (lastLocation.current) {
+            // Fallback: Calculate speed from distance if native speed is null
+            const dist = getDistance(lastLocation.current.lat, lastLocation.current.lng, currentLocation.lat, currentLocation.lng);
+            if (dist > 0.001) { // Only if moved enough
+                setCurrentSpeed(Math.round((dist / 1) * 3600)); // assumes 1s interval
+            }
+        }
 
         // Fetch Route & Instructions
         fetchRoute(currentLocation, destinationCoords);
@@ -238,13 +265,29 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     distance: `${(route.distance / 1000).toFixed(1)} km`
                 });
 
+                // Arrival Alert Detection (within 100m)
+                if (route.distance < 100 && !isArriving) {
+                    setIsArriving(true);
+                    speak("Você está chegando ao seu destino. Reduza a velocidade.");
+                } else if (route.distance >= 100 && isArriving) {
+                    setIsArriving(false);
+                }
+
                 // Next Step Instruction
                 if (route.legs[0].steps.length > 0) {
                     const nextStep = route.legs[0].steps[0];
+                    const distText = nextStep.distance < 1000 ? `${Math.round(nextStep.distance)}m` : `${(nextStep.distance / 1000).toFixed(1)}km`;
+                    const fullText = `A ${distText}, ${nextStep.maneuver.instruction}`;
+                    
                     setInstruction({
-                        text: nextStep.maneuver.instruction,
+                        text: fullText,
                         distance: nextStep.distance
                     });
+
+                    // Voice Guidance: Announce when getting closer
+                    if (nextStep.distance < 200 || lastAnnouncedText.current === '') {
+                        speak(fullText);
+                    }
                 }
 
                 // Update Route Line
@@ -307,6 +350,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
     };
 
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // Earth radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
     return (
         <div className="w-full h-full relative overflow-hidden bg-zinc-950">
             <div ref={mapContainer} className="w-full h-full" />
@@ -314,18 +368,48 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             {/* Header Instructions */}
             <div className="absolute top-0 left-0 right-0 p-4 z-10">
                 <div className="bg-zinc-900/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-2xl">
+                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-2xl animate-pulse">
                         <i className={`fas ${instruction?.text.toLowerCase().includes('esquerda') ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
                     </div>
                     <div>
-                        <p className="text-zinc-400 text-xs font-medium uppercase tracking-wider">A {instruction?.distance ? (instruction.distance < 1000 ? `${Math.round(instruction.distance)}m` : `${(instruction.distance / 1000).toFixed(1)}km`) : '--'}</p>
+                        <p className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Instrução de Rota</p>
                         <h2 className="text-white text-lg font-bold leading-tight line-clamp-2">{instruction?.text || 'Calculando rota...'}</h2>
                     </div>
+                    <button 
+                        onClick={() => setVoiceEnabled(!voiceEnabled)}
+                        className={`ml-auto w-10 h-10 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-orange-500/20 text-orange-500' : 'bg-zinc-800 text-zinc-500'}`}
+                    >
+                        <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'}`}></i>
+                    </button>
                 </div>
             </div>
 
-            
+            {/* Arrival Alert Overlay */}
+            {isArriving && (
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+                    <div className="bg-orange-600 text-white px-8 py-4 rounded-full text-2xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(234,88,12,0.6)] border-4 border-white/20 animate-bounce">
+                        🏠 CHEGANDO AO LOCAL
+                    </div>
+                </div>
+            )}
+
+            {/* Speedometer & Tools - Styled as "Orange Reluzente" with white borders */}
+            <div className="absolute top-1/2 -translate-y-1/2 left-6 z-10 flex flex-col gap-3">
+                <div className="bg-orange-600 border-2 border-white rounded-3xl p-4 flex flex-col items-center justify-center w-24 h-24 shadow-[0_0_30px_rgba(234,88,12,0.6)] animate-pulse-subtle">
+                    <span className="text-4xl font-black text-white drop-shadow-md">{currentSpeed}</span>
+                    <span className="text-[10px] text-white/90 font-black tracking-widest leading-none">KM/H</span>
+                </div>
+            </div>
+
             <style>{`
+                @keyframes pulse-subtle {
+                    0% { transform: scale(1); box-shadow: 0 0 20px rgba(234,88,12,0.5); }
+                    50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(234,88,12,0.8); }
+                    100% { transform: scale(1); box-shadow: 0 0 20px rgba(234,88,12,0.5); }
+                }
+                .animate-pulse-subtle {
+                    animation: pulse-subtle 3s infinite ease-in-out;
+                }
                 .navigation-marker {
                     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
                 }
