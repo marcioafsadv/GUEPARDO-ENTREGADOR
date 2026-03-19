@@ -45,6 +45,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [currentSpeed, setCurrentSpeed] = useState<number>(0);
     const [isArriving, setIsArriving] = useState<boolean>(false);
     const lastAnnouncedText = useRef<string>('');
+    const lastAnnouncedStep = useRef<string>('');
     const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
 
     const speak = (text: string) => {
@@ -284,9 +285,12 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         distance: nextStep.distance
                     });
 
-                    // Voice Guidance: Announce when getting closer
-                    if (nextStep.distance < 200 || lastAnnouncedText.current === '') {
-                        speak(fullText);
+                    // Voice Guidance: Announce ONLY ONCE at 50m before the turn
+                    // Uses lastAnnouncedStep to track which instruction was spoken, preventing repeated announcements
+                    const stepKey = `${nextStep.maneuver.instruction}`;
+                    if (nextStep.distance <= 50 && lastAnnouncedStep.current !== stepKey) {
+                        lastAnnouncedStep.current = stepKey;
+                        speak(`Em ${Math.round(nextStep.distance)} metros, ${nextStep.maneuver.instruction}`);
                     }
                 }
 

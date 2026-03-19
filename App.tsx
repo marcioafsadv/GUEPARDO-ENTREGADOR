@@ -2232,9 +2232,16 @@ const App: React.FC = () => {
                 />
               )}
 
-              {/* Speedometer - bottom left, always visible when online */}
-              {(status !== DriverStatus.OFFLINE && currentLocation) && (
-                <div className="absolute left-4 bottom-32 z-[1001]">
+              {/* Speedometer - only visible during active delivery, above the mission panel, and NOT when using internal GPS (MapNavigation has its own) */}
+              {([
+                DriverStatus.GOING_TO_STORE,
+                DriverStatus.ARRIVED_AT_STORE,
+                DriverStatus.PICKING_UP,
+                DriverStatus.GOING_TO_CUSTOMER,
+                DriverStatus.ARRIVED_AT_CUSTOMER,
+                DriverStatus.RETURNING
+              ].includes(status) && currentLocation && !isNavigating) && (
+                <div className="absolute left-4 z-[1002]" style={{ bottom: '220px' }}>
                   <div
                     className="flex flex-col items-center justify-center rounded-2xl shadow-2xl border"
                     style={{
