@@ -37,6 +37,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
     const marker = useRef<mapboxgl.Marker | null>(null);
+    const destinationMarker = useRef<mapboxgl.Marker | null>(null);
     const [instruction, setInstruction] = useState<Instruction | null>(null);
     const [remainingTime, setRemainingTime] = useState<string>('-- min');
     const [remainingDistance, setRemainingDistance] = useState<string>('-- km');
@@ -68,24 +69,18 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             style.id = styleId;
             style.innerHTML = `
                 .navigation-marker {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    border: 3px solid #FF6B00;
-                    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.4);
-                    background: white;
+                    width: 50px;
+                    height: 50px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    overflow: hidden;
-                    transition: transform 0.3s ease;
                     z-index: 10;
+                    transition: transform 0.3s ease-out;
                 }
-                .navigation-marker img {
+                .navigation-marker svg {
                     width: 100%;
                     height: 100%;
-                    object-fit: cover;
-                    border-radius: 50%;
+                    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
                 }
                 @keyframes pulse-orange {
                     0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
@@ -94,6 +89,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 }
                 .marker-pulse {
                     animation: pulse-orange 2s infinite !important;
+                }
+                .destination-marker-wrapper {
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .destination-marker-svg {
+                    filter: drop-shadow(0 0 8px rgba(204, 255, 0, 0.9));
                 }
             `;
             document.head.appendChild(style);
@@ -180,8 +185,18 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         // Create marker
         const el = document.createElement('div');
-        el.className = 'navigation-marker marker-pulse';
-        el.innerHTML = '<img src="/guepardo-avatar.png" alt="Driver" />';
+        el.className = 'navigation-marker';
+        el.innerHTML = `
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 4L58 56L32 46L6 56L32 4Z" fill="url(#arrowGrad)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                <defs>
+                    <linearGradient id="arrowGrad" x1="32" y1="4" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FF8A00"/>
+                        <stop offset="1" stop-color="#FF4D00"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        `;
         
         marker.current = new mapboxgl.Marker({
             element: el,
@@ -190,6 +205,30 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         })
             .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : [-46.6333, -23.5505])
             .addTo(map.current);
+
+        // Create Destination Marker
+        const destEl = document.createElement('div');
+        destEl.className = 'destination-marker-wrapper';
+        destEl.innerHTML = `
+            <svg width="40" height="40" viewBox="0 0 40 40" class="destination-marker-svg">
+                <circle cx="20" cy="20" r="15" fill="rgba(204, 255, 0, 0.3)">
+                    <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="20" cy="20" r="10" fill="#7B3F00" stroke="#CCFF00" stroke-width="3" />
+                <circle cx="20" cy="20" r="3" fill="#CCFF00" />
+            </svg>
+        `;
+
+        destinationMarker.current = new mapboxgl.Marker({
+            element: destEl,
+            rotationAlignment: 'map',
+            pitchAlignment: 'map'
+        });
+
+        if (destinationCoords) {
+            destinationMarker.current.setLngLat([destinationCoords.lng, destinationCoords.lat]).addTo(map.current);
+        }
 
         return () => {
             map.current?.remove();
@@ -201,8 +240,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     useEffect(() => {
         if (!map.current || !currentLocation || !destinationCoords) return;
 
-        // Update marker
+        // Update markers
         marker.current?.setLngLat([currentLocation.lng, currentLocation.lat]);
+        destinationMarker.current?.setLngLat([destinationCoords.lng, destinationCoords.lat]);
+        
+        // Add destination marker if it's not on the map yet
+        if (map.current && destinationMarker.current && !destinationMarker.current.getElement().parentElement) {
+            destinationMarker.current.addTo(map.current);
+        }
 
         // Calculate Bearing (Direction)
         if (lastLocation.current) {
@@ -247,6 +292,35 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
     }, [currentLocation, destinationCoords]);
 
+    const simplifyInstruction = (text: string) => {
+        if (!text) return '';
+        
+        let simplified = text;
+        
+        // Remove common verbose prefixes
+        simplified = simplified.replace(/Conduza para (norte|sul|leste|oeste|nordeste|noroeste|sudeste|sudoeste) na /i, '');
+        simplified = simplified.replace(/Siga para o (norte|sul|leste|oeste) na /i, '');
+        simplified = simplified.replace(/Mantenha-se à (esquerda|direita) na /i, 'Mantenha-se à $1 na '); // Keep as is if it's already specific
+        
+        // Specific fixes for common patterns
+        if (simplified.toLowerCase().includes('vire à esquerda')) return 'Vire à esquerda';
+        if (simplified.toLowerCase().includes('vire à direita')) return 'Vire à direita';
+        if (simplified.toLowerCase().includes('pegue a saída')) {
+            const match = simplified.match(/(\d+)ª saída/i);
+            return match ? `Na rotatória, pegue a ${match[1]}ª saída` : 'Na rotatória, pegue a saída';
+        }
+        if (simplified.toLowerCase().includes('faça o retorno')) return 'Faça o retorno';
+        if (simplified.toLowerCase().includes('em frente')) return 'Siga em frente';
+        
+        // Final cleanup: if it's still too long, try to just get the action
+        if (simplified.length > 50) {
+             const parts = simplified.split(',');
+             if (parts.length > 1) return parts[0].trim();
+        }
+
+        return simplified;
+    };
+
     const fetchRoute = async (start: { lat: number, lng: number }, end: { lat: number, lng: number }) => {
         const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_TOKEN}&language=pt`;
         
@@ -270,27 +344,42 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 if (route.distance < 100 && !isArriving) {
                     setIsArriving(true);
                     speak("Você está chegando ao seu destino. Reduza a velocidade.");
+                    
+                    // Exit 3D mode and zoom in
+                    map.current?.easeTo({
+                        pitch: 0,
+                        zoom: 18.5,
+                        duration: 1500
+                    });
                 } else if (route.distance >= 100 && isArriving) {
                     setIsArriving(false);
+                    
+                    // Return to 3D mode
+                    map.current?.easeTo({
+                        pitch: 60,
+                        zoom: 18,
+                        duration: 1500
+                    });
                 }
 
                 // Next Step Instruction
                 if (route.legs[0].steps.length > 0) {
                     const nextStep = route.legs[0].steps[0];
                     const distText = nextStep.distance < 1000 ? `${Math.round(nextStep.distance)}m` : `${(nextStep.distance / 1000).toFixed(1)}km`;
-                    const fullText = `A ${distText}, ${nextStep.maneuver.instruction}`;
+                    
+                    const simplified = simplifyInstruction(nextStep.maneuver.instruction);
+                    const fullText = `A ${distText}, ${simplified}`;
                     
                     setInstruction({
                         text: fullText,
                         distance: nextStep.distance
                     });
 
-                    // Voice Guidance: Announce ONLY ONCE at 50m before the turn
-                    // Uses lastAnnouncedStep to track which instruction was spoken, preventing repeated announcements
-                    const stepKey = `${nextStep.maneuver.instruction}`;
-                    if (nextStep.distance <= 50 && lastAnnouncedStep.current !== stepKey) {
+                    // Voice Guidance: Announce ONLY ONCE at 200m before the turn
+                    const stepKey = `${simplified}`;
+                    if (nextStep.distance <= 200 && lastAnnouncedStep.current !== stepKey) {
                         lastAnnouncedStep.current = stepKey;
-                        speak(`Em ${Math.round(nextStep.distance)} metros, ${nextStep.maneuver.instruction}`);
+                        speak(`${simplified}`);
                     }
                 }
 
@@ -397,11 +486,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Speedometer & Tools - Styled as "Orange Reluzente" with white borders */}
+            {/* Speedometer & Tools - Premium Glassmorphism style */}
             <div className="absolute top-1/2 -translate-y-1/2 left-6 z-10 flex flex-col gap-3">
-                <div className="bg-orange-600 border-2 border-white rounded-3xl p-4 flex flex-col items-center justify-center w-24 h-24 shadow-[0_0_30px_rgba(234,88,12,0.6)] animate-pulse-subtle">
-                    <span className="text-4xl font-black text-white drop-shadow-md">{currentSpeed}</span>
-                    <span className="text-[10px] text-white/90 font-black tracking-widest leading-none">KM/H</span>
+                <div className="bg-orange-600/20 backdrop-blur-xl border-2 border-orange-500/50 rounded-2xl flex flex-col items-center justify-center w-20 h-20 shadow-[0_0_20px_rgba(234,88,12,0.3)] animate-pulse-subtle group overflow-hidden relative">
+                    {/* Interior Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
+                    
+                    <span className="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10 relative">{currentSpeed}</span>
+                    <span className="text-[8px] text-orange-500 font-black tracking-widest leading-none z-10 relative">KM/H</span>
+                    
+                    {/* Decorative Ring */}
+                    <div className="absolute inset-1 border border-white/10 rounded-[14px]"></div>
                 </div>
             </div>
 

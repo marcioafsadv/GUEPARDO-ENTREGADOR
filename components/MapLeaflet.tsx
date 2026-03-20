@@ -51,7 +51,7 @@ const COLORS = {
 const courierIcon = L.icon({
     iconUrl: '/cheetah-icon.png',
     iconSize: [60, 48],
-    iconAnchor: [30, 24],
+    className: 'courier-icon-transition'
 });
 
 const storeIcon = L.icon({
@@ -60,10 +60,21 @@ const storeIcon = L.icon({
     iconAnchor: [20, 20],
 });
 
-const destIcon = L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/25/25694.png',
-    iconSize: [35, 35],
-    iconAnchor: [17, 35],
+const destIcon = L.divIcon({
+    html: `
+    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+      <svg width="40" height="40" viewBox="0 0 40 40" style="filter: drop-shadow(0 0 8px rgba(204, 255, 0, 0.9));">
+        <circle cx="20" cy="20" r="15" fill="rgba(204, 255, 0, 0.3)">
+          <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="20" cy="20" r="10" fill="#7B3F00" stroke="#CCFF00" stroke-width="3" />
+        <circle cx="20" cy="20" r="3" fill="#CCFF00" />
+      </svg>
+    </div>`,
+    className: 'destination-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
 });
 
 const MapUpdater: React.FC<{ points: [number, number][], reCenterTrigger?: number }> = ({ points, reCenterTrigger }) => {
