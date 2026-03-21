@@ -707,6 +707,9 @@ const App: React.FC = () => {
 
   const getStatusLabel = (status: DriverStatus) => {
     switch (status) {
+      case DriverStatus.OFFLINE: return 'DESCONECTADO';
+      case DriverStatus.ONLINE: return 'DISPONÍVEL';
+      case DriverStatus.ALERTING: return 'CHAMADA RECEBIDA';
       case DriverStatus.GOING_TO_STORE: return 'INDO PARA COLETA';
       case DriverStatus.ARRIVED_AT_STORE: return isOrderReady ? 'PEDIDO PRONTO' : 'AGUARDANDO PEDIDO';
       case DriverStatus.PICKING_UP: return 'CONFIRMAÇÃO DE COLETA';

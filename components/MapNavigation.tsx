@@ -303,8 +303,11 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         simplified = simplified.replace(/Mantenha-se à (esquerda|direita) na /i, 'Mantenha-se à $1 na '); // Keep as is if it's already specific
         
         // Specific fixes for common patterns
-        if (simplified.toLowerCase().includes('vire à esquerda')) return 'Vire à esquerda';
-        if (simplified.toLowerCase().includes('vire à direita')) return 'Vire à direita';
+        if (simplified.toLowerCase().includes('vire à esquerda') || simplified.toLowerCase().includes('turn left')) return 'Vire à esquerda';
+        if (simplified.toLowerCase().includes('vire à direita') || simplified.toLowerCase().includes('turn right')) return 'Vire à direita';
+        if (simplified.toLowerCase().includes('siga em frente') || simplified.toLowerCase().includes('go straight') || simplified.toLowerCase().includes('continue straight')) return 'Siga em frente';
+        if (simplified.toLowerCase().includes('chegou') || simplified.toLowerCase().includes('arrived')) return 'Você chegou ao destino';
+        if (simplified.toLowerCase().includes('retorne') || simplified.toLowerCase().includes('make a u-turn')) return 'Faça o retorno';
         if (simplified.toLowerCase().includes('pegue a saída')) {
             const match = simplified.match(/(\d+)ª saída/i);
             return match ? `Na rotatória, pegue a ${match[1]}ª saída` : 'Na rotatória, pegue a saída';

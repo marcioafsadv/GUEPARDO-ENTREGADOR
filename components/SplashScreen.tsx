@@ -39,7 +39,7 @@ export const SplashScreen: React.FC = () => {
                         className="text-[10px] font-bold uppercase tracking-[0.55em] mt-1.5"
                         style={{ color: 'rgba(255,190,80,0.6)' }}
                     >
-                        ENTREGADOR
+                        GUEPARDO ENTREGADOR
                     </p>
                 </div>
             </div>
