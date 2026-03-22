@@ -301,6 +301,57 @@ export const createTransaction = async (transactionData: any) => {
   return data;
 };
 
+export const createWithdrawalRequest = async (withdrawalData: {
+  user_id: string;
+  amount: number;
+  pix_key: string;
+  pix_key_type?: string;
+  status: string;
+}) => {
+  // 1. Criar transação pendente para "bloquear" o saldo
+  const { error: txError } = await supabase
+    .from('transactions')
+    .insert([{
+      user_id: withdrawalData.user_id,
+      amount: -withdrawalData.amount, // Valor negativo
+      type: 'Saque',
+      status: 'pending',
+      created_at: new Date().toISOString()
+    }]);
+
+  if (txError) {
+    console.error('Erro ao criar transação de saque:', txError);
+    throw txError;
+  }
+
+  // Detectar tipo de chave PIX se não fornecido
+  let type = withdrawalData.pix_key_type;
+  if (!type) {
+    const key = withdrawalData.pix_key;
+    if (key.includes('@')) type = 'email';
+    else if (key.length === 11 && !isNaN(Number(key))) type = 'cpf';
+    else if (key.length === 14 && !isNaN(Number(key))) type = 'cnpj';
+    else if (key.length >= 10 && key.length <= 11) type = 'phone';
+    else type = 'evp';
+  }
+
+  // 2. Criar a solicitação de saque para aprovação do admin
+  const { data, error } = await supabase
+    .from('withdrawal_requests')
+    .insert([{
+      ...withdrawalData,
+      pix_key_type: type
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erro ao criar solicitação de saque:', error);
+    throw error;
+  }
+  return data;
+};
+
 export const getTransactions = async (userId: string, weekId?: string) => {
   let query = supabase
     .from('transactions')

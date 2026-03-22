@@ -16,7 +16,7 @@ import { processWizardRegistration } from './utils/wizardProcessor';
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS';
-type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION';
+type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION' | 'PENDING_APPROVAL';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
 
@@ -229,7 +229,8 @@ const App: React.FC = () => {
       category: "A",
       expiry: ""
     },
-    preferredMap: 'internal' as 'internal' | 'google' | 'waze' | 'choose'
+    preferredMap: 'internal' as 'internal' | 'google' | 'waze' | 'choose',
+    status: null as 'pending' | 'approved' | 'rejected' | null
   });
 
   // Simulação de Banco de Dados de Usuários
@@ -522,7 +523,8 @@ const App: React.FC = () => {
               } : {}),
               // Pix Key vem do perfil ou da conta bancária
               pixKey: profile.pix_key || (bankData?.pix_key) || prev.bank.pixKey
-            }
+            },
+            status: profile.status || null
           }));
         }
 
@@ -716,7 +718,7 @@ const App: React.FC = () => {
       case DriverStatus.GOING_TO_CUSTOMER: return 'INDO PARA O CLIENTE';
       case DriverStatus.ARRIVED_AT_CUSTOMER: return 'LOCAL DE ENTREGA';
       case DriverStatus.RETURNING: return 'RETORNANDO À LOJA';
-      default: return status.replace(/_/g, ' ');
+      default: return (status as string).replace(/_/g, ' ');
     }
   };
 
@@ -1530,35 +1532,45 @@ const App: React.FC = () => {
   };
 
 
-  const handleAnticipateRequest = () => {
+  const handleAnticipateRequest = async () => {
     if (balance <= ANTICIPATION_FEE) return;
+    if (!userId) return;
+
     setIsAnticipating(true);
-    setTimeout(() => {
+    try {
       const amountToWithdraw = balance;
       const fee = ANTICIPATION_FEE;
-      setBalance(0);
+      const netAmount = amountToWithdraw - fee;
+
+      await supabaseClient.createWithdrawalRequest({
+        user_id: userId,
+        amount: amountToWithdraw,
+        pix_key: currentUser.bank.pixKey || '',
+        pix_key_type: 'PIX', // Poderiamos expandir isso se necessário
+        status: 'pending'
+      });
+
+      // Recarregar saldo e histórico para refletir a transação pendente
+      const newBalance = await supabaseClient.getBalance(userId);
+      setBalance(newBalance);
+      
+      const transactions = await supabaseClient.getTransactions(userId);
+      if (transactions) {
+        setHistory(transactions.map((t: any) => ({
+          ...t,
+          date: new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+          time: new Date(t.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          weekId: t.week_id || 'current'
+        })) as Transaction[]);
+      }
+
       setIsAnticipating(false);
       setShowSuccessAnticipation(true);
-      const newTransaction: Transaction = {
-        id: Math.random().toString(36).substr(2, 9),
-        type: 'Antecipação de Ganhos',
-        amount: -(amountToWithdraw),
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Hoje',
-        weekId: 'current',
-        status: 'COMPLETED'
-      };
-      const feeTransaction: Transaction = {
-        id: Math.random().toString(36).substr(2, 9),
-        type: 'Taxa de Antecipação',
-        amount: -(fee),
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Hoje',
-        weekId: 'current',
-        status: 'COMPLETED'
-      };
-      setHistory(prev => [newTransaction, feeTransaction, ...prev]);
-    }, 2000);
+    } catch (error) {
+      console.error('Erro ao processar saque:', error);
+      setIsAnticipating(false);
+      // Poderiamos mostrar um alerta de erro aqui
+    }
   };
 
   const handleCodeChange = (index: number, val: string) => {
@@ -1881,10 +1893,10 @@ const App: React.FC = () => {
       };
 
       await processWizardRegistration(completeData);
-
-      alert("Cadastro realizado com sucesso! Aguarde a aprovação do seu perfil.");
+ 
+      // Instead of alert, show the dedicated pending approval screen
+      setAuthScreen('PENDING_APPROVAL');
       setOnboardingScreen(null);
-      setAuthScreen('LOGIN');
       setSelectedCity('');
     } catch (error: any) {
       console.error('Wizard registration error:', error);
@@ -2122,6 +2134,45 @@ const App: React.FC = () => {
                   {otpTimer > 0 ? `Reenviar em ${otpTimer}s` : 'Reenviar Código'}
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* ── AGUARDANDO APROVAÇÃO ── */}
+          {authScreen === 'PENDING_APPROVAL' && (
+            <div className="flex flex-col items-center justify-center py-10 text-center animate-in zoom-in duration-500">
+              <div className="w-24 h-24 bg-[#FF6B00]/10 rounded-full flex items-center justify-center mb-8 border border-[#FF6B00]/30 shadow-2xl shadow-orange-900/20">
+                <i className="fas fa-clock text-4xl text-[#FF6B00] animate-pulse"></i>
+              </div>
+              <h2 className="text-3xl font-black italic mb-4 text-white uppercase">Conta em Análise</h2>
+              <p className="text-zinc-400 font-bold mb-10 uppercase text-xs tracking-[0.2em] leading-relaxed">
+                Seu cadastro foi recebido com sucesso!<br/>
+                Estamos analisando seus documentos.<br/>
+                <span className="text-[#FF6B00]">Aguardando aprovação do APP Guepardo Central.</span>
+              </p>
+              
+              <div className="w-full bg-zinc-900/50 p-6 rounded-[32px] border border-white/5 mb-10">
+                <p className="text-zinc-500 font-black text-[10px] uppercase mb-2">Status do Perfil</p>
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                  <p className="text-lg font-black text-orange-500 italic uppercase">Pendente</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => { 
+                  supabaseClient.signOut(); 
+                  setIsAuthenticated(false); 
+                  setUserId(null);
+                  setAuthScreen('LOGIN'); 
+                }} 
+                className="w-full h-16 bg-zinc-800 rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+              >
+                Voltar ao Login
+              </button>
+              
+              <p className="mt-8 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+                Guepardo Logística © 2026
+              </p>
             </div>
           )}
 
@@ -3170,7 +3221,8 @@ const App: React.FC = () => {
                         category: "A",
                         expiry: ""
                       },
-                      preferredMap: 'internal'
+                      preferredMap: 'internal',
+                      status: null
                     });
                     setBalance(0);
                     setDailyEarnings(0);
@@ -3499,11 +3551,65 @@ const App: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || (currentUser.status === 'pending')) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
         <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
-          {renderAuthScreen()}
+          {isAuthenticated && currentUser.status === 'pending' ? (
+            <div className="relative z-10 flex flex-col h-full overflow-y-auto px-6">
+              {/* Header Logo equivalent for the pending screen when logged in */}
+              <div className="flex flex-col items-center pt-14 pb-5 shrink-0">
+                <img
+                  src="/cheetah-icon.png"
+                  alt="Guepardo Delivery"
+                  className="w-56 object-contain"
+                  style={{ filter: 'drop-shadow(0 16px 48px rgba(200,80,10,0.65)) drop-shadow(0 4px 12px rgba(0,0,0,0.7))' }}
+                />
+                <p className="mt-2 text-2xl font-black uppercase tracking-wider" style={{ color: 'white', textShadow: '0 2px 12px rgba(200,80,10,0.7)' }}>
+                  Guepardo <span style={{ color: '#FF8C28' }}>Delivery</span>
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.6em] mt-0.5" style={{ color: 'rgba(255,190,80,0.6)' }}>
+                  ENTREGADOR
+                </p>
+              </div>
+              <div className="w-full flex items-center gap-3 mb-6 shrink-0">
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,140,40,0.35))' }} />
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF8C28', boxShadow: '0 0 8px 2px rgba(255,140,40,0.6)' }} />
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(255,140,40,0.35))' }} />
+              </div>
+              
+              <div className="flex flex-col items-center justify-center py-5 text-center">
+                <div className="w-24 h-24 bg-[#FF6B00]/10 rounded-full flex items-center justify-center mb-8 border border-[#FF6B00]/30 shadow-2xl shadow-orange-900/20">
+                  <i className="fas fa-clock text-4xl text-[#FF6B00] animate-pulse"></i>
+                </div>
+                <h2 className="text-3xl font-black italic mb-4 text-white uppercase">Conta em Análise</h2>
+                <p className="text-zinc-400 font-bold mb-10 uppercase text-xs tracking-[0.2em] leading-relaxed">
+                  Estamos analisando seus documentos.<br/>
+                  <span className="text-[#FF6B00]">Aguardando aprovação do APP Guepardo Central.</span>
+                </p>
+                
+                <div className="w-full bg-zinc-900/50 p-6 rounded-[32px] border border-white/5 mb-10">
+                  <p className="text-zinc-500 font-black text-[10px] uppercase mb-2">Status do Perfil</p>
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                    <p className="text-lg font-black text-orange-500 italic uppercase">Pendente</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => { 
+                    supabaseClient.signOut(); 
+                    setIsAuthenticated(false); 
+                    setUserId(null);
+                    setAuthScreen('LOGIN'); 
+                  }} 
+                  className="w-full h-16 bg-zinc-800 rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                >
+                  Sair da Conta
+                </button>
+              </div>
+            </div>
+          ) : renderAuthScreen()}
         </div>
       </div>
     );
