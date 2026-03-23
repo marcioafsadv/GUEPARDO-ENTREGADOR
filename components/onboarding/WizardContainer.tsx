@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import ProgressBar from '../common/ProgressBar';
 import Step1PersonalData from './steps/Step1PersonalData';
-import Step2Photo from './steps/Step2Photo';
-import Step3Address from './steps/Step3Address';
-import Step4Vehicle from './steps/Step4Vehicle';
-import Step5Documents from './steps/Step5Documents';
+import Step2BankData from './steps/Step2BankData';
+import Step3Photo from './steps/Step2Photo';
+import Step4Address from './steps/Step3Address';
+import Step5Vehicle from './steps/Step4Vehicle';
+import Step6Documents from './steps/Step5Documents';
 
 export interface WizardData {
     // Step 1: Personal Data
@@ -14,16 +15,22 @@ export interface WizardData {
     phone: string;
     email: string;
     gender: string;
-    pixKey: string;
     password: string;
     confirmPassword: string;
     workCity: string;
 
-    // Step 2: Photo
+    // Step 2: Bank Data
+    bankName: string;
+    bankAgency: string;
+    bankAccount: string;
+    bankAccountType: string;
+    pixKey: string;
+
+    // Step 3: Photo
     photoUrl: string | null;
     photoFile: File | null;
 
-    // Step 3: Address
+    // Step 4: Address
     zipCode: string;
     street: string;
     number: string;
@@ -34,7 +41,7 @@ export interface WizardData {
     city: string;
     state: string;
 
-    // Step 4: Vehicle
+    // Step 5: Vehicle
     cnhNumber: string;
     cnhValidity: string;
     plate: string;
@@ -46,7 +53,7 @@ export interface WizardData {
     renavam: string;
     isOwner: boolean;
 
-    // Step 5: Documents
+    // Step 6: Documents
     cnhFrontUrl: string | null;
     cnhBackUrl: string | null;
     crlvUrl: string | null;
@@ -70,10 +77,14 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
         phone: '',
         email: '',
         gender: '',
-        pixKey: '',
         password: '',
         confirmPassword: '',
         workCity: initialCity,
+        bankName: '',
+        bankAgency: '',
+        bankAccount: '',
+        bankAccountType: '',
+        pixKey: '',
         photoUrl: null,
         photoFile: null,
         zipCode: '',
@@ -102,7 +113,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
         proofOfResidenceUrl: null,
     });
 
-    const totalSteps = 5;
+    const totalSteps = 6;
 
     const updateData = (updates: Partial<WizardData>) => {
         setWizardData(prev => ({ ...prev, ...updates }));
@@ -157,7 +168,6 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                             phone: wizardData.phone,
                             email: wizardData.email,
                             gender: wizardData.gender,
-                            pixKey: wizardData.pixKey,
                             password: wizardData.password,
                             confirmPassword: wizardData.confirmPassword,
                         }}
@@ -167,7 +177,29 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                     />
                 )}
                 {currentStep === 2 && (
-                    <Step2Photo
+                    <Step2BankData
+                        data={{
+                            bankName: wizardData.bankName,
+                            agency: wizardData.bankAgency,
+                            accountNumber: wizardData.bankAccount,
+                            accountType: wizardData.bankAccountType,
+                            pixKey: wizardData.pixKey,
+                        }}
+                        onUpdate={(updates: any) => {
+                            const mapped: any = {};
+                            if (updates.agency !== undefined) mapped.bankAgency = updates.agency;
+                            if (updates.accountNumber !== undefined) mapped.bankAccount = updates.accountNumber;
+                            if (updates.accountType !== undefined) mapped.bankAccountType = updates.accountType;
+                            if (updates.bankName !== undefined) mapped.bankName = updates.bankName;
+                            if (updates.pixKey !== undefined) mapped.pixKey = updates.pixKey;
+                            updateData(mapped);
+                        }}
+                        onNext={handleNext}
+                        theme={theme}
+                    />
+                )}
+                {currentStep === 3 && (
+                    <Step3Photo
                         data={{
                             photoUrl: wizardData.photoUrl,
                             photoFile: wizardData.photoFile,
@@ -177,8 +209,8 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                         theme={theme}
                     />
                 )}
-                {currentStep === 3 && (
-                    <Step3Address
+                {currentStep === 4 && (
+                    <Step4Address
                         data={{
                             zipCode: wizardData.zipCode,
                             street: wizardData.street,
@@ -195,8 +227,8 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                         theme={theme}
                     />
                 )}
-                {currentStep === 4 && (
-                    <Step4Vehicle
+                {currentStep === 5 && (
+                    <Step5Vehicle
                         data={{
                             cnhNumber: wizardData.cnhNumber,
                             cnhValidity: wizardData.cnhValidity,
@@ -214,8 +246,8 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                         theme={theme}
                     />
                 )}
-                {currentStep === 5 && (
-                    <Step5Documents
+                {currentStep === 6 && (
+                    <Step6Documents
                         data={{
                             cnhFrontUrl: wizardData.cnhFrontUrl,
                             cnhBackUrl: wizardData.cnhBackUrl,
@@ -231,7 +263,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
             </div>
 
             {/* Navigation buttons */}
-            {currentStep > 1 && currentStep < 5 && (
+            {currentStep > 1 && currentStep < 6 && (
                 <div className="w-full mt-6">
                     <button
                         onClick={handleBack}
@@ -247,4 +279,3 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
 };
 
 export default WizardContainer;
-

@@ -102,6 +102,12 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
                 cpf: wizardData.cpf.replace(/\D/g, ''),
                 phone: wizardData.phone.replace(/\D/g, ''),
                 gender: wizardData.gender,
+            },
+            bank: {
+                bankName: wizardData.bankName,
+                agency: wizardData.bankAgency,
+                accountNumber: wizardData.bankAccount,
+                accountType: wizardData.bankAccountType,
                 pixKey: wizardData.pixKey,
             },
             photoUrl: avatarUrl,

@@ -95,6 +95,14 @@ export enum OnboardingStep {
   REVIEW = 'REVIEW'
 }
 
+export interface BankData {
+  bankName: string;
+  agency: string;
+  accountNumber: string;
+  accountType: string;
+  pixKey: string;
+}
+
 export interface PersonalData {
   fullName: string;
   birthDate: string;
@@ -104,7 +112,6 @@ export interface PersonalData {
   password: string;
   confirmPassword: string;
   gender: string;
-  pixKey: string;
 }
 
 export interface AddressData {
@@ -143,6 +150,7 @@ export interface DocumentUpload {
 export interface RegistrationData {
   workCity: string;
   personal: PersonalData;
+  bank: BankData;
   photoUrl: string;
   address: AddressData;
   vehicle: VehicleData;

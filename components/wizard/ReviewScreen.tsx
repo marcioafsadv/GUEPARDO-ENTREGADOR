@@ -42,7 +42,7 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                         <i className="fas fa-check text-white"></i>
                     </div>
                     <div>
-                        <p className={`text-xs ${textMuted}`}>Etapa {step}/5</p>
+                        <p className={`text-xs ${textMuted}`}>Etapa {step}/6</p>
                         <h3 className={`font-bold ${textPrimary}`}>{title}</h3>
                     </div>
                 </div>
@@ -88,11 +88,19 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                     <DataRow label="Telefone" value={data.personal.phone} />
                     <DataRow label="E-mail" value={data.personal.email} />
                     <DataRow label="Gênero" value={data.personal.gender} />
-                    <DataRow label="Chave PIX" value={data.personal.pixKey} />
                 </ReviewSection>
 
-                {/* Step 2: Photo */}
-                <ReviewSection step={2} title="Foto do Rosto" icon="fa-camera">
+                {/* Step 2: Financial Data */}
+                <ReviewSection step={2} title="Dados Financeiros" icon="fa-wallet">
+                    <DataRow label="Banco" value={data.bank.bankName} />
+                    <DataRow label="Agência" value={data.bank.agency} />
+                    <DataRow label="Conta" value={data.bank.accountNumber} />
+                    <DataRow label="Tipo de Conta" value={data.bank.accountType} />
+                    <DataRow label="Chave PIX" value={data.bank.pixKey} />
+                </ReviewSection>
+
+                {/* Step 3: Photo */}
+                <ReviewSection step={3} title="Foto do Rosto" icon="fa-camera">
                     {data.photoUrl ? (
                         <div className="text-center">
                             <img
@@ -107,8 +115,8 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                     )}
                 </ReviewSection>
 
-                {/* Step 3: Address */}
-                <ReviewSection step={3} title="Endereço" icon="fa-map-marker-alt">
+                {/* Step 4: Address */}
+                <ReviewSection step={4} title="Endereço" icon="fa-map-marker-alt">
                     <DataRow label="CEP" value={data.address.zipCode} />
                     <DataRow label="Logradouro" value={data.address.street} />
                     <DataRow label="Número" value={data.address.number || 'S/N'} />
@@ -118,8 +126,8 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                     <DataRow label="Cidade" value={`${data.address.city} - ${data.address.state}`} />
                 </ReviewSection>
 
-                {/* Step 4: Vehicle */}
-                <ReviewSection step={4} title="Veículo e CNH" icon="fa-motorcycle">
+                {/* Step 5: Vehicle */}
+                <ReviewSection step={5} title="Veículo e CNH" icon="fa-motorcycle">
                     <DataRow label="CNH" value={data.vehicle.cnhNumber} />
                     <DataRow label="Validade CNH" value={new Date(data.vehicle.cnhValidity).toLocaleDateString('pt-BR')} />
                     <DataRow label="Placa" value={data.vehicle.plate} />
@@ -131,8 +139,8 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                     <DataRow label="Veículo Próprio" value={data.vehicle.isOwner ? 'Sim' : 'Não'} />
                 </ReviewSection>
 
-                {/* Step 5: Documents */}
-                <ReviewSection step={5} title="Documentos" icon="fa-file-alt">
+                {/* Step 6: Documents */}
+                <ReviewSection step={6} title="Documentos" icon="fa-file-alt">
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <span className={`${textMuted} text-sm`}>CNH - Frente</span>

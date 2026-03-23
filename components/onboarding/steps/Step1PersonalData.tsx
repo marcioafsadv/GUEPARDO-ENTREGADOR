@@ -10,7 +10,6 @@ interface Step1PersonalDataProps {
         phone: string;
         email: string;
         gender: string;
-        pixKey: string;
         password: string;
         confirmPassword: string;
     };
@@ -56,9 +55,6 @@ const Step1PersonalData: React.FC<Step1PersonalDataProps> = ({ data, onUpdate, o
             newErrors.gender = 'Selecione o gênero';
         }
 
-        if (!data.pixKey) {
-            newErrors.pixKey = 'Chave Pix é obrigatória';
-        }
 
         if (!isPasswordValid) {
             newErrors.password = 'Senha não atende aos requisitos';
@@ -179,21 +175,6 @@ const Step1PersonalData: React.FC<Step1PersonalDataProps> = ({ data, onUpdate, o
                     {errors.gender && <p className="text-xs text-red-500 mt-1 ml-2">{errors.gender}</p>}
                 </div>
 
-                {/* Chave Pix */}
-                <div>
-                    <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Chave Pix *
-                    </label>
-                    <input
-                        type="text"
-                        value={data.pixKey}
-                        onChange={(e) => onUpdate({ pixKey: e.target.value })}
-                        placeholder="CPF, e-mail, telefone ou chave aleatória"
-                        className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.pixKey ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
-                    />
-                    {errors.pixKey && <p className="text-xs text-red-500 mt-1 ml-2">{errors.pixKey}</p>}
-                    <p className={`text-xs ${textMuted} mt-1 ml-2`}>Necessário para receber seus pagamentos</p>
-                </div>
 
                 {/* Senha */}
                 <div>

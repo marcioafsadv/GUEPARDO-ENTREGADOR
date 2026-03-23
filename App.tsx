@@ -3301,30 +3301,88 @@ const App: React.FC = () => {
                 <div className="space-y-6 animate-in slide-in-from-right duration-300">
                   <div className={`rounded-[32px] p-6 border ${cardBg}`}>
                     <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-4 border-b border-white/5 pb-2`}>Seus dados Bancários</p>
-                    <div className="flex items-center space-x-4 mb-6">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-bank"></i></div>
+                    
+                    <div className="space-y-4">
                       <div>
-                        <p className={`text-lg font-black ${textPrimary}`}>{currentUser.bank.name}</p>
-                        <p className={`text-[10px] font-bold ${textMuted}`}>{currentUser.bank.type}</p>
+                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Banco</label>
+                        <input
+                          type="text"
+                          value={currentUser.bank.name}
+                          onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, name: e.target.value } })}
+                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                        />
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Agência</label>
+                          <input
+                            type="text"
+                            value={currentUser.bank.agency}
+                            onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, agency: e.target.value } })}
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Conta</label>
+                          <input
+                            type="text"
+                            value={currentUser.bank.account}
+                            onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, account: e.target.value } })}
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                      </div>
+
                       <div>
-                        <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest`}>Agência</p>
-                        <p className={`text-sm font-bold ${textPrimary}`}>{currentUser.bank.agency}</p>
+                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Tipo de Conta</label>
+                        <select
+                          value={currentUser.bank.type}
+                          onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, type: e.target.value } })}
+                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                        >
+                          <option value="Conta Corrente">Conta Corrente</option>
+                          <option value="Conta Poupança">Conta Poupança</option>
+                          <option value="Conta de Pagamento">Conta de Pagamento</option>
+                        </select>
                       </div>
+
                       <div>
-                        <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest`}>Conta</p>
-                        <p className={`text-sm font-bold ${textPrimary}`}>{currentUser.bank.account}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest`}>Chave PIX</p>
-                        <p className={`text-sm font-bold ${textPrimary}`}>{currentUser.bank.pixKey || 'Não cadastrada'}</p>
+                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Chave PIX</label>
+                        <input
+                          type="text"
+                          value={currentUser.bank.pixKey}
+                          onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, pixKey: e.target.value } })}
+                          placeholder="CPF, E-mail, Celular ou Aleatória"
+                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                        />
                       </div>
                     </div>
                   </div>
-                  <button className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform">
-                    Cadastrar Dados Bancários
+
+                  <button 
+                    onClick={async () => {
+                      try {
+                        // Se houver userId logado, salvar no banco
+                        const authUser = await supabaseClient.getCurrentUser();
+                        if (authUser) {
+                          await supabaseClient.upsertBankAccount(authUser.id, {
+                            bank_name: currentUser.bank.name,
+                            agency: currentUser.bank.agency,
+                            account_number: currentUser.bank.account,
+                            account_type: currentUser.bank.type,
+                            pix_key: currentUser.bank.pixKey
+                          });
+                        }
+                        setSettingsView('MAIN');
+                      } catch (err) {
+                        console.error('Erro ao salvar dados bancários:', err);
+                        alert('Erro ao salvar dados bancários. Tente novamente.');
+                      }
+                    }}
+                    className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                  >
+                    Salvar Dados Bancários
                   </button>
                 </div>
               )}

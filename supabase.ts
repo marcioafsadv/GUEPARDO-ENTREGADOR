@@ -719,6 +719,17 @@ export const submitCompleteRegistration = async (
 
     if (profileError) throw profileError;
 
+    // 1.1 Create bank account
+    if (registrationData.bank) {
+      await upsertBankAccount(userId, {
+        bank_name: registrationData.bank.bankName,
+        agency: registrationData.bank.agency,
+        account_number: registrationData.bank.accountNumber,
+        account_type: registrationData.bank.accountType,
+        pix_key: registrationData.bank.pixKey
+      });
+    }
+
     // 2. Create address
     await upsertAddress(userId, {
       zip_code: registrationData.address.zipCode,
