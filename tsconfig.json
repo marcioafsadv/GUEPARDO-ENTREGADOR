@@ -27,6 +27,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "_BACKUP_OLD_PROJECT"
+    "_BACKUP_OLD_PROJECT",
+    "supabase/functions"
   ]
 }

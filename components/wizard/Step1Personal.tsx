@@ -60,7 +60,6 @@ export const Step1Personal: React.FC<Step1PersonalProps> = ({
         if (data.password !== data.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
 
         if (!data.gender) newErrors.gender = 'Gênero é obrigatório';
-        if (!data.pixKey.trim()) newErrors.pixKey = 'Chave PIX é obrigatória';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -271,25 +270,7 @@ export const Step1Personal: React.FC<Step1PersonalProps> = ({
                     {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
                 </div>
 
-                {/* Chave PIX */}
-                <div>
-                    <label className={`block text-sm font-semibold ${textPrimary} mb-2`}>
-                        Chave PIX *
-                    </label>
-                    <input
-                        type="text"
-                        value={data.pixKey}
-                        onChange={(e) => handleChange('pixKey', e.target.value)}
-                        className={`w-full px-4 py-3 rounded-xl ${inputBg} ${textPrimary} outline-none ${errors.pixKey ? 'border-2 border-red-500' : ''
-                            }`}
-                        placeholder="CPF, e-mail, telefone ou chave aleatória"
-                    />
-                    <p className={`text-xs ${textMuted} mt-1`}>
-                        <i className="fas fa-info-circle mr-1"></i>
-                        Usada para receber seus ganhos
-                    </p>
-                    {errors.pixKey && <p className="text-red-500 text-sm mt-1">{errors.pixKey}</p>}
-                </div>
+                {/* Removing Pix Key from Step 1 since it is now in its own step */}
             </div>
 
             {/* Footer */}

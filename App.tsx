@@ -479,6 +479,8 @@ const App: React.FC = () => {
 
   // Carregar dados do usuário quando autenticado
   useEffect(() => {
+    let profileSubscription: any = null;
+
     const loadUserData = async () => {
       if (!userId) return;
 
@@ -624,7 +626,31 @@ const App: React.FC = () => {
 
     if (isAuthenticated && userId) {
       loadUserData();
+
+      // Iniciar escuta realtime para o perfil do usuário (ex: aprovação automática)
+      profileSubscription = supabaseClient.supabase
+        .channel(`profile-updates-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${userId}`
+          },
+          (payload) => {
+            console.log('Perfil atualizado em tempo real:', payload);
+            loadUserData();
+          }
+        )
+        .subscribe();
     }
+
+    return () => {
+      if (profileSubscription) {
+        supabaseClient.supabase.removeChannel(profileSubscription);
+      }
+    };
   }, [isAuthenticated, userId]);
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');

@@ -21,11 +21,11 @@ async function checkTable(tableName: string) {
 }
 
 async function run() {
-    await checkTable('orders');
-    await checkTable('missions');
+    await checkTable('profiles');
+    await checkTable('user_roles');
+    await checkTable('admins');
+    await checkTable('roles');
     await checkTable('deliveries');
-    await checkTable('requests');
-    await checkTable('calls');
 }
 
 run();
