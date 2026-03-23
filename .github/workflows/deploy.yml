@@ -16,7 +16,7 @@ jobs:
       - name: 🟢 Usage Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: 📦 Install Dependencies
         run: npm install
@@ -33,6 +33,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
+
+      - name: ✅ Verify Build Output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory was not created!"
+            exit 1
+          fi
+          ls -la dist/
 
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
