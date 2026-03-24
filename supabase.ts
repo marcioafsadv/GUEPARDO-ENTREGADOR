@@ -92,25 +92,23 @@ export const getBankAccount = async (userId: string) => {
   const { data, error } = await supabase
     .from('bank_accounts')
     .select('*')
-    .eq('user_id', userId)
-    .single();
+    .eq('user_id', userId);
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
-  return data;
+  if (error) {
+    console.error('getBankAccount error:', error);
+    return null;
+  }
+  return data?.[0] || null;
 };
 
 export const upsertBankAccount = async (userId: string, bankData: any) => {
   const { data, error } = await supabase
     .from('bank_accounts')
-    .upsert({
-      user_id: userId,
-      ...bankData
-    })
-    .select()
-    .single();
+    .upsert({ user_id: userId, ...bankData }, { onConflict: 'user_id' })
+    .select();
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 // ============ DRIVER LICENSES ============

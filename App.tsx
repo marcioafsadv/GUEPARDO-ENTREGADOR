@@ -3393,20 +3393,25 @@ const App: React.FC = () => {
                   <button 
                     onClick={async () => {
                       try {
-                        // Se houver userId logado, salvar no banco
-                        const authUser = await supabaseClient.getCurrentUser();
-                        if (authUser) {
-                          await supabaseClient.upsertBankAccount(authUser.id, {
-                            bank_name: currentUser.bank.name,
-                            agency: currentUser.bank.agency,
-                            account_number: currentUser.bank.account,
-                            account_type: currentUser.bank.type,
-                            pix_key: currentUser.bank.pixKey
-                          });
+                        if (!userId) {
+                          alert('Erro: Usuário não identificado.');
+                          return;
                         }
+                        
+                        // Garante que usa o ID do usuário que está em foco na interface
+                        await supabaseClient.upsertBankAccount(userId, {
+                          bank_name: currentUser.bank.name,
+                          agency: currentUser.bank.agency,
+                          account_number: currentUser.bank.account,
+                          account_type: currentUser.bank.type,
+                          pix_key: currentUser.bank.pixKey
+                        });
+
+                        alert('Dados bancários salvos com sucesso!');
                         setSettingsView('MAIN');
                       } catch (err) {
-                        console.error('Erro ao salvar dados bancários:', err);
+                        console.error('Erro DETALHADO ao salvar dados bancários:', JSON.stringify(err, null, 2));
+                        console.error('Erro objeto:', err);
                         alert('Erro ao salvar dados bancários. Tente novamente.');
                       }
                     }}

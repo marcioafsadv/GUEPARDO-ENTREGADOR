@@ -1,0 +1,7 @@
+﻿Column 'id': EXISTS
+Column 'user_id': EXISTS
+Column 'bank_name': EXISTS
+Column 'agency': EXISTS
+Column 'account_number': column bank_accounts.account_number does not exist
+Column 'account_type': EXISTS
+Column 'pix_key': EXISTS
