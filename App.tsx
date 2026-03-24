@@ -1573,6 +1573,10 @@ const App: React.FC = () => {
         amount: amountToWithdraw,
         pix_key: currentUser.bank.pixKey || '',
         pix_key_type: 'PIX', // Poderiamos expandir isso se necessário
+        bank_name: currentUser.bank.name || '',
+        bank_agency: currentUser.bank.agency || '',
+        bank_account: currentUser.bank.account || '',
+        bank_type: currentUser.bank.accountType || '',
         status: 'pending'
       });
 
