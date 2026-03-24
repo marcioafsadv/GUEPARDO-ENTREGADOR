@@ -3590,7 +3590,11 @@ const App: React.FC = () => {
                           color: vehicleDetails.color,
                           plate: vehicleDetails.plate,
                           cnh_number: vehicleDetails.cnh_number,
-                          cnh_validity: vehicleDetails.cnh_validity
+                          cnh_validity: vehicleDetails.cnh_validity,
+                          plate_state: 'SP',
+                          plate_city: 'N/A',
+                          year: new Date().getFullYear(),
+                          renavam: '00000000000'
                         });
 
                         alert('Dados do veículo salvos com sucesso!');
