@@ -51,7 +51,7 @@ const SOUND_OPTIONS = [
   }
 ];
 
-const ANTICIPATION_FEE = 5.00;
+const ANTICIPATION_FEE = 0.00; // Suspenso temporariamente conforme solicitação do usuário
 
 // Helper para formatar data (dd MMM)
 const formatDate = (date: Date) => {
@@ -1612,17 +1612,20 @@ const App: React.FC = () => {
 
 
   const handleAnticipateRequest = async () => {
-    if (balance <= ANTICIPATION_FEE) return;
     if (!userId) return;
-
     setIsAnticipating(true);
     try {
+      if (balance <= 0) {
+        alert("Você não possui saldo suficiente para realizar um repasse.");
+        setIsAnticipating(false);
+        return;
+      }
       const amountToWithdraw = balance;
-      const fee = ANTICIPATION_FEE;
-      const netAmount = amountToWithdraw - fee;
+      const fee = 0; // Taxa suspensa
+      const netAmount = amountToWithdraw;
 
       await supabaseClient.createWithdrawalRequest({
-        user_id: userId,
+        user_id: userId as string,
         amount: amountToWithdraw,
         pix_key: currentUser.bank.pixKey || '',
         pix_key_type: 'PIX', // Poderiamos expandir isso se necessário
@@ -1634,7 +1637,7 @@ const App: React.FC = () => {
       });
 
       // Recarregar saldo e histórico para refletir a transação pendente
-      const newBalance = await supabaseClient.getBalance(userId);
+      const newBalance = await supabaseClient.getBalance(userId as string);
       setBalance(newBalance);
       
       const transactions = await supabaseClient.getTransactions(userId);
@@ -3051,7 +3054,7 @@ const App: React.FC = () => {
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
                 <span className={`${textMuted} font-bold text-xs uppercase tracking-widest`}>Taxa de Antecipação</span>
-                <span className="text-red-500 font-black text-xl">- R$ {ANTICIPATION_FEE.toFixed(2)}</span>
+                <span className="text-green-500 font-black text-xl">GRÁTIS</span>
               </div>
               <div className="flex justify-between items-center pt-2">
                 <span className={`${textPrimary} font-black text-sm uppercase tracking-widest`}>Você Recebe</span>
@@ -3059,7 +3062,7 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <button disabled={balance <= ANTICIPATION_FEE || isAnticipating} onClick={handleAnticipateRequest} className={`w-full h-20 rounded-[28px] font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-3 transition-all ${balance <= ANTICIPATION_FEE ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00] active:scale-95'}`}>
+          <button disabled={balance <= 0 || isAnticipating} onClick={handleAnticipateRequest} className={`w-full h-20 rounded-[28px] font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-3 transition-all ${balance <= 0 ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00] active:scale-95'}`}>
             {isAnticipating ? <><i className="fas fa-circle-notch animate-spin"></i><span>Processando...</span></> : <><i className="fas fa-bolt"></i><span>Confirmar Antecipação</span></>}
           </button>
         </div>
