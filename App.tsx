@@ -3588,8 +3588,7 @@ const App: React.FC = () => {
                           model: vehicleDetails.model,
                           color: vehicleDetails.color,
                           plate: vehicleDetails.plate,
-                          cnh_number: vehicleDetails.cnh_number,
-                          type: selectedVehicle
+                          cnh_number: vehicleDetails.cnh_number
                         });
 
                         alert('Dados do veículo salvos com sucesso!');
