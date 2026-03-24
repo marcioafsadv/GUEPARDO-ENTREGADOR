@@ -413,6 +413,17 @@ const App: React.FC = () => {
   // Vehicle Details
   const [vehicleDetails, setVehicleDetails] = useState({ model: '', color: '', plate: '', cnh_number: '', cnh_validity: '2030-12-31' });
 
+  // Address Details
+  const [addressDetails, setAddressDetails] = useState({
+    zip_code: '',
+    street: '',
+    number: '',
+    complement: '',
+    district: '',
+    city: '',
+    state: ''
+  });
+
   useEffect(() => {
     setTypedCode(['', '', '', '']);
   }, [status]);
@@ -571,6 +582,24 @@ const App: React.FC = () => {
           });
           const filteredTransactions = Array.from(uniqueTransactions.values());
           setHistory(filteredTransactions as Transaction[]);
+        }
+
+        // Carregar Endereço
+        try {
+          const addressData = await supabaseClient.getAddress(userId);
+          if (addressData) {
+            setAddressDetails({
+              zip_code: addressData.zip_code || '',
+              street: addressData.street || '',
+              number: addressData.number || '',
+              complement: addressData.complement || '',
+              district: addressData.district || '',
+              city: addressData.city || '',
+              state: addressData.state || ''
+            });
+          }
+        } catch (err) {
+          console.error('Erro ao carregar endereço:', err);
         }
 
         // Carregar saldo
@@ -3311,18 +3340,97 @@ const App: React.FC = () => {
 
               {settingsView === 'PERSONAL' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                  {[
-                    { label: 'Nome Completo', value: currentUser.name },
-                    { label: 'CPF', value: currentUser.cpf },
-                    { label: 'Telefone', value: currentUser.phone },
-                    { label: 'E-mail', value: currentUser.email },
-                    { label: 'Região', value: currentUser.region },
-                  ].map((item, i) => (
-                    <div key={i} className={`p-4 rounded-[24px] border ${cardBg}`}>
-                      <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>{item.label}</p>
-                      <p className={`text-sm font-bold ${textPrimary}`}>{item.value || '-'}</p>
+                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
+                    <h3 className={`font-black text-lg mb-4 ${textPrimary}`}>Informações de Contato</h3>
+                    <div className="space-y-4">
+                      {[
+                        { label: 'Nome Completo', value: currentUser.name },
+                        { label: 'CPF', value: currentUser.cpf },
+                        { label: 'Telefone', value: currentUser.phone },
+                        { label: 'E-mail', value: currentUser.email },
+                        { label: 'Região Original', value: currentUser.region },
+                      ].map((item, i) => (
+                        <div key={i} className={`p-4 rounded-[24px] border ${cardBg}`}>
+                          <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>{item.label}</p>
+                          <p className={`text-sm font-bold ${textPrimary}`}>{item.value || '-'}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Formulário de Endereço Residencial */}
+                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
+                    <h3 className={`font-black text-lg mb-4 ${textPrimary}`}>Endereço Residencial</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>CEP</label>
+                          <input type="text" value={addressDetails.zip_code} onChange={e => setAddressDetails({ ...addressDetails, zip_code: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Número</label>
+                          <input type="text" value={addressDetails.number} onChange={e => setAddressDetails({ ...addressDetails, number: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Logradouro (Rua/Av)</label>
+                        <input type="text" value={addressDetails.street} onChange={e => setAddressDetails({ ...addressDetails, street: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Bairro</label>
+                          <input type="text" value={addressDetails.district} onChange={e => setAddressDetails({ ...addressDetails, district: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Complemento</label>
+                          <input type="text" value={addressDetails.complement} onChange={e => setAddressDetails({ ...addressDetails, complement: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Cidade</label>
+                          <input type="text" value={addressDetails.city} onChange={e => setAddressDetails({ ...addressDetails, city: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Estado (SIGLA MAIÚSCULA)</label>
+                          <input type="text" value={addressDetails.state} onChange={e => setAddressDetails({ ...addressDetails, state: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold uppercase`} maxLength={2} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={async () => {
+                      try {
+                        if (!userId) {
+                          alert('Erro: Usuário não identificado.');
+                          return;
+                        }
+                        
+                        await supabaseClient.upsertAddress(userId, {
+                          zip_code: addressDetails.zip_code,
+                          street: addressDetails.street,
+                          number: addressDetails.number,
+                          complement: addressDetails.complement,
+                          district: addressDetails.district,
+                          city: addressDetails.city,
+                          state: addressDetails.state
+                        });
+
+                        alert('Dados e endereço salvos com sucesso!');
+                        setSettingsView('MAIN');
+                      } catch (err: any) {
+                        console.error('Erro DETALHADO ao salvar endereco:', JSON.stringify(err, null, 2));
+                        alert('Erro ao salvar endereço. Tente novamente.');
+                      }
+                    }} 
+                    className="w-full h-16 mt-6 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                  >
+                    Salvar Alterações
+                  </button>
                 </div>
               )}
 
