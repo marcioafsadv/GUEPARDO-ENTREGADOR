@@ -409,6 +409,9 @@ const App: React.FC = () => {
 
   const [recoveryMethod, setRecoveryMethod] = useState<'cpf' | 'email'>('cpf');
   const [recoveryInput, setRecoveryInput] = useState('');
+  
+  // Vehicle Details
+  const [vehicleDetails, setVehicleDetails] = useState({ model: '', color: '', plate: '', cnh_number: '' });
 
   useEffect(() => {
     setTypedCode(['', '', '', '']);
@@ -500,6 +503,14 @@ const App: React.FC = () => {
           console.log('Sem dados bancários ainda');
         }
 
+        // Carregar veículo
+        let vehicleData = null;
+        try {
+          vehicleData = await supabaseClient.getVehicle(userId);
+        } catch (e) {
+          console.log('Sem dados de veículo ainda');
+        }
+
         if (profile) {
           setCurrentUser(prev => ({
             ...prev,
@@ -528,6 +539,18 @@ const App: React.FC = () => {
             },
             status: profile.status || null
           }));
+        }
+
+        if (vehicleData) {
+          setVehicleDetails({
+            model: vehicleData.model || '',
+            color: vehicleData.color || '',
+            plate: vehicleData.plate || '',
+            cnh_number: vehicleData.cnh_number || ''
+          });
+          if (vehicleData.type) {
+             setSelectedVehicle(vehicleData.type as any);
+          }
         }
 
         // Carregar transações
@@ -1576,7 +1599,7 @@ const App: React.FC = () => {
         bank_name: currentUser.bank.name || '',
         bank_agency: currentUser.bank.agency || '',
         bank_account: currentUser.bank.account || '',
-        bank_type: currentUser.bank.accountType || '',
+        bank_type: currentUser.bank.type || '',
         status: 'pending'
       });
 
@@ -3496,6 +3519,56 @@ const App: React.FC = () => {
                   </div>
 
                   <div className={`p-6 rounded-[32px] border ${cardBg}`}>
+                    <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-6`}>Detalhes do Veículo</p>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Modelo</label>
+                          <input
+                            type="text"
+                            value={vehicleDetails.model}
+                            onChange={e => setVehicleDetails({ ...vehicleDetails, model: e.target.value })}
+                            placeholder="Ex: Honda CG 160"
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Cor</label>
+                          <input
+                            type="text"
+                            value={vehicleDetails.color}
+                            onChange={e => setVehicleDetails({ ...vehicleDetails, color: e.target.value })}
+                            placeholder="Ex: Vermelha"
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Placa</label>
+                          <input
+                            type="text"
+                            value={vehicleDetails.plate}
+                            onChange={e => setVehicleDetails({ ...vehicleDetails, plate: e.target.value })}
+                            placeholder="ABC-1234"
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>CNH</label>
+                          <input
+                            type="text"
+                            value={vehicleDetails.cnh_number}
+                            onChange={e => setVehicleDetails({ ...vehicleDetails, cnh_number: e.target.value })}
+                            placeholder="12345678900"
+                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
                     <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-4`}>Região de Atuação</p>
                     <div className={`flex items-center justify-between p-4 rounded-xl border border-white/5 ${innerBg}`}>
                       <span className={`text-sm font-bold ${textPrimary}`}>{currentUser.region}</span>
@@ -3503,7 +3576,32 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <button onClick={() => setSettingsView('MAIN')} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        if (!userId) {
+                          alert('Erro: Usuário não identificado.');
+                          return;
+                        }
+                        
+                        await supabaseClient.upsertVehicle(userId, {
+                          model: vehicleDetails.model,
+                          color: vehicleDetails.color,
+                          plate: vehicleDetails.plate,
+                          cnh_number: vehicleDetails.cnh_number,
+                          type: selectedVehicle
+                        });
+
+                        alert('Dados do veículo salvos com sucesso!');
+                        setSettingsView('MAIN');
+                      } catch (err) {
+                        console.error('Erro DETALHADO ao salvar veículo:', JSON.stringify(err, null, 2));
+                        console.error('Erro objeto:', err);
+                        alert('Erro ao salvar veículo. Tente novamente.');
+                      }
+                    }}
+                    className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                  >
                     Salvar Alterações
                   </button>
                 </div>

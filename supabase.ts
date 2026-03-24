@@ -309,7 +309,7 @@ export const createWithdrawalRequest = async (withdrawalData: {
   bank_account?: string;
   bank_type?: string;
   status: string;
-  created_at: string;
+  created_at?: string;
 }) => {
   // 1. Criar transação pendente para "bloquear" o saldo
   const { error: txError } = await supabase
