@@ -138,6 +138,20 @@ export const upsertDriverLicense = async (userId: string, licenseData: any) => {
   return data;
 };
 
+// ============ PROFILE ============
+
+export const updateProfileStatus = async (userId: string, status: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
 // ============ DELIVERIES ============
 
 export const createDelivery = async (deliveryData: any) => {

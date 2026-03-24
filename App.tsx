@@ -3365,73 +3365,82 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>CEP</label>
-                          <input type="text" value={addressDetails.zip_code} onChange={e => setAddressDetails({ ...addressDetails, zip_code: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.zip_code} onChange={e => setAddressDetails({ ...addressDetails, zip_code: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                         </div>
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Número</label>
-                          <input type="text" value={addressDetails.number} onChange={e => setAddressDetails({ ...addressDetails, number: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.number} onChange={e => setAddressDetails({ ...addressDetails, number: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                         </div>
                       </div>
                       
                       <div>
                         <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Logradouro (Rua/Av)</label>
-                        <input type="text" value={addressDetails.street} onChange={e => setAddressDetails({ ...addressDetails, street: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                        <input type="text" readOnly={currentUser.verified} value={addressDetails.street} onChange={e => setAddressDetails({ ...addressDetails, street: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Bairro</label>
-                          <input type="text" value={addressDetails.district} onChange={e => setAddressDetails({ ...addressDetails, district: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.district} onChange={e => setAddressDetails({ ...addressDetails, district: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                         </div>
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Complemento</label>
-                          <input type="text" value={addressDetails.complement} onChange={e => setAddressDetails({ ...addressDetails, complement: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.complement} onChange={e => setAddressDetails({ ...addressDetails, complement: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Cidade</label>
-                          <input type="text" value={addressDetails.city} onChange={e => setAddressDetails({ ...addressDetails, city: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.city} onChange={e => setAddressDetails({ ...addressDetails, city: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold ${currentUser.verified ? 'opacity-50' : ''}`} />
                         </div>
                         <div>
                           <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Estado (SIGLA MAIÚSCULA)</label>
-                          <input type="text" value={addressDetails.state} onChange={e => setAddressDetails({ ...addressDetails, state: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold uppercase`} maxLength={2} />
+                          <input type="text" readOnly={currentUser.verified} value={addressDetails.state} onChange={e => setAddressDetails({ ...addressDetails, state: e.target.value })} className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold uppercase ${currentUser.verified ? 'opacity-50' : ''}`} maxLength={2} />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <button 
-                    onClick={async () => {
-                      try {
-                        if (!userId) {
-                          alert('Erro: Usuário não identificado.');
-                          return;
-                        }
-                        
-                        await supabaseClient.upsertAddress(userId, {
-                          zip_code: addressDetails.zip_code,
-                          street: addressDetails.street,
-                          number: addressDetails.number,
-                          complement: addressDetails.complement,
-                          district: addressDetails.district,
-                          city: addressDetails.city,
-                          state: addressDetails.state
-                        });
+                  {!currentUser.verified && (
+                    <button 
+                      onClick={async () => {
+                        try {
+                          if (!userId) {
+                            alert('Erro: Usuário não identificado.');
+                            return;
+                          }
+                          
+                          await supabaseClient.upsertAddress(userId, {
+                            zip_code: addressDetails.zip_code,
+                            street: addressDetails.street,
+                            number: addressDetails.number,
+                            complement: addressDetails.complement,
+                            district: addressDetails.district,
+                            city: addressDetails.city,
+                            state: addressDetails.state
+                          });
 
-                        alert('Dados e endereço salvos com sucesso!');
-                        setSettingsView('MAIN');
-                      } catch (err: any) {
-                        console.error('Erro DETALHADO ao salvar endereco:', JSON.stringify(err, null, 2));
-                        alert('Erro ao salvar endereço. Tente novamente.');
-                      }
-                    }} 
-                    className="w-full h-16 mt-6 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
-                  >
-                    Salvar Alterações
-                  </button>
-                </div>
+                          alert('Dados e endereço salvos com sucesso!');
+                          setSettingsView('MAIN');
+                        } catch (err: any) {
+                          console.error('Erro DETALHADO ao salvar endereco:', JSON.stringify(err, null, 2));
+                          alert('Erro ao salvar endereço. Tente novamente.');
+                        }
+                      }} 
+                      className="w-full h-16 mt-6 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                    >
+                      Salvar Alterações
+                    </button>
+                  )}
+                  {currentUser.verified && (
+                     <div className={`mt-6 p-4 rounded-2xl border border-[#FF6B00]/20 bg-[#FF6B00]/5 flex items-start space-x-3`}>
+                        <i className="fas fa-lock text-[#FF6B00] mt-1"></i>
+                        <p className={`text-[10px] font-bold leading-relaxed ${textMuted}`}>
+                          Seus dados pessoais estão <span className="text-[#FF6B00]">congelados</span> por segurança. Para alterações, entre em contato com o suporte.
+                        </p>
+                     </div>
+                  )}                </div>
               )}
 
               {settingsView === 'DOCUMENTS' && (
@@ -3705,11 +3714,17 @@ const App: React.FC = () => {
                           renavam: '00000000000'
                         });
 
-                        alert('Dados do veículo salvos com sucesso!');
-                        setSettingsView('MAIN');
+                        if (currentUser.verified) {
+                          // Se estava aprovado e mudou dados sensíveis, volta para pending
+                          await supabaseClient.updateProfileStatus(userId, 'pending');
+                          alert('Dados salvos. Devido à alteração do veículo, seu cadastro entrou em re-análise.');
+                          window.location.reload(); // Força atualização do estado de bloqueio
+                        } else {
+                          alert('Dados do veículo salvos com sucesso!');
+                          setSettingsView('MAIN');
+                        }
                       } catch (err) {
                         console.error('Erro DETALHADO ao salvar veículo:', JSON.stringify(err, null, 2));
-                        console.error('Erro objeto:', err);
                         alert('Erro ao salvar veículo. Tente novamente.');
                       }
                     }}
