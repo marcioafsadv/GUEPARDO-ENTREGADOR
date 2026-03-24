@@ -325,22 +325,6 @@ export const createWithdrawalRequest = async (withdrawalData: {
   status: string;
   created_at?: string;
 }) => {
-  // 1. Criar transação pendente para "bloquear" o saldo
-  const { error: txError } = await supabase
-    .from('transactions')
-    .insert([{
-      user_id: withdrawalData.user_id,
-      amount: -withdrawalData.amount, // Valor negativo
-      type: 'Saque',
-      status: 'pending',
-      created_at: new Date().toISOString()
-    }]);
-
-  if (txError) {
-    console.error('Erro ao criar transação de saque:', txError);
-    throw txError;
-  }
-
   // Detectar tipo de chave PIX se não fornecido
   let type = withdrawalData.pix_key_type;
   if (!type) {
@@ -352,12 +336,20 @@ export const createWithdrawalRequest = async (withdrawalData: {
     else type = 'evp';
   }
 
-  // 2. Criar a solicitação de saque para aprovação do admin
+  // Criar a solicitação de saque para aprovação do admin
+  // O registro na tabela 'transactions' deve ser criado via Trigger no Banco de Dados (Segurança)
   const { data, error } = await supabase
     .from('withdrawal_requests')
     .insert([{
-      ...withdrawalData,
-      pix_key_type: type
+      user_id: withdrawalData.user_id,
+      amount: withdrawalData.amount,
+      pix_key: withdrawalData.pix_key,
+      pix_key_type: type,
+      bank_name: withdrawalData.bank_name,
+      bank_agency: withdrawalData.bank_agency,
+      bank_account: withdrawalData.bank_account,
+      bank_type: withdrawalData.bank_type,
+      status: 'pending'
     }])
     .select()
     .single();
