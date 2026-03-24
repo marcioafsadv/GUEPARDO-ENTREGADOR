@@ -411,7 +411,7 @@ const App: React.FC = () => {
   const [recoveryInput, setRecoveryInput] = useState('');
   
   // Vehicle Details
-  const [vehicleDetails, setVehicleDetails] = useState({ model: '', color: '', plate: '', cnh_number: '' });
+  const [vehicleDetails, setVehicleDetails] = useState({ model: '', color: '', plate: '', cnh_number: '', cnh_validity: '2030-12-31' });
 
   useEffect(() => {
     setTypedCode(['', '', '', '']);
@@ -546,7 +546,8 @@ const App: React.FC = () => {
             model: vehicleData.model || '',
             color: vehicleData.color || '',
             plate: vehicleData.plate || '',
-            cnh_number: vehicleData.cnh_number || ''
+            cnh_number: vehicleData.cnh_number || '',
+            cnh_validity: vehicleData.cnh_validity || '2030-12-31'
           });
           if (vehicleData.type) {
              setSelectedVehicle(vehicleData.type as any);
@@ -3588,7 +3589,8 @@ const App: React.FC = () => {
                           model: vehicleDetails.model,
                           color: vehicleDetails.color,
                           plate: vehicleDetails.plate,
-                          cnh_number: vehicleDetails.cnh_number
+                          cnh_number: vehicleDetails.cnh_number,
+                          cnh_validity: vehicleDetails.cnh_validity
                         });
 
                         alert('Dados do veículo salvos com sucesso!');
