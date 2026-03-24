@@ -1,8 +1,0 @@
-﻿components/wizard/Step1Personal.tsx(63,19): error TS2339: Property 'pixKey' does not exist on type 'PersonalData'.
-components/wizard/Step1Personal.tsx(281,37): error TS2339: Property 'pixKey' does not exist on type 'PersonalData'.
-components/wizard/Step1Personal.tsx(282,55): error TS2345: Argument of type '"pixKey"' is not assignable to parameter of type 'keyof PersonalData'.
-supabase/functions/process-payout/index.ts(2,30): error TS2307: Cannot find module 'https://esm.sh/@supabase/supabase-js@2' or its corresponding type declarations.
-supabase/functions/process-payout/index.ts(4,34): error TS2304: Cannot find name 'Deno'.
-supabase/functions/process-payout/index.ts(8,3): error TS2304: Cannot find name 'Deno'.
-supabase/functions/process-payout/index.ts(9,3): error TS2304: Cannot find name 'Deno'.
-supabase/functions/process-payout/index.ts(17,1): error TS2304: Cannot find name 'Deno'.

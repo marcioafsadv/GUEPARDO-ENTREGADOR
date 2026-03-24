@@ -1,4 +1,0 @@
-Table 'transactions' is empty. Testing insert with minimal data...
-Insert Test Error: new row violates row-level security policy for table "transactions"
-Code: 42501
-Hint: null
