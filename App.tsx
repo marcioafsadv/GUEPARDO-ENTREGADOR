@@ -24,8 +24,8 @@ const SOUND_OPTIONS = [
   {
     id: 'cheetah',
     label: 'Rugido do Guepardo',
-    description: 'Alerta exclusivo da marca',
-    url: '/sounds/lion-roar.mp3',
+    description: 'Toque oficial e exclusivo da marca',
+    url: '/sounds/rugido-guepardo.mp3',
     icon: 'fa-cat'
   },
   {
