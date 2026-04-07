@@ -1526,6 +1526,47 @@ const App: React.FC = () => {
     statusRef.current = status;
   }, [status]);
 
+  // ─── FAST POLLING: Dedicated watcher for PICKING_UP → in_transit ───────────
+  // When the courier is showing the collection code, poll the DB every 3 seconds.
+  // This guarantees the automation works even if the Realtime WebSocket misses the event.
+  useEffect(() => {
+    if (status !== DriverStatus.PICKING_UP || !mission || !userId) return;
+
+    console.log('⏱️ [PICKUP WATCHER] Starting fast-poll for in_transit...');
+
+    const watchInterval = setInterval(async () => {
+      try {
+        const { data, error } = await supabaseClient.supabase
+          .from('deliveries')
+          .select('status')
+          .eq('id', mission.id)
+          .single();
+
+        if (error) {
+          console.error('❌ [PICKUP WATCHER] Error polling delivery:', error);
+          return;
+        }
+
+        console.log(`🔍 [PICKUP WATCHER] DB status: ${data?.status}`);
+
+        if (data?.status === 'in_transit') {
+          console.log('🚀 [PICKUP WATCHER] in_transit detected! Auto-transitioning...');
+          clearInterval(watchInterval);
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          playSuccess();
+          setStatus(DriverStatus.GOING_TO_CUSTOMER);
+        }
+      } catch (e) {
+        console.error('❌ [PICKUP WATCHER] Unexpected error:', e);
+      }
+    }, 3000); // check every 3 seconds
+
+    return () => {
+      console.log('🛑 [PICKUP WATCHER] Stopping fast-poll.');
+      clearInterval(watchInterval);
+    };
+  }, [status, mission?.id, userId]);
+
   // MONITOR ACTIVE MISSION (ALERTING or IN_PROGRESS)
   // ⚠️  Depends only on mission?.id — NOT on status.
   //     The channel must stay alive across status transitions so
