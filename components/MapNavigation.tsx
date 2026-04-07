@@ -481,10 +481,21 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             </div>
 
             {/* Arrival Alert Overlay */}
-            {isArriving && !['ARRIVED_AT_STORE', 'PICKING_UP', 'ARRIVED_AT_CUSTOMER', 'RETURNING'].includes(status) && (
+            {isArriving && !['ARRIVED_AT_STORE', 'READY_FOR_PICKUP', 'PICKING_UP', 'ARRIVED_AT_CUSTOMER', 'RETURNING'].includes(status) && (
                 <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                     <div className="bg-orange-600 text-white px-8 py-4 rounded-full text-2xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(234,88,12,0.6)] border-4 border-white/20 animate-bounce">
                         🏠 CHEGANDO AO LOCAL
+                    </div>
+                </div>
+            )}
+
+            {/* Ready for Pickup Alert Overlay */}
+            {status === 'READY_FOR_PICKUP' && (
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+                    <div className="bg-green-600 text-white px-8 py-4 rounded-xl text-3xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(22,163,74,0.6)] border-4 border-white/20 animate-pulse flex flex-col items-center gap-2">
+                        <i className="fas fa-box-open text-4xl"></i>
+                        RETIRAR NO BALCÃO
+                        <span className="text-xs font-medium normal-case tracking-normal opacity-80">O lojista marcou como pronto!</span>
                     </div>
                 </div>
             )}

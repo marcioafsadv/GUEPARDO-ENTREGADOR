@@ -154,6 +154,7 @@ const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
   switch (dbStatus) {
     case 'accepted': return DriverStatus.GOING_TO_STORE;
     case 'arrived_pickup': return DriverStatus.ARRIVED_AT_STORE;
+    case 'ready_for_pickup': return DriverStatus.READY_FOR_PICKUP;
     case 'picking_up': return DriverStatus.PICKING_UP;   // ← Fix Bug 2: novo estado intermediário
     case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
     case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
@@ -1231,6 +1232,7 @@ const App: React.FC = () => {
   // PERIODIC POLLING: Check for pending or assigned deliveries
   // Estados onde o driver está ativamente em uma entrega e o polling NÃO deve alterar o status
   const DELIVERY_LOCKED_STATES = [
+    DriverStatus.READY_FOR_PICKUP,
     DriverStatus.PICKING_UP,
     DriverStatus.GOING_TO_CUSTOMER,
     DriverStatus.ARRIVED_AT_CUSTOMER,
