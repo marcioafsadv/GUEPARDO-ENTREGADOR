@@ -569,26 +569,11 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             </div>
 
-            {/* Right Side: Tools Cluster */}
-            <div className="absolute right-9 bottom-[100px] z-[1000] flex flex-col gap-3">
-                <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-zinc-400 active:scale-95 transition-transform">
-                    <i className="fas fa-layer-group text-lg"></i>
-                </button>
-                <div className="relative">
-                    <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-[#FF6B00] active:scale-95 transition-transform">
-                        <i className="fas fa-triangle-exclamation text-xl"></i>
-                    </button>
-                </div>
-                <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-white border-b-2 border-transparent active:scale-95 transition-transform" onClick={() => map.current?.easeTo({pitch: 0, bearing: 0, zoom: 15, duration: 1000})}>
-                    <i className="fas fa-route text-lg"></i>
-                </button>
-            </div>
-
             {/* Right Edge: Vertical Progress Bar */}
-            <div className="absolute right-3 top-[30%] bottom-[250px] w-[6px] bg-zinc-800 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] z-[100] border border-white/5">
+            <div className="absolute right-1 top-[30%] bottom-[250px] w-[4px] bg-zinc-800 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] z-[100] border border-white/5">
                 <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] shadow-[0_0_12px_rgba(255,107,0,0.8)] transition-all duration-1000" style={{ height: `${progressPct}%` }}></div>
-                <div className="absolute left-1/2 -ml-[10px] w-5 h-5 bg-white border-4 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000 flex items-center justify-center" style={{ bottom: `calc(${progressPct}% - 10px)` }}>
-                    <div className="w-1.5 h-1.5 bg-black rounded-full mix-blend-overlay"></div>
+                <div className="absolute left-1/2 -ml-[8px] w-4 h-4 bg-white border-4 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000 flex items-center justify-center" style={{ bottom: `calc(${progressPct}% - 8px)` }}>
+                    <div className="w-1 h-1 bg-black rounded-full mix-blend-overlay"></div>
                 </div>
             </div>
 

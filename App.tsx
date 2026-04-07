@@ -2721,10 +2721,7 @@ const App: React.FC = () => {
                   <div className="flex justify-between items-center mb-3 shrink-0">
                     {/* Minimal 99-style Header when navigating and collapsed */}
                     {isNavigating && !isMissionExpanded ? (
-                      <div className="flex items-center justify-between w-full px-2" onClick={() => setIsMissionExpanded(true)}>
-                        <button onClick={(e) => { e.stopPropagation(); setIsNavigating(false); }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-white shrink-0">
-                           <i className="fas fa-times text-sm"></i>
-                        </button>
+                      <div className="flex items-center justify-center w-full px-2" onClick={() => setIsMissionExpanded(true)}>
                         <div className="flex flex-col items-center justify-center w-full">
                            <h3 className="text-white font-bold text-[15px] leading-tight">Entrega em andamento</h3>
                            <div className="flex items-center gap-1.5 mt-1">
@@ -2732,7 +2729,6 @@ const App: React.FC = () => {
                              <span className="text-zinc-400 text-[11px] font-medium">Chegada prevista: <strong className="text-[#FF6B00]">{navMetrics?.time || '--'}</strong></span>
                            </div>
                         </div>
-                        <div className="w-8 h-8 shrink-0"></div>{/* Balance */}
                       </div>
                     ) : (
                       <>
@@ -2766,30 +2762,13 @@ const App: React.FC = () => {
                           <button
                             onClick={() => {
                               playClick();
-                              if (currentUser.preferredMap === 'internal') {
-                                setIsNavigating(true);
-                              } else if (currentUser.preferredMap === 'google') {
-                                openNavigation('google');
-                              } else if (currentUser.preferredMap === 'waze') {
-                                openNavigation('waze');
-                              } else {
-                                setShowMissionMapPicker(!showMissionMapPicker);
-                              }
+                              setShowMissionMapPicker(!showMissionMapPicker);
                             }}
                             className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
                           >
                             <i className="fas fa-location-arrow text-[10px]"></i>
                             <span>GPS</span>
                           </button>
-                          {isNavigating && (
-                            <button
-                                onClick={() => setIsNavigating(false)}
-                                className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 bg-red-500/20 text-red-500 hover:bg-red-500/30`}
-                              >
-                                <i className="fas fa-times text-[10px]"></i>
-                                <span>SAIR DO GPS</span>
-                            </button>
-                          )}
                           <button
                             onClick={() => { playClick(); setShowDeliveryHelpModal(!showDeliveryHelpModal); }}
                             className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
