@@ -150,12 +150,38 @@ const getDisplayId = (items: any) => {
   return items.displayId || items.id?.toString().slice(-4);
 };
 
+const STATUS_RANK: Record<string, number> = {
+  'pending': 0,
+  'accepted': 1,
+  'arrived_pickup': 2,
+  'ready_for_pickup': 3,
+  'picking_up': 4,
+  'in_transit': 5,
+  'arrived_at_customer': 6,
+  'returning': 7,
+  'completed': 10,
+  'cancelled': 10
+};
+
+const DRIVER_STATUS_RANK: Record<string, number> = {
+  [DriverStatus.OFFLINE]: -1,
+  [DriverStatus.ONLINE]: 0,
+  [DriverStatus.ALERTING]: 0.5,
+  [DriverStatus.GOING_TO_STORE]: 1,
+  [DriverStatus.ARRIVED_AT_STORE]: 2,
+  [DriverStatus.READY_FOR_PICKUP]: 3,
+  [DriverStatus.PICKING_UP]: 4,
+  [DriverStatus.GOING_TO_CUSTOMER]: 5,
+  [DriverStatus.ARRIVED_AT_CUSTOMER]: 6,
+  [DriverStatus.RETURNING]: 7
+};
+
 const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
   switch (dbStatus) {
     case 'accepted': return DriverStatus.GOING_TO_STORE;
     case 'arrived_pickup': return DriverStatus.ARRIVED_AT_STORE;
     case 'ready_for_pickup': return DriverStatus.READY_FOR_PICKUP;
-    case 'picking_up': return DriverStatus.PICKING_UP;   // ← Fix Bug 2: novo estado intermediário
+    case 'picking_up': return DriverStatus.PICKING_UP;
     case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
     case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
     case 'returning': return DriverStatus.RETURNING;
@@ -253,6 +279,8 @@ const App: React.FC = () => {
 
   // Estados Globais
   const [status, setStatus] = useState<DriverStatus>(DriverStatus.OFFLINE);
+  // Ref to always have the latest status inside realtime callbacks (avoids stale closure)
+  const statusRef = useRef<DriverStatus>(DriverStatus.OFFLINE);
   const [activeMissions, setActiveMissions] = useState<DeliveryMission[]>([]);
   const mission = React.useMemo(() => {
     if (activeMissions.length === 0) return null;
@@ -1245,12 +1273,7 @@ const App: React.FC = () => {
     if (status !== DriverStatus.OFFLINE && userId && currentUser) {
       const checkForDeliveries = async () => {
         try {
-          // GUARD: If in an active delivery state, do NOT poll for new missions or alter anything
-          // This prevents the background polling from overwriting the local delivery state
-          if (DELIVERY_LOCKED_STATES.includes(status)) {
-            console.log(`🔒 [POLLING] Skipping poll - driver is in locked state: ${status}`);
-            return;
-          }
+          // No longer skipping poll entirely. We fetch and compare ranks.
 
           const getDisplayId = (items: any) => {
             if (!items) return undefined;
@@ -1331,20 +1354,46 @@ const App: React.FC = () => {
                   setTimeout(() => setShowBatchAlert(false), 8000);
                 }
 
-                // Fix Bug 3: Guard was moved to the top of checkForDeliveries.
-                // This secondary guard is kept as a safety net for setActiveMissions.
-                if (DELIVERY_LOCKED_STATES.includes(status)) {
-                  return prev; // extra safety: return without changes
+                // PROGRESSIVE SYNC LOGIC:
+                // If we are in an active delivery, only update the local status if the server is AHEAD.
+                // This prevents "flickering" back to previous states while enabling automation.
+                const currentRank = DRIVER_STATUS_RANK[status] || 0;
+                
+                if (currentRank > 0 && currentRank < 10) {
+                  // We are in a delivery. Check first mission's status (main anchor)
+                  const mainServerMission = syncMissions.find(m => m.id === (mission?.id || syncMissions[0].id));
+                  if (mainServerMission) {
+                    const serverRank = STATUS_RANK[mainServerMission.status] || 0;
+                    
+                    if (serverRank > currentRank) {
+                      console.log(`🚀 [POLLING] Status advance detected: ${status} -> ${mainServerMission.status}. Syncing...`);
+                      const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
+                      
+                      // Trigger notifications if transitioning to key states
+                      if (nextStatus === DriverStatus.GOING_TO_CUSTOMER && status !== DriverStatus.GOING_TO_CUSTOMER) {
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                        playSuccess();
+                      }
+                      
+                      setStatus(nextStatus);
+                      setMission(mainServerMission);
+                    } else if (serverRank < currentRank) {
+                      console.log(`🛡️ [POLLING] Blocked status regression: Local is ${status} (${currentRank}), Server is ${mainServerMission.status} (${serverRank})`);
+                    }
+                  }
+                  
+                  return [...filteredPrev, ...newOnly];
                 }
 
                 // If we were ONLINE and suddenly have missions, transition status
-                if (status === DriverStatus.ONLINE && (filteredPrev.length === 0 && newOnly.length > 0) && !mission) {
+                if (status === DriverStatus.ONLINE && (filteredPrev.length === 0 && newOnly.length > 0)) {
                   const firstNew = newOnly[0];
                   if (firstNew.status === 'pending') {
                     setMission(firstNew);
                     setStatus(DriverStatus.ALERTING);
                   } else {
-                    setStatus(DriverStatus.GOING_TO_STORE);
+                    const nextStatus = mapDbStatusToDriverStatus(firstNew.status);
+                    setStatus(nextStatus);
                   }
                 }
 
@@ -1472,18 +1521,28 @@ const App: React.FC = () => {
     } catch (e) { /* silencioso */ }
   };
 
+  // Keep statusRef always up to date so realtime callbacks never read stale closures
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   // MONITOR ACTIVE MISSION (ALERTING or IN_PROGRESS)
+  // ⚠️  Depends only on mission?.id — NOT on status.
+  //     The channel must stay alive across status transitions so
+  //     we never miss the 'in_transit' event fired by the Lojista.
   useEffect(() => {
     let subscription: any;
 
     if (mission) {
-      console.log(`👀 Monitoring active mission: ${mission.id} (Status: ${status})`);
+      console.log(`👀 Monitoring active mission: ${mission.id}`);
 
       subscription = supabaseClient.subscribeToActiveMission(mission.id, (newStatus) => {
-        console.log(`📢 Mission ${mission.id} status update: ${newStatus}`);
+        // Always read the CURRENT status from the ref, not from the stale closure
+        const currentStatus = statusRef.current;
+        console.log(`📢 Mission ${mission.id} status update: ${newStatus} (local: ${currentStatus})`);
 
         // CASE 1: While alerting, if mission is taken by someone else or cancelled
-        if (status === DriverStatus.ALERTING) {
+        if (currentStatus === DriverStatus.ALERTING) {
           if (newStatus !== 'pending') {
             console.log("⚠️ Alerting mission is no longer pending. Removing alert.");
             setMission(null);
@@ -1493,19 +1552,25 @@ const App: React.FC = () => {
             else alert('Esta entrega acabou de ser aceita por outro entregador.');
           }
         }
-        // CASE 2: While doing the delivery, if mission is cancelled or validated
-        else if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE) {
+        // CASE 2: Active delivery — handle cancellation, completion and merchant validation
+        else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE) {
           if (newStatus === 'cancelled') {
             console.log("⚠️ Active delivery cancelled by store.");
             alert('Pedido cancelado pelo lojista. Você não está mais em rota.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
-          } else if (newStatus === 'completed' && status === DriverStatus.RETURNING) {
+          } else if (newStatus === 'completed' && currentStatus === DriverStatus.RETURNING) {
             console.log("✅ Return confirmed by merchant.");
-            // When a return is confirmed, we can finalize this mission locally
-             processDeliverySuccess();
-          } else if (newStatus === 'in_transit' && (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.PICKING_UP)) {
-            console.log("🚀 Merchant validated code! Moving to customer route.");
+            processDeliverySuccess();
+          } else if (
+            newStatus === 'in_transit' &&
+            (
+              currentStatus === DriverStatus.ARRIVED_AT_STORE ||
+              currentStatus === DriverStatus.READY_FOR_PICKUP ||
+              currentStatus === DriverStatus.PICKING_UP
+            )
+          ) {
+            console.log("🚀 [REALTIME] Merchant validated code! Auto-transitioning to GOING_TO_CUSTOMER.");
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             playSuccess();
             setStatus(DriverStatus.GOING_TO_CUSTOMER);
@@ -1520,7 +1585,8 @@ const App: React.FC = () => {
         subscription.unsubscribe();
       }
     };
-  }, [mission?.id, status]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mission?.id]);
 
 
 
