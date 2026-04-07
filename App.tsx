@@ -1243,6 +1243,13 @@ const App: React.FC = () => {
     if (status !== DriverStatus.OFFLINE && userId && currentUser) {
       const checkForDeliveries = async () => {
         try {
+          // GUARD: If in an active delivery state, do NOT poll for new missions or alter anything
+          // This prevents the background polling from overwriting the local delivery state
+          if (DELIVERY_LOCKED_STATES.includes(status)) {
+            console.log(`🔒 [POLLING] Skipping poll - driver is in locked state: ${status}`);
+            return;
+          }
+
           const getDisplayId = (items: any) => {
             if (!items) return undefined;
             if (Array.isArray(items)) {
@@ -1293,10 +1300,11 @@ const App: React.FC = () => {
                 const syncIds = new Set(syncMissions.map(m => m.id));
                 
                 // 1. Update existing missions with new data (status, etc.)
+                // BUT: only update status fields if we're not in a locked delivery state
                 const updatedPrev = prev.map(oldMission => {
                   const serverMission = syncMissions.find(m => m.id === oldMission.id);
                   if (serverMission) {
-                    // Update relevant fields while keeping local state if needed
+                    // Update relevant fields while keeping local status intact if in locked state
                     return { ...oldMission, ...serverMission };
                   }
                   return oldMission;
@@ -1321,11 +1329,10 @@ const App: React.FC = () => {
                   setTimeout(() => setShowBatchAlert(false), 8000);
                 }
 
-                // Fix Bug 3: Proteger estados ativos — não alterar status se o driver
-                // já está em pleno fluxo de entrega (PICKING_UP, GOING_TO_CUSTOMER, etc.)
-                // Este guard precisa ser verificado ANTES de qualquer alteração de missions
+                // Fix Bug 3: Guard was moved to the top of checkForDeliveries.
+                // This secondary guard is kept as a safety net for setActiveMissions.
                 if (DELIVERY_LOCKED_STATES.includes(status)) {
-                  return prev; // retorna sem alterar nada
+                  return prev; // extra safety: return without changes
                 }
 
                 // If we were ONLINE and suddenly have missions, transition status
