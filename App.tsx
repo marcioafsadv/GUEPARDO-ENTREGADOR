@@ -2701,7 +2701,7 @@ const App: React.FC = () => {
               <div 
                 className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
                 style={{ 
-                  transform: `translateY(${!isMissionExpanded ? `calc(100% - 100px + ${dragY}px)` : `${dragY}px`})`,
+                  transform: `translateY(${!isMissionExpanded ? (isNavigating ? 'calc(100% - 85px + ' + dragY + 'px)' : 'calc(100% - 100px + ' + dragY + 'px)') : dragY + 'px'})`,
                   touchAction: 'none',
                   willChange: 'transform'
                 }}
@@ -2719,60 +2719,88 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center mb-3 shrink-0">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
-                      {getStatusLabel(status)}
-                    </span>
-                    
-                    {/* Metrics Badge (Visible when navigating) */}
-                    {isNavigating && navMetrics && (
-                      <div className={`flex items-center space-x-3 px-3 py-1.5 rounded-2xl ${innerBg} border border-white/5`}>
-                        <div className="flex items-center space-x-1">
-                          <i className="fas fa-clock text-[10px] text-zinc-500"></i>
-                          <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.time}</span>
+                    {/* Minimal 99-style Header when navigating and collapsed */}
+                    {isNavigating && !isMissionExpanded ? (
+                      <div className="flex items-center justify-between w-full px-2" onClick={() => setIsMissionExpanded(true)}>
+                        <button onClick={(e) => { e.stopPropagation(); setIsNavigating(false); }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-white shrink-0">
+                           <i className="fas fa-times text-sm"></i>
+                        </button>
+                        <div className="flex flex-col items-center justify-center w-full">
+                           <h3 className="text-white font-bold text-[15px] leading-tight">Entrega em andamento</h3>
+                           <div className="flex items-center gap-1.5 mt-1">
+                             <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]"></div>
+                             <span className="text-zinc-400 text-[11px] font-medium">Chegada prevista: <strong className="text-[#FF6B00]">{navMetrics?.time || '--'}</strong></span>
+                           </div>
                         </div>
-                        <div className="w-px h-3 bg-white/10"></div>
-                        <div className="flex items-center space-x-1">
-                          <i className="fas fa-route text-[10px] text-zinc-500"></i>
-                          <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.distance}</span>
-                        </div>
+                        <div className="w-8 h-8 shrink-0"></div>{/* Balance */}
                       </div>
-                    )}
+                    ) : (
+                      <>
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
+                          {getStatusLabel(status)}
+                        </span>
+                        
+                        {/* Metrics Badge (Visible when navigating and expanded) */}
+                        {isNavigating && navMetrics && (
+                          <div className={`flex items-center space-x-3 px-3 py-1.5 rounded-2xl ${innerBg} border border-white/5`}>
+                            <div className="flex items-center space-x-1">
+                              <i className="fas fa-clock text-[10px] text-zinc-500"></i>
+                              <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.time}</span>
+                            </div>
+                            <div className="w-px h-3 bg-white/10"></div>
+                            <div className="flex items-center space-x-1">
+                              <i className="fas fa-route text-[10px] text-zinc-500"></i>
+                              <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.distance}</span>
+                            </div>
+                          </div>
+                        )}
 
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => { playClick(); setShowOrderDetails(!showOrderDetails); }}
-                        className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
-                      >
-                        <i className="fas fa-shopping-bag text-[10px]"></i>
-                        <span>PEDIDO</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          playClick();
-                          if (currentUser.preferredMap === 'internal') {
-                            setIsNavigating(true);
-                          } else if (currentUser.preferredMap === 'google') {
-                            openNavigation('google');
-                          } else if (currentUser.preferredMap === 'waze') {
-                            openNavigation('waze');
-                          } else {
-                            setShowMissionMapPicker(!showMissionMapPicker);
-                          }
-                        }}
-                        className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
-                      >
-                        <i className="fas fa-location-arrow text-[10px]"></i>
-                        <span>GPS</span>
-                      </button>
-                      <button
-                        onClick={() => { playClick(); setShowDeliveryHelpModal(!showDeliveryHelpModal); }}
-                        className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
-                      >
-                        <i className="fas fa-circle-question text-[10px]"></i>
-                        <span>Ajuda</span>
-                      </button>
-                      <button onClick={() => { playClick(); setShowSOSModal(true); }} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
-                    </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => { playClick(); setShowOrderDetails(!showOrderDetails); }}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                          >
+                            <i className="fas fa-shopping-bag text-[10px]"></i>
+                            <span>PEDIDO</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              playClick();
+                              if (currentUser.preferredMap === 'internal') {
+                                setIsNavigating(true);
+                              } else if (currentUser.preferredMap === 'google') {
+                                openNavigation('google');
+                              } else if (currentUser.preferredMap === 'waze') {
+                                openNavigation('waze');
+                              } else {
+                                setShowMissionMapPicker(!showMissionMapPicker);
+                              }
+                            }}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                          >
+                            <i className="fas fa-location-arrow text-[10px]"></i>
+                            <span>GPS</span>
+                          </button>
+                          {isNavigating && (
+                            <button
+                                onClick={() => setIsNavigating(false)}
+                                className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 bg-red-500/20 text-red-500 hover:bg-red-500/30`}
+                              >
+                                <i className="fas fa-times text-[10px]"></i>
+                                <span>SAIR DO GPS</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { playClick(); setShowDeliveryHelpModal(!showDeliveryHelpModal); }}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                          >
+                            <i className="fas fa-circle-question text-[10px]"></i>
+                            <span>Ajuda</span>
+                          </button>
+                          <button onClick={() => { playClick(); setShowSOSModal(true); }} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex-1 space-y-3 mb-4 pr-1">

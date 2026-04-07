@@ -11,16 +11,21 @@ const MAPBOX_TOKEN = _mbp2 + _mbp1 + _mbp3;
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface Instruction {
-    text: string;
+    fullText: string;
     distance: number;
+    distanceText: string;
+    modifier: string;
+    roadName: string;
+    nextRoadName?: string;
 }
 
 interface MapNavigationProps {
     status: string;
     destinationAddress: string | null;
     currentLocation: { lat: number; lng: number; speed?: number | null } | null;
+    routeProgress?: number; // 0 to 100 percentage
     onArrived?: () => void;
-    onUpdateMetrics?: (metrics: { time: string; distance: string }) => void;
+    onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number }) => void;
     preloadedDestination?: { lat: number; lng: number } | null;
     theme?: 'dark' | 'light';
 }
@@ -44,6 +49,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
     const lastLocation = useRef<{ lat: number; lng: number } | null>(null);
     const [currentSpeed, setCurrentSpeed] = useState<number>(0);
+    const [progressPct, setProgressPct] = useState<number>(0);
+    const [totalRouteDistance, setTotalRouteDistance] = useState<number>(0);
     const [isArriving, setIsArriving] = useState<boolean>(false);
     const lastAnnouncedText = useRef<string>('');
     const lastAnnouncedStep = useRef<string>('');
@@ -290,6 +297,13 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         // Fetch Route & Instructions
         fetchRoute(currentLocation, destinationCoords);
 
+        // Calculate progress if we have the total distance tracked
+        if (totalRouteDistance > 0 && map.current?.getSource('route')) {
+             const currentDist = getDistance(currentLocation.lat, currentLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
+             const rawPct = ((totalRouteDistance - currentDist) / totalRouteDistance) * 100;
+             setProgressPct(Math.min(100, Math.max(0, rawPct)));
+        }
+
     }, [currentLocation, destinationCoords]);
 
     const simplifyInstruction = (text: string) => {
@@ -334,13 +348,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 const route = data.routes[0];
                 const coords = route.geometry.coordinates;
 
+                // Setup initial total distance for progress calculation
+                if (totalRouteDistance === 0) setTotalRouteDistance(route.distance);
+
                 // Update UI Info
                 setRemainingTime(`${Math.round(route.duration / 60)} min`);
                 setRemainingDistance(`${(route.distance / 1000).toFixed(1)} km`);
                 
                 onUpdateMetrics?.({
                     time: `${Math.round(route.duration / 60)} min`,
-                    distance: `${(route.distance / 1000).toFixed(1)} km`
+                    distance: `${(route.distance / 1000).toFixed(1)} km`,
+                    progress: progressPct
                 });
 
                 // Arrival Alert Detection (within 100m)
@@ -373,9 +391,19 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     const simplified = simplifyInstruction(nextStep.maneuver.instruction);
                     const fullText = `A ${distText}, ${simplified}`;
                     
+                    const modifier = nextStep.maneuver.modifier || 'straight'; // e.g. "left", "right", "straight", "sharp right"
+                    const roadName = nextStep.name || simplified;
+
+                    const nextNextStep = route.legs[0].steps[1];
+                    const secondaryRoad = nextNextStep?.name || '';
+                    
                     setInstruction({
-                        text: fullText,
-                        distance: nextStep.distance
+                        fullText: fullText,
+                        distance: nextStep.distance,
+                        distanceText: distText.replace('m', ' m').replace('km', ' km'),
+                        modifier: modifier,
+                        roadName: roadName,
+                        nextRoadName: secondaryRoad
                     });
 
                     // Voice Guidance: Announce ONLY ONCE at 200m before the turn
@@ -461,22 +489,52 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         <div className="w-full h-full relative overflow-hidden bg-zinc-950">
             <div ref={mapContainer} className="w-full h-full" />
 
-            {/* Header Instructions */}
-            <div className="absolute top-0 left-0 right-0 p-4 z-10">
-                <div className="bg-zinc-900/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-2xl animate-pulse">
-                        <i className={`fas ${instruction?.text.toLowerCase().includes('esquerda') ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+            {/* 99-style Header Instructions */}
+            <div className="absolute top-0 left-0 right-0 z-20">
+                <div className="bg-[#0b0b0b] rounded-b-[32px] shadow-[0_15px_30px_rgba(0,0,0,0.4)] pb-5 pt-8 px-6 flex flex-col uppercase transition-all">
+                    {/* Main Instruction */}
+                    <div className="flex items-start">
+                        <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-16">
+                            {instruction?.modifier.includes('left') ? (
+                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-5xl"></i>
+                            ) : instruction?.modifier.includes('right') ? (
+                                <i className="fas fa-arrow-turn-down text-5xl fa-rotate-180"></i>
+                            ) : instruction?.modifier.includes('uturn') ? (
+                                <i className="fas fa-arrow-rotate-left text-5xl"></i>
+                            ) : (
+                                <i className="fas fa-arrow-up text-5xl"></i>
+                            )}
+                        </div>
+                        <div className="flex flex-col flex-1 pb-4">
+                            <h1 className="text-white text-[42px] font-black leading-none tracking-tight">
+                                {instruction?.distanceText || '-- m'}
+                            </h1>
+                            <p className="text-white/90 text-[18px] font-semibold leading-tight line-clamp-2 mt-2">
+                                {instruction?.roadName || 'Calculando...'}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Instrução de Rota</p>
-                        <h2 className="text-white text-lg font-bold leading-tight line-clamp-2">{instruction?.text || 'Calculando rota...'}</h2>
-                    </div>
-                    <button 
-                        onClick={() => setVoiceEnabled(!voiceEnabled)}
-                        className={`ml-auto w-10 h-10 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-orange-500/20 text-orange-500' : 'bg-zinc-800 text-zinc-500'}`}
-                    >
-                        <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'}`}></i>
-                    </button>
+                    {/* Secondary Instruction (If available) */}
+                    {instruction?.nextRoadName ? (
+                        <div className="border-t border-white/10 pt-4 flex items-center gap-3">
+                            <i className="fas fa-arrow-turn-up text-zinc-400 rotate-90 text-sm"></i>
+                            <p className="text-zinc-400 text-base font-semibold truncate leading-none">
+                                {instruction.nextRoadName}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="border-t border-white/10 pt-4 flex items-center justify-between">
+                            <p className="text-zinc-500 text-xs font-bold leading-none tracking-widest">
+                                MANTENHA A ATENÇÃO NA VIA
+                            </p>
+                            <button 
+                                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-zinc-800 text-white' : 'bg-transparent border border-zinc-700 text-zinc-600'}`}
+                            >
+                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -500,17 +558,37 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Speedometer & Tools - Premium Glassmorphism style */}
-            <div className="absolute top-1/2 -translate-y-1/2 left-6 z-10 flex flex-col gap-3">
-                <div className="bg-orange-600/20 backdrop-blur-xl border-2 border-orange-500/50 rounded-2xl flex flex-col items-center justify-center w-20 h-20 shadow-[0_0_20px_rgba(234,88,12,0.3)] animate-pulse-subtle group overflow-hidden relative">
-                    {/* Interior Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
-                    
-                    <span className="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10 relative">{currentSpeed}</span>
-                    <span className="text-[8px] text-orange-500 font-black tracking-widest leading-none z-10 relative">KM/H</span>
-                    
-                    {/* Decorative Ring */}
-                    <div className="absolute inset-1 border border-white/10 rounded-[14px]"></div>
+            {/* Left Side: Shield + Speedometer */}
+            <div className="absolute left-4 bottom-[100px] z-[1000] flex flex-col gap-3 items-center">
+                <div className="w-12 h-12 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
+                    <i className="fas fa-shield-halved text-xl"></i>
+                </div>
+                <div className="bg-[#121212] border-2 border-zinc-800 rounded-full flex flex-col items-center justify-center w-20 h-20 shadow-[0_8px_20px_rgba(0,0,0,0.6)]">
+                    <span className="text-3xl font-black text-white">{currentSpeed}</span>
+                    <span className="text-[10px] text-zinc-400 font-bold tracking-wider pt-0.5">km/h</span>
+                </div>
+            </div>
+
+            {/* Right Side: Tools Cluster */}
+            <div className="absolute right-9 bottom-[100px] z-[1000] flex flex-col gap-3">
+                <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-zinc-400 active:scale-95 transition-transform">
+                    <i className="fas fa-layer-group text-lg"></i>
+                </button>
+                <div className="relative">
+                    <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-[#FF6B00] active:scale-95 transition-transform">
+                        <i className="fas fa-triangle-exclamation text-xl"></i>
+                    </button>
+                </div>
+                <button className="w-[46px] h-[46px] rounded-full bg-[#202020] shadow-xl flex items-center justify-center text-white border-b-2 border-transparent active:scale-95 transition-transform" onClick={() => map.current?.easeTo({pitch: 0, bearing: 0, zoom: 15, duration: 1000})}>
+                    <i className="fas fa-route text-lg"></i>
+                </button>
+            </div>
+
+            {/* Right Edge: Vertical Progress Bar */}
+            <div className="absolute right-3 top-[30%] bottom-[250px] w-[6px] bg-zinc-800 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] z-[100] border border-white/5">
+                <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] shadow-[0_0_12px_rgba(255,107,0,0.8)] transition-all duration-1000" style={{ height: `${progressPct}%` }}></div>
+                <div className="absolute left-1/2 -ml-[10px] w-5 h-5 bg-white border-4 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000 flex items-center justify-center" style={{ bottom: `calc(${progressPct}% - 10px)` }}>
+                    <div className="w-1.5 h-1.5 bg-black rounded-full mix-blend-overlay"></div>
                 </div>
             </div>
 

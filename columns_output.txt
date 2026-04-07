@@ -1,0 +1,59 @@
+COLUMNS:
+accepted_at
+batch_id
+collection_code
+completed_at
+created_at
+customer_address
+customer_name
+customer_phone_suffix
+delivery_distance
+distance_to_store
+driver_id
+earnings
+id
+items
+status
+store_address
+store_id
+store_name
+total_distance
+updated_at
+
+SAMPLE DATA:
+{
+  "id": "fc7be34e-a804-42df-8964-2a25b7af13bb",
+  "driver_id": "b605229f-da52-4af2-8120-f9cfc7211d87",
+  "store_name": "Guepardo Delivery",
+  "store_address": "Rua Carlos Scalet, 58 - Itu",
+  "customer_name": "Carlos Miguel",
+  "customer_address": "Rua Roque Dalben, 01 - Casa - Parque Residencial Presidente Médici, Itu/SP",
+  "customer_phone_suffix": "0101",
+  "items": {
+    "changeFor": null,
+    "displayId": 4672,
+    "addressCep": "13310-100",
+    "stopNumber": 1,
+    "addressCity": "Itu/SP",
+    "storeFreight": 8.6,
+    "deliveryValue": 50,
+    "paymentMethod": "PIX",
+    "destinationLat": -23.269046,
+    "destinationLng": -47.310373,
+    "isReturnRequired": false,
+    "addressComplement": "Casa",
+    "addressNeighborhood": "Parque Residencial Presidente Médici"
+  },
+  "collection_code": "3886",
+  "distance_to_store": null,
+  "delivery_distance": 0.453156,
+  "total_distance": null,
+  "earnings": 7.52,
+  "status": "completed",
+  "created_at": "2026-04-06T14:11:02.135203+00:00",
+  "completed_at": "2026-04-06T14:14:11.125+00:00",
+  "store_id": "bcb22ff3-3f46-4402-a094-6a7c9c26db17",
+  "accepted_at": "2026-04-06T14:11:24.117+00:00",
+  "updated_at": "2026-04-06T14:11:02.135203+00:00",
+  "batch_id": null
+}
