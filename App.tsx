@@ -1456,6 +1456,22 @@ const App: React.FC = () => {
   }, [status, alertCountdown]);
 
 
+  // Sucesso Eletrônico: bip duplo rápido
+  const playSuccess = () => {
+    try {
+      const ctx = getAudioCtx();
+      const t = ctx.currentTime;
+      const beep = (freq: number, delay: number) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(freq, t + delay);
+        g.gain.setValueAtTime(0.1, t + delay); g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.1);
+        o.connect(g); g.connect(ctx.destination); o.start(t + delay); o.stop(t + delay + 0.12);
+      };
+      beep(880, 0);   // A5
+      beep(1108, 0.1); // C#6
+    } catch (e) { /* silencioso */ }
+  };
+
   // MONITOR ACTIVE MISSION (ALERTING or IN_PROGRESS)
   useEffect(() => {
     let subscription: any;
@@ -1477,7 +1493,7 @@ const App: React.FC = () => {
             else alert('Esta entrega acabou de ser aceita por outro entregador.');
           }
         }
-        // CASE 2: While doing the delivery, if mission is cancelled
+        // CASE 2: While doing the delivery, if mission is cancelled or validated
         else if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE) {
           if (newStatus === 'cancelled') {
             console.log("⚠️ Active delivery cancelled by store.");
@@ -1488,6 +1504,11 @@ const App: React.FC = () => {
             console.log("✅ Return confirmed by merchant.");
             // When a return is confirmed, we can finalize this mission locally
              processDeliverySuccess();
+          } else if (newStatus === 'in_transit' && (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.PICKING_UP)) {
+            console.log("🚀 Merchant validated code! Moving to customer route.");
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            playSuccess();
+            setStatus(DriverStatus.GOING_TO_CUSTOMER);
           }
         }
       });
