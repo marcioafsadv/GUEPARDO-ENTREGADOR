@@ -154,6 +154,7 @@ const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
   switch (dbStatus) {
     case 'accepted': return DriverStatus.GOING_TO_STORE;
     case 'arrived_pickup': return DriverStatus.ARRIVED_AT_STORE;
+    case 'picking_up': return DriverStatus.PICKING_UP;   // ← Fix Bug 2: novo estado intermediário
     case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
     case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
     case 'returning': return DriverStatus.RETURNING;
@@ -962,20 +963,55 @@ const App: React.FC = () => {
     }
   }, [status, soundEnabled, autoAccept]);
 
+  // Fix Bug #2: Monitorar o status 'ready_for_pickup' no banco de dados via Realtime
+  // em vez de usar um timeout local de 10s que ignora o Lojista.
   useEffect(() => {
-    let timer: any;
-    if (status === DriverStatus.ARRIVED_AT_STORE) {
+    if (status !== DriverStatus.ARRIVED_AT_STORE || !mission) {
       setIsOrderReady(false);
-      timer = setTimeout(() => {
-        setIsOrderReady(true);
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        // Status will be updated after code validation, not automatically
-      }, 10000);
-    } else {
-      setIsOrderReady(false);
+      return;
     }
-    return () => clearTimeout(timer);
-  }, [status]);
+
+    setIsOrderReady(false);
+
+    // Ouvir mudanças de status para esta entrega específica
+    const readyChannel = supabaseClient.supabase
+      .channel(`ready-check-${mission.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deliveries',
+          filter: `id=eq.${mission.id}`
+        },
+        (payload) => {
+          console.log('📦 [READY_CHECK] Delivery updated:', payload.new.status);
+          if (payload.new.status === 'ready_for_pickup') {
+            console.log('✅ [READY_CHECK] Lojista marcou pedido como pronto!');
+            setIsOrderReady(true);
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Também verificar imediatamente o status atual no banco (caso já esteja pronto)
+    supabaseClient.supabase
+      .from('deliveries')
+      .select('status')
+      .eq('id', mission.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.status === 'ready_for_pickup') {
+          console.log('✅ [READY_CHECK] Pedido já estava pronto no banco');
+          setIsOrderReady(true);
+        }
+      });
+
+    return () => {
+      supabaseClient.supabase.removeChannel(readyChannel);
+    };
+  }, [status, mission?.id]);
 
   useEffect(() => {
     if (status === DriverStatus.ONLINE || status === DriverStatus.OFFLINE) {
@@ -1039,7 +1075,9 @@ const App: React.FC = () => {
                 storePhone: '', // Not in DB yet
                 customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
                 status: firstPending.status || 'pending',
-                displayId: getDisplayId(firstPending.items)
+                displayId: getDisplayId(firstPending.items),
+                deliveryValue: parseFloat(firstPending.items?.deliveryValue || '0'),
+                paymentMethod: firstPending.items?.paymentMethod || 'PIX'
               };
 
               setMission(dynamicMission);
@@ -1112,7 +1150,9 @@ const App: React.FC = () => {
             status: newMissionPayload.status || 'pending',
             isReturnRequired: newMissionPayload.is_return_required || (newMissionPayload.items?.isReturnRequired) || false,
             displayId: getDisplayId(newMissionPayload.items),
-            batch_id: newMissionPayload.batch_id
+            batch_id: newMissionPayload.batch_id,
+            deliveryValue: parseFloat(newMissionPayload.items?.deliveryValue || '0'),
+            paymentMethod: newMissionPayload.items?.paymentMethod || 'PIX'
           };
 
           // If it's a batch, fetch all stops to ensure we accept/reject them together
@@ -1189,6 +1229,14 @@ const App: React.FC = () => {
 
 
   // PERIODIC POLLING: Check for pending or assigned deliveries
+  // Estados onde o driver está ativamente em uma entrega e o polling NÃO deve alterar o status
+  const DELIVERY_LOCKED_STATES = [
+    DriverStatus.PICKING_UP,
+    DriverStatus.GOING_TO_CUSTOMER,
+    DriverStatus.ARRIVED_AT_CUSTOMER,
+    DriverStatus.RETURNING,
+  ];
+
   useEffect(() => {
     let pollingInterval: any;
 
@@ -1208,7 +1256,7 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'returning']);
+            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
 
           if (assignedOrders && assignedOrders.length > 0) {
             // Filter out missions the driver has already rejected locally
@@ -1235,7 +1283,9 @@ const App: React.FC = () => {
               displayId: getDisplayId(d.items),
               batch_id: d.batch_id,
               destinationLat: d.destination_lat,
-              destinationLng: d.destination_lng
+              destinationLng: d.destination_lng,
+              deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
+              paymentMethod: d.items?.paymentMethod || 'PIX'
             }));
 
             if (syncMissions.length > 0) {
@@ -1269,6 +1319,13 @@ const App: React.FC = () => {
                   setNewBatchEarnings(addedEarnings);
                   setShowBatchAlert(true);
                   setTimeout(() => setShowBatchAlert(false), 8000);
+                }
+
+                // Fix Bug 3: Proteger estados ativos — não alterar status se o driver
+                // já está em pleno fluxo de entrega (PICKING_UP, GOING_TO_CUSTOMER, etc.)
+                // Este guard precisa ser verificado ANTES de qualquer alteração de missions
+                if (DELIVERY_LOCKED_STATES.includes(status)) {
+                  return prev; // retorna sem alterar nada
                 }
 
                 // If we were ONLINE and suddenly have missions, transition status
@@ -1690,10 +1747,12 @@ const App: React.FC = () => {
   };
 
   const isCodeValid = () => {
+    if (!mission) return false;
+    
     if (status === DriverStatus.ARRIVED_AT_CUSTOMER) {
-      if (!mission) return false;
-      const cleanedSuffix = String(mission.customerPhoneSuffix || '').replace(/\D/g, '').slice(-4);
+      // Validação do código de entrega (4 últimos dígitos do telefone do cliente)
       const codeStr = typedCode.join('');
+      const cleanedSuffix = String(mission.customerPhoneSuffix || '').replace(/\D/g, '').slice(-4);
       const isMatch = codeStr === cleanedSuffix;
 
       if (codeStr.length === 4 && !isMatch) {
@@ -1701,7 +1760,8 @@ const App: React.FC = () => {
       }
       return isMatch;
     }
-    return true;
+    
+    return true; // Para os demais estados (como PICKING_UP), o código é apenas exibido
   };
 
   const applyCpfMask = (value: string) => {
@@ -1850,7 +1910,22 @@ const App: React.FC = () => {
         }
       }
     }
-    else if (status === DriverStatus.ARRIVED_AT_STORE) setStatus(DriverStatus.PICKING_UP);
+    else if (status === DriverStatus.ARRIVED_AT_STORE) {
+      // Fix Bug 3: Persistir 'picking_up' no banco para evitar que o polling (5s) reverta
+      // o status para ARRIVED_AT_STORE ao ler 'arrived_pickup' desatualizado do servidor.
+      if (mission && userId) {
+        supabaseClient.supabase
+          .from('deliveries')
+          .update({ status: 'picking_up' })
+          .eq('id', mission.id)
+          .eq('driver_id', userId)
+          .then(({ error }) => {
+            if (error) console.error('❌ Erro ao salvar status picking_up:', error);
+            else console.log('✅ Status atualizado para picking_up no banco');
+          });
+      }
+      setStatus(DriverStatus.PICKING_UP);
+    }
     else if (status === DriverStatus.PICKING_UP && isCodeValid()) {
       // Update database status to in_transit when pickup code is validated
       if (mission && userId) {
@@ -2721,6 +2796,16 @@ const App: React.FC = () => {
                             {isOrderReady ? 'Retire no Balcão' : 'Aguarde o Lojista'}
                           </h4>
                           <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: #{mission?.displayId || mission?.id?.slice(-4)}</p>
+                          {(mission?.deliveryValue ?? 0) > 0 && (
+                            <div className="flex items-center space-x-2 mt-1.5">
+                              <span className={`text-[10px] font-black ${isOrderReady ? 'text-[#FFD700]' : 'text-green-400'}`}>
+                                R$ {(mission?.deliveryValue || 0).toFixed(2)}
+                              </span>
+                              <span className={`text-[9px] font-bold uppercase ${textMuted}`}>
+                                · {mission?.paymentMethod || 'PIX'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2742,6 +2827,17 @@ const App: React.FC = () => {
                         <div className="flex flex-col items-center">
                           <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>Cliente</p>
                           <h2 className={`text-2xl font-black ${textPrimary} line-clamp-1`}>{mission?.customerName}</h2>
+                          {(mission?.deliveryValue ?? 0) > 0 && (
+                            <div className="flex items-center space-x-2 mt-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                              <i className="fas fa-money-bill-wave text-green-400 text-xs"></i>
+                              <span className="text-green-400 font-black text-sm">
+                                R$ {(mission?.deliveryValue || 0).toFixed(2)}
+                              </span>
+                              <span className={`text-[9px] font-bold uppercase ${textMuted}`}>
+                                {mission?.paymentMethod || 'PIX'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

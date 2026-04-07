@@ -34,6 +34,8 @@ export interface DeliveryMission {
   destinationLat?: number;
   destinationLng?: number;
   stopNumber?: number;
+  deliveryValue?: number;
+  paymentMethod?: string;
 }
 
 export interface DailySummary {

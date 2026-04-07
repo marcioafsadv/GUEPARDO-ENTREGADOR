@@ -182,7 +182,7 @@ export const getActiveDelivery = async (driverId: string) => {
     .from('deliveries')
     .select('*')
     .eq('driver_id', driverId)
-    .in('status', ['accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'returning'])
+    .in('status', ['accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
