@@ -1263,7 +1263,7 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
+            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup', 'in_transit', 'arrived_at_customer', 'returning']);
 
           if (assignedOrders && assignedOrders.length > 0) {
             // Filter out missions the driver has already rejected locally
@@ -1497,7 +1497,7 @@ const App: React.FC = () => {
         subscription.unsubscribe();
       }
     };
-  }, [mission, status]);
+  }, [mission?.id, status]);
 
 
 
