@@ -4376,17 +4376,17 @@ const App: React.FC = () => {
       )}
 
       {showPostDeliveryModal && (
-        <div className="absolute inset-0 z-[6000] bg-chocolate-orange-v2 flex flex-col items-center justify-center p-8 overflow-hidden">
+        <div className="fixed inset-0 z-[10000] bg-chocolate-orange-v2 flex flex-col items-center justify-center p-8 overflow-hidden">
           {/* Layer 1: The Realistic Scratch Background (Print 3 style) */}
           <div className="scratch-container-v2">
-            <img src="/images/paw-scratch-v2.png" className="paw-bg-scratch" alt="Feroz Scratch" />
+            <img src="/images/paw-scratch.png" className="paw-bg-scratch" alt="Feroz Scratch" />
           </div>
 
           {/* Layer 2: Main Content */}
           <div className="w-full max-w-xs text-center animate-in fade-in zoom-in duration-700 delay-300 relative z-20 flex flex-col items-center">
             {/* Guepardo Sticker V2 (Print 2 style) */}
             <div className="mb-4 transform h-48 flex items-center justify-center">
-              <img src="/images/logo-sticker-v2.png" className="h-full object-contain filter drop-shadow-[0_10px_30px_rgba(255,107,0,0.4)]" alt="Guepardo Sticker" />
+              <img src="/images/logo-sticker.png" className="h-full object-contain filter drop-shadow-[0_10px_30px_rgba(255,107,0,0.5)]" alt="Guepardo Sticker" />
             </div>
 
             <div className="space-y-1 mb-8">
