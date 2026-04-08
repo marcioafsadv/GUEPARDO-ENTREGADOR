@@ -1724,75 +1724,78 @@ const App: React.FC = () => {
         console.log('✅ Mission completed (phase finalized)');
       }
 
-      let nextToMove: DeliveryMission | null = null;
-      let targetStatus: DriverStatus | null = null;
+      // 🎯 FORCE RELIABLE STATE BY FETCHING DIRECTLY FROM DATABASE
+      // This eliminates all React state batching and stale closure issues across the multi-stop sequencing.
+      const ACTIVE_DELIVERY_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'ready_for_pickup'];
+      
+      const { data: remainingMissions, error: fetchErr } = await supabaseClient.supabase
+        .from('deliveries')
+        .select('*')
+        .eq('driver_id', userId)
+        .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning'])
+        .order('created_at', { ascending: true });
 
-      setActiveMissions(prev => {
-        console.log('🔄 Current Active Missions (prev):', prev.map(m => `${m.id.slice(-4)}:${m.status}`));
+      if (fetchErr) {
+        console.error('Error fetching remaining missions:', fetchErr);
+        throw fetchErr;
+      }
+
+      const syncMissions: DeliveryMission[] = (remainingMissions || []).map(d => ({
+        id: d.id,
+        storeName: d.store_name || 'Loja',
+        storeAddress: d.store_address || '',
+        customerName: d.customer_name || 'Cliente',
+        customerAddress: d.customer_address || '',
+        customerPhoneSuffix: d.customer_phone_suffix || '',
+        items: d.items || [],
+        collectionCode: d.collection_code || '0000',
+        distanceToStore: d.distance_to_store || 1.5,
+        deliveryDistance: d.delivery_distance || 2.0,
+        totalDistance: d.total_distance || 3.5,
+        earnings: parseFloat(d.earnings || '0'),
+        timeLimit: 25,
+        storePhone: '',
+        customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
+        status: d.status || 'pending',
+        isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+        displayId: d.items?.displayId || d.id?.toString().slice(-4),
+        batch_id: d.batch_id,
+        destinationLat: d.destination_lat,
+        destinationLng: d.destination_lng,
+        deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
+        paymentMethod: d.items?.paymentMethod || 'PIX'
+      }));
+
+      console.log('📝 Reliable DB Missions Remaining:', syncMissions.length, syncMissions.map(m => `${m.id.slice(-4)}:${m.status}`));
+      
+      setActiveMissions(syncMissions);
+
+      const pendingOrTransit = syncMissions.filter(m => ACTIVE_DELIVERY_STATUSES.includes(m.status));
+
+      if (pendingOrTransit.length > 0) {
+        const nextToMove = pendingOrTransit[0];
+        const newTargetStatus = nextToMove.storeName === mission.storeName 
+          ? DriverStatus.GOING_TO_CUSTOMER 
+          : DriverStatus.GOING_TO_STORE;
         
-        const updated = prev.map(m => {
-          if (m.id !== mission.id) return m;
-
-          // If already in returning status, this success confirms the return is DONE
-          if (m.status === 'returning') {
-            console.log(`✅ Finalizing return for mission: ${m.id.slice(-4)}`);
-            return { ...m, status: 'completed' };
-          }
-
-          // Otherwise, determine if it needs to go to returning or completed
-          return { ...m, status: (mission.isReturnRequired ? 'returning' : 'completed') };
-        }).filter(m => m.status !== 'completed');
-        
-        console.log('📝 Updated Missions List:', updated.map(m => `${m.id.slice(-4)}:${m.status}`));
-
-        // 📝 ROBUST FIX: Define what states constitute "pending or in-transit"
-        const ACTIVE_DELIVERY_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'in_transit', 'arrived_at_customer', 'ready_for_pickup'];
-        
-        const pendingOrTransit = updated.filter(m => 
-            ACTIVE_DELIVERY_STATUSES.includes(m.status)
-        );
-        
-        console.log('📑 Pending/Transit Missions Remaining:', pendingOrTransit.length, pendingOrTransit.map(m => m.id.slice(-4)));
-
-        if (pendingOrTransit.length > 0) {
-          // Sequence to next delivery stop
-          nextToMove = pendingOrTransit[0];
-          targetStatus = nextToMove.storeName === mission.storeName 
-            ? DriverStatus.GOING_TO_CUSTOMER 
-            : DriverStatus.GOING_TO_STORE;
-          console.log(`➡️ Sequencing to next delivery stop: ${nextToMove.id.slice(-4)}, Target Status: ${targetStatus}`);
-        } else if (updated.some(m => m.status === 'returning')) {
-          // All stops delivered, but some require return to merchant
-          targetStatus = DriverStatus.RETURNING;
-          // Pick the first mission that requires return
-          nextToMove = updated.find(m => m.status === 'returning') || updated[0];
-          console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
-        } else {
-          // Everything truly finished
-          targetStatus = DriverStatus.ONLINE;
-          nextToMove = null;
-          console.log('✨ All missions including returns finished.');
-        }
-
-        return updated;
-      });
-
-      // 🔄 APPLY STATUS TRANSITION (outside the functional update for stability)
-      setTimeout(() => {
-        if (targetStatus !== null) {
-          console.log(`🔄 Applying status transition: ${targetStatus}`);
-          setStatus(targetStatus);
-          setMission(nextToMove);
-          
-          if (targetStatus === DriverStatus.ONLINE) {
-            setBatchHasReturn(false);
-            setShowPostDeliveryModal(true);
-            setIsNavigating(false);
-          } else {
-            setShowPostDeliveryModal(false);
-          }
-        }
-      }, 100);
+        console.log(`➡️ Sequencing to next delivery stop: ${nextToMove.id.slice(-4)}, Target Status: ${newTargetStatus}`);
+        setStatus(newTargetStatus);
+        setMission(nextToMove);
+        setShowPostDeliveryModal(false);
+      } else if (syncMissions.some(m => m.status === 'returning')) {
+        const nextToMove = syncMissions.find(m => m.status === 'returning') || syncMissions[0];
+        console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
+        setStatus(DriverStatus.RETURNING);
+        setMission(nextToMove);
+        setShowPostDeliveryModal(false);
+      } else {
+        console.log('✨ All missions including returns finished.');
+        setStatus(DriverStatus.ONLINE);
+        setMission(null);
+        setBatchHasReturn(false);
+        setShowPostDeliveryModal(true);
+        setIsNavigating(false);
+      }
 
       console.log('🚀 Success processing finished.');
 
@@ -2609,7 +2612,13 @@ const App: React.FC = () => {
                 DriverStatus.ARRIVED_AT_CUSTOMER,
                 DriverStatus.RETURNING
               ].includes(status) && currentLocation && !isNavigating) && (
-                <div className="absolute left-4 z-[1002]" style={{ bottom: '220px' }}>
+                <div 
+                  className="absolute left-4 z-[1002]" 
+                  style={{ 
+                    bottom: isMissionExpanded ? 'calc(100vh - 100px)' : '200px',
+                    transition: 'bottom 0.3s ease-out'
+                  }}
+                >
                   <div
                     className="flex flex-col items-center justify-center rounded-2xl shadow-2xl border"
                     style={{
@@ -2754,9 +2763,16 @@ const App: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
-                          {getStatusLabel(status)}
-                        </span>
+                        <div className="flex flex-col items-start">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
+                            {getStatusLabel(status)}
+                          </span>
+                          {activeMissions.length > 1 && (
+                            <span className="text-[10px] font-black text-[#FF6B00] mt-1 ml-1 transform -skew-x-12">
+                              VALOR TOTAL: R$ {activeMissions.reduce((acc, m) => acc + (m.earnings || 0), 0).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                         
                         {/* Metrics Badge (Visible when navigating and expanded) */}
                         {isNavigating && navMetrics && (
@@ -4509,7 +4525,11 @@ const App: React.FC = () => {
                 {(() => {
                   const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
                   const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
-                  const totalD = mToShow.reduce((acc, m) => acc + (m?.totalDistance || 0), 0);
+                  
+                  // Se for um lote (batch), cada missão já contém a distância TOTAL da rota. 
+                  // Portanto, NÃO devemos somar, ou triplicaremos a distância real na tela.
+                  // Tomamos apenas a distância da primeira rota como referência do trajeto total.
+                  const totalD = mToShow.length > 0 ? (mToShow[0]?.totalDistance || 0) : 0;
                   const isB = mToShow.length > 1;
 
                   return (

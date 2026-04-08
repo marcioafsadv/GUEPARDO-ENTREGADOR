@@ -559,7 +559,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             )}
 
             {/* Left Side: Shield + Speedometer */}
-            <div className="absolute left-4 bottom-[100px] z-[1000] flex flex-col gap-3 items-center">
+            <div className="absolute left-4 bottom-[200px] z-[1000] flex flex-col gap-3 items-center">
                 <div className="w-12 h-12 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
                     <i className="fas fa-shield-halved text-xl"></i>
                 </div>
