@@ -1521,6 +1521,13 @@ const App: React.FC = () => {
     } catch (e) { /* silencioso */ }
   };
 
+  const playRugido = () => {
+    try {
+      const sound = new Howl({ src: ['/sounds/rugido-guepardo.mp3'], volume: 1.0 });
+      sound.play();
+    } catch (e) { console.error('Audio error:', e); }
+  };
+
   // Keep statusRef always up to date so realtime callbacks never read stale closures
   useEffect(() => {
     statusRef.current = status;
@@ -1793,6 +1800,7 @@ const App: React.FC = () => {
         setStatus(DriverStatus.ONLINE);
         setMission(null);
         setBatchHasReturn(false);
+        playRugido();
         setShowPostDeliveryModal(true);
         setIsNavigating(false);
       }
@@ -4368,13 +4376,28 @@ const App: React.FC = () => {
       )}
 
       {showPostDeliveryModal && (
-        <div className="absolute inset-0 z-[6000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
-          <div className="w-full max-w-xs text-center animate-in zoom-in duration-300">
-            <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-900/40"><i className="fas fa-check text-4xl text-white"></i></div>
-            <h2 className="text-3xl font-black italic mb-2 text-white">MUITO BEM!</h2>
-            <p className="text-zinc-400 font-bold mb-8 uppercase text-xs tracking-widest">Entrega concluída com sucesso</p>
-            <div className="bg-zinc-900 p-6 rounded-[32px] border border-white/5 mb-10"><p className="text-zinc-500 font-black text-[10px] uppercase mb-1">Você ganhou</p><p className="text-4xl font-black text-white italic">R$ {(batchEarnings || 0).toFixed(2)}</p></div>
-            <button onClick={() => { setShowPostDeliveryModal(false); }} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl">Continuar</button>
+        <div className="absolute inset-0 z-[6000] bg-chocolate-orange backdrop-blur-xl flex items-center justify-center p-8 overflow-hidden">
+          <div className="scratch-container">
+            <div className="scratch-mark scratch-mark-1"></div>
+            <div className="scratch-mark scratch-mark-2"></div>
+            <div className="scratch-mark scratch-mark-3"></div>
+          </div>
+          <div className="w-full max-w-xs text-center animate-in zoom-in duration-300 relative z-20">
+            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl border border-white/20 backdrop-blur-md">
+              <i className="fas fa-cat text-4xl text-[#FF6B00]"></i>
+            </div>
+            <h2 className="text-3xl font-black italic mb-2 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] transform -skew-x-12">VOCÊ É FEROZ GUEPARDO!</h2>
+            <p className="text-white/70 font-bold mb-8 uppercase text-[10px] tracking-widest">Entrega concluída com maestria</p>
+            <div className="bg-black/30 backdrop-blur-md p-6 rounded-[32px] border border-white/10 mb-10 shadow-inner">
+              <p className="text-white/50 font-black text-[10px] uppercase mb-1">Você conquistou</p>
+              <p className="text-5xl font-black text-white italic drop-shadow-lg">R$ {(batchEarnings || 0).toFixed(2)}</p>
+            </div>
+            <button 
+              onClick={() => { playClick(); setShowPostDeliveryModal(false); }} 
+              className="w-full h-16 bg-white text-black rounded-2xl font-black uppercase italic tracking-widest shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all"
+            >
+              Continuar a Caça
+            </button>
           </div>
         </div>
       )}
