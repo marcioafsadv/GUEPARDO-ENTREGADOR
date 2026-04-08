@@ -4393,7 +4393,7 @@ const App: React.FC = () => {
           <div className="w-full max-w-xs text-center animate-in fade-in zoom-in duration-700 delay-300 relative z-20 flex flex-col items-center">
             {/* Logo Oficial do Guepardo */}
             <div className="mb-8 transform h-32 flex items-center justify-center">
-              <img src="/images/logo-guepardo.jpg" className="h-full object-contain rounded-2xl shadow-2xl border border-white/10" alt="Guepardo Logo" />
+              <img src="/images/logo-sticker.png" className="h-full object-contain drop-shadow-2xl" alt="Guepardo Sticker" />
             </div>
 
             <div className="space-y-1 mb-8">
@@ -4428,7 +4428,7 @@ const App: React.FC = () => {
 
             <button 
               onClick={() => { playClick(); setShowPostDeliveryModal(false); }} 
-              className="w-full h-18 bg-white text-black rounded-2xl font-black uppercase italic tracking-widest shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center space-x-3 text-lg"
+              className="w-full h-18 bg-[#FF6B00] text-white rounded-2xl font-black uppercase italic tracking-widest shadow-[0_15px_40px_rgba(255,107,0,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center space-x-3 text-lg border-2 border-white/20"
             >
               <span>Continuar a Caça</span>
               <i className="fas fa-chevron-right text-xs"></i>
