@@ -1632,6 +1632,7 @@ const App: React.FC = () => {
 
 
   const isProcessingDeliveryRef = useRef(false);
+  const processedEarningsIdsRef = useRef<Set<string>>(new Set());
 
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
@@ -1651,12 +1652,15 @@ const App: React.FC = () => {
     };
 
     const missionId = `Entrega #${getNumericId(mission)}`;
+    // Um ID exclusivo para não contabilizar na volta (mesmo que displayId/missionId seja igual)
+    const earningsLockId = `${mission.id}-earnings`;
     
-    // ⚠️ Transaction & Earnings logic: Only run if NOT already in history
-    const alreadyProcessed = history.some(h => h.type === missionId);
+    // ⚠️ Transaction & Earnings logic: Only run if NOT already processed
+    const alreadyProcessed = processedEarningsIdsRef.current.has(earningsLockId) || history.some(h => h.type === missionId);
 
     try {
       if (!alreadyProcessed) {
+        processedEarningsIdsRef.current.add(earningsLockId);
         const earned = mission.earnings;
 
         // 2. Prepare transaction data
