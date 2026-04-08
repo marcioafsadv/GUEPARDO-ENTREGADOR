@@ -4376,27 +4376,62 @@ const App: React.FC = () => {
       )}
 
       {showPostDeliveryModal && (
-        <div className="absolute inset-0 z-[6000] bg-chocolate-orange backdrop-blur-xl flex items-center justify-center p-8 overflow-hidden">
-          <div className="scratch-container">
-            <div className="scratch-mark scratch-mark-1"></div>
-            <div className="scratch-mark scratch-mark-2"></div>
-            <div className="scratch-mark scratch-mark-3"></div>
+        <div className="absolute inset-0 z-[6000] bg-chocolate-orange-v2 flex flex-col items-center justify-center p-8 overflow-hidden">
+          {/* Layer 1: The Realistic Scratch Marks (Behind everything) */}
+          <div className="scratch-container-v2">
+            <div className="tear-mark tear-1"></div>
+            <div className="tear-mark tear-2"></div>
+            <div className="tear-mark tear-3"></div>
           </div>
-          <div className="w-full max-w-xs text-center animate-in zoom-in duration-300 relative z-20">
-            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl border border-white/20 backdrop-blur-md">
-              <i className="fas fa-cat text-4xl text-[#FF6B00]"></i>
+
+          {/* Layer 2: The Animated Paw (Swipes over the center) */}
+          <div className="scratch-container-v2">
+            <img src="/images/paw-scratch.png" className="paw-img" alt="Cheetah Paw" />
+          </div>
+
+          {/* Layer 3: Main Content (Fade in slightly after swipe) */}
+          <div className="w-full max-w-xs text-center animate-in fade-in zoom-in duration-700 delay-300 relative z-20 flex flex-col items-center">
+            {/* Logo Oficial do Guepardo */}
+            <div className="mb-8 transform h-32 flex items-center justify-center">
+              <img src="/images/logo-guepardo.jpg" className="h-full object-contain rounded-2xl shadow-2xl border border-white/10" alt="Guepardo Logo" />
             </div>
-            <h2 className="text-3xl font-black italic mb-2 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] transform -skew-x-12">VOCÊ É FEROZ GUEPARDO!</h2>
-            <p className="text-white/70 font-bold mb-8 uppercase text-[10px] tracking-widest">Entrega concluída com maestria</p>
-            <div className="bg-black/30 backdrop-blur-md p-6 rounded-[32px] border border-white/10 mb-10 shadow-inner">
-              <p className="text-white/50 font-black text-[10px] uppercase mb-1">Você conquistou</p>
-              <p className="text-5xl font-black text-white italic drop-shadow-lg">R$ {(batchEarnings || 0).toFixed(2)}</p>
+
+            <div className="space-y-1 mb-8">
+              <h2 className="text-4xl font-black italic text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transform -skew-x-12 leading-tight">
+                VOCÊ É FEROZ<br/>GUEPARDO!
+              </h2>
+              <p className="text-[#FF6B00] font-black italic text-lg tracking-tight drop-shadow-md">A caça continua</p>
             </div>
+
+            <p className="text-white/40 font-bold mb-8 uppercase text-[8px] tracking-[0.3em]">Entrega realizada com sucesso</p>
+
+            {/* Earnings Card estilo Print 4 */}
+            <div className="w-full bg-black/40 backdrop-blur-xl p-8 rounded-[40px] border border-white/5 mb-10 shadow-2xl relative group overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/5 to-transparent"></div>
+              <p className="text-white/40 font-black text-[9px] uppercase tracking-widest mb-2 relative z-10">Valor da Corrida</p>
+              <p className="text-6xl font-black text-white italic drop-shadow-[0_5px_15px_rgba(0,0,0,0.6)] relative z-10">
+                R$ <span className="text-white">{(batchEarnings || 0).toFixed(2)}</span>
+              </p>
+            </div>
+
+            {/* Motivos extras estilo Print 4 */}
+            <div className="space-y-4 mb-10 w-full px-4 text-left">
+              <div className="flex items-center space-x-3 text-[9px] font-bold text-white/50">
+                <i className="fas fa-truck-moving text-[#FF6B00]"></i>
+                <span className="uppercase tracking-widest">Entrega concluída com maestria</span>
+              </div>
+              <div className="flex items-center space-x-3 text-[9px] font-bold text-white/50">
+                <i className="fas fa-trophy text-gold"></i>
+                <span className="uppercase tracking-widest">Nível Guepardo PRO alcançado</span>
+              </div>
+            </div>
+
             <button 
               onClick={() => { playClick(); setShowPostDeliveryModal(false); }} 
-              className="w-full h-16 bg-white text-black rounded-2xl font-black uppercase italic tracking-widest shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all"
+              className="w-full h-18 bg-white text-black rounded-2xl font-black uppercase italic tracking-widest shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center space-x-3 text-lg"
             >
-              Continuar a Caça
+              <span>Continuar a Caça</span>
+              <i className="fas fa-chevron-right text-xs"></i>
             </button>
           </div>
         </div>

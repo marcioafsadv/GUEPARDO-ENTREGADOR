@@ -29,36 +29,65 @@ body {
     transition: all 1s linear !important;
 }
 
-/* Cheetah Scratch Animation */
-@keyframes scratch-grow {
-  0% { transform: scaleX(0) skewX(-45deg); opacity: 0; }
-  10% { opacity: 1; }
-  100% { transform: scaleX(1) skewX(-45deg); opacity: 0; }
+/* Realistic Cheetah Scratch Animation */
+@keyframes paw-swipe {
+  0% { transform: translateY(-100%) translateX(20%) rotate(-10deg); opacity: 0; }
+  20% { opacity: 1; }
+  60% { transform: translateY(120%) translateX(-20%) rotate(10deg); opacity: 0.8; }
+  100% { transform: translateY(150%) translateX(-30%) rotate(15deg); opacity: 0; }
 }
 
-.scratch-container {
+@keyframes tear-open {
+  0% { height: 0; opacity: 0; }
+  30% { opacity: 1; }
+  100% { height: 600px; opacity: 0.4; }
+}
+
+@keyframes spark-float {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0); opacity: 0; }
+}
+
+.scratch-container-v2 {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 10;
+  z-index: 15;
 }
 
-.scratch-mark {
+.paw-img {
   position: absolute;
-  background: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 15px rgba(255, 107, 0, 0.6);
-  height: 4px;
-  width: 150%;
-  left: -25%;
-  transform-origin: left center;
+  top: 0;
+  left: 20%;
+  width: 400px;
+  animation: paw-swipe 0.8s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  filter: drop-shadow(0 0 20px rgba(0,0,0,0.8));
+}
+
+.tear-mark {
+  position: absolute;
+  background: #000;
+  width: 8px;
+  border-radius: 4px;
+  transform-origin: top center;
+  box-shadow: 0 0 10px rgba(255, 107, 0, 0.3);
   opacity: 0;
 }
 
-.scratch-mark-1 { top: 30%; animation: scratch-grow 0.6s ease-out forwards; }
-.scratch-mark-2 { top: 45%; animation: scratch-grow 0.6s ease-out 0.1s forwards; }
-.scratch-mark-3 { top: 60%; animation: scratch-grow 0.6s ease-out 0.2s forwards; }
+.tear-1 { left: 40%; top: 10%; animation: tear-open 0.6s ease-out 0.2s forwards; }
+.tear-2 { left: 45%; top: 15%; animation: tear-open 0.6s ease-out 0.3s forwards; }
+.tear-3 { left: 50%; top: 12%; animation: tear-open 0.6s ease-out 0.4s forwards; }
 
-.bg-chocolate-orange {
-  background: linear-gradient(135deg, #1d0f08 0%, #3d1c02 40%, #FF6B00 100%);
+.bg-chocolate-orange-v2 {
+  background: radial-gradient(circle at center, #4d2204 0%, #1d0f08 100%);
+  position: relative;
+}
+
+.bg-chocolate-orange-v2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+  opacity: 0.1;
 }
