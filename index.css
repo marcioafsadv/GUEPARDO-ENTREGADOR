@@ -48,10 +48,23 @@ body {
   100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0); opacity: 0; }
 }
 
-.scratch-container-v2 {
+/* Ultra-Premium Victoria Guepardo v5 */
+.bg-chocolate-orange-v5 {
+  background-color: #1a0a05 !important;
+  background-image: radial-gradient(circle at center, #3d1c02 0%, #1a0a05 100%) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.scratch-layer {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   pointer-events: none;
   z-index: 10;
   display: flex;
@@ -59,32 +72,56 @@ body {
   justify-content: center;
 }
 
-.paw-bg-scratch {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.paw-scratch-img {
+  width: 140%;
+  height: 140%;
+  object-fit: contain;
   opacity: 0;
-  filter: brightness(0.8) contrast(1.2) drop-shadow(0 0 30px #FF6B00);
-  animation: scratch-reveal 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  filter: drop-shadow(0 0 40px rgba(255, 107, 0, 0.6));
+  animation: feroz-scratch 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
-.scratch-container-v2 {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 5;
+@keyframes feroz-scratch {
+  0% { transform: scale(3) rotate(-20deg); opacity: 0; filter: brightness(3) blur(10px); }
+  20% { opacity: 1; filter: brightness(1.5) blur(0px); }
+  100% { transform: scale(1.1) rotate(0deg); opacity: 0.2; filter: brightness(1); }
+}
+
+.victory-content {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: content-entrance 0.5s ease-out 0.4s both;
+}
+
+@keyframes content-entrance {
+  0% { transform: translateY(30px); opacity: 0; filter: blur(10px); }
+  100% { transform: translateY(0); opacity: 1; filter: blur(0px); }
+}
+
+.btn-guepardo-orange {
+  width: 100%;
+  height: 64px;
+  background: #FF6B00;
+  color: white;
+  border-radius: 32px;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: 0.1em;
+  box-shadow: 0 15px 40px rgba(255, 107, 0, 0.4);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 4px solid rgba(255, 255, 255, 0.2);
 }
 
-.bg-chocolate-orange-v2::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-  opacity: 0.1;
+.btn-guepardo-orange:active {
+  transform: scale(0.95);
 }
