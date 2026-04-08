@@ -99,6 +99,14 @@ body {
   animation: content-entrance 0.5s ease-out 0.4s both;
 }
 
+.claw-logo {
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: brightness(1.2) contrast(1.1);
+  transform: scale(1.1);
+}
+
 @keyframes content-entrance {
   0% { transform: translateY(30px); opacity: 0; filter: blur(10px); }
   100% { transform: translateY(0); opacity: 1; filter: blur(0px); }

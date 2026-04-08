@@ -4384,9 +4384,9 @@ const App: React.FC = () => {
 
           {/* Conteúdo da Vitória */}
           <div className="victory-content">
-            {/* O Guepardo (Print 3) no lugar do mapa */}
+            {/* A Pata rasgando no lugar do logo (Print 4 com fundo removido via CSS) */}
             <div className="mb-6 transform h-48 flex items-center justify-center">
-              <img src="/images/logo-guepardo.png" className="h-full object-contain filter drop-shadow-[0_10px_30px_rgba(255,107,0,0.5)]" alt="Guepardo Sticker" />
+              <img src="/images/victory-claw.png" className="claw-logo" alt="Claw Logo" />
             </div>
 
             <div className="space-y-1 mb-8">
