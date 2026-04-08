@@ -58,6 +58,11 @@ const formatDate = (date: Date) => {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
 };
 
+// Helper para formatar moeda (R$ 0,00)
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
 // Gerar semanas dinâmicas
 const getWeekOptions = () => {
   const today = new Date();
@@ -4286,9 +4291,9 @@ const App: React.FC = () => {
               <div>
                 <p className="text-white text-[10px] font-black uppercase tracking-widest leading-none mb-1">Nova Missão na Rota!</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-white font-black text-lg">+ R$ {newBatchEarnings.toFixed(2)}</span>
+                  <span className="text-white font-black text-lg">+ {formatCurrency(newBatchEarnings)}</span>
                   <div className="h-4 w-px bg-white/30"></div>
-                  <span className="text-white/80 text-[10px] font-bold">Total: R$ {activeMissions.reduce((acc, m) => acc + m.earnings, 0).toFixed(2)}</span>
+                  <span className="text-white/80 text-[10px] font-bold">Total: {formatCurrency(activeMissions.reduce((acc, m) => acc + m.earnings, 0))}</span>
                 </div>
               </div>
             </div>
@@ -4400,7 +4405,7 @@ const App: React.FC = () => {
             <div className="w-full bg-black/60 backdrop-blur-md p-8 rounded-[40px] border border-white/10 mb-10 shadow-2xl">
               <p className="text-white/40 font-black text-[10px] uppercase tracking-widest mb-2">Valor da Corrida</p>
               <p className="text-6xl font-black text-white italic drop-shadow-lg">
-                R$ {(batchEarnings || 0).toFixed(2)}
+                {formatCurrency(batchEarnings || 0)}
               </p>
             </div>
 
@@ -4503,7 +4508,7 @@ const App: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-8 pt-0">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <p className={`text-4xl font-black text-green-500 italic tracking-tighter`}>+ R$ {selectedTransaction.amount.toFixed(2)}</p>
+                  <p className={`text-4xl font-black text-green-500 italic tracking-tighter`}>+ {formatCurrency(selectedTransaction.amount)}</p>
                   <p className={`${textMuted} text-[10px] font-bold uppercase tracking-widest mt-1`}>
                     {selectedTransaction.date}, {selectedTransaction.time}
                   </p>
@@ -4570,7 +4575,7 @@ const App: React.FC = () => {
                   return (
                     <>
                       <div className="flex items-center space-x-3">
-                        <h2 className={`text-4xl font-black italic ${textPrimary}`}>R$ {totalE.toFixed(2)}</h2>
+                        <h2 className={`text-4xl font-black italic ${textPrimary}`}>{formatCurrency(totalE)}</h2>
                         <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
                           {totalD.toFixed(1)} KM TOTAL
                         </div>
