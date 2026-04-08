@@ -1631,8 +1631,16 @@ const App: React.FC = () => {
 
 
 
+  const isProcessingDeliveryRef = useRef(false);
+
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
+    
+    if (isProcessingDeliveryRef.current) {
+        console.log('⏳ Delivery already processing. Skipping.');
+        return;
+    }
+    isProcessingDeliveryRef.current = true;
 
     const getNumericId = (m: any) => {
       if (m.displayId) return m.displayId;
@@ -1796,6 +1804,10 @@ const App: React.FC = () => {
       // Show more specific error message
       const errorMsg = error?.message || 'Erro desconhecido';
       alert(`Erro ao finalizar entrega: ${errorMsg}\n\nTente novamente.`);
+    } finally {
+      setTimeout(() => {
+        isProcessingDeliveryRef.current = false;
+      }, 1000);
     }
   };
 
@@ -2701,7 +2713,7 @@ const App: React.FC = () => {
               <div 
                 className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
                 style={{ 
-                  transform: `translateY(${!isMissionExpanded ? (isNavigating ? 'calc(100% - 85px + ' + dragY + 'px)' : 'calc(100% - 100px + ' + dragY + 'px)') : dragY + 'px'})`,
+                  transform: `translateY(${!isMissionExpanded ? 'calc(100% - 180px + ' + dragY + 'px)' : dragY + 'px'})`,
                   touchAction: 'none',
                   willChange: 'transform'
                 }}
@@ -2719,15 +2731,21 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center mb-3 shrink-0">
-                    {/* Minimal 99-style Header when navigating and collapsed */}
-                    {isNavigating && !isMissionExpanded ? (
-                      <div className="flex items-center justify-center w-full px-2" onClick={() => setIsMissionExpanded(true)}>
-                        <div className="flex flex-col items-center justify-center w-full">
-                           <h3 className="text-white font-bold text-[15px] leading-tight">Entrega em andamento</h3>
-                           <div className="flex items-center gap-1.5 mt-1">
+                    {/* Minimal 99-style Header when collapsed */}
+                    {!isMissionExpanded ? (
+                      <div className="flex flex-col w-full px-1 cursor-pointer" onClick={() => setIsMissionExpanded(true)}>
+                        <div className="flex flex-col items-center justify-center w-full mb-5">
+                           <h3 className={`font-bold text-[15px] leading-tight mb-1 ${textPrimary}`}>Entrega em andamento</h3>
+                           <div className="flex items-center gap-1.5 mt-0.5">
                              <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]"></div>
-                             <span className="text-zinc-400 text-[11px] font-medium">Chegada prevista: <strong className="text-[#FF6B00]">{navMetrics?.time || '--'}</strong></span>
+                             <span className="text-[#FF6B00] text-[11px] font-bold">Chegada prevista: {navMetrics?.time || '--'}</span>
                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-start w-full pb-2">
+                           <h2 className={`font-black text-lg leading-tight mb-1 ${textPrimary}`}>{mission?.customerName}</h2>
+                           <p className={`text-[11px] font-medium line-clamp-1 ${textMuted}`}>{mission?.customerAddress}</p>
+                           <div className="w-12 h-[3px] bg-[#FF6B00] mt-3 rounded-full"></div>
                         </div>
                       </div>
                     ) : (
