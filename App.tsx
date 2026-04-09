@@ -3377,10 +3377,39 @@ const App: React.FC = () => {
                     )}
 
                     {status === DriverStatus.ARRIVED_AT_CUSTOMER && (
-                      <div className={`p-4 rounded-[24px] border mb-4 transition-all ${isCodeValid() ? 'bg-green-500/10 border-green-500/40' : 'bg-white/5 border-white/5'}`}>
-                        <p className={`text-[9px] font-black uppercase text-center mb-3 tracking-widest ${isCodeValid() ? 'text-green-500' : textMuted}`}>
-                          CÓDIGO DE ENTREGA (4 DÍGITOS DO CELULAR):
-                        </p>
+                      <>
+                        {/* ALERTA DE COBRANÇA - NOVO */}
+                        {(mission?.paymentMethod?.toUpperCase() === 'DINHEIRO' || 
+                          mission?.paymentMethod?.toUpperCase()?.includes('CART')) && (
+                          <div className="mb-4 p-4 rounded-[24px] bg-[#FF6B00] border-2 border-white/20 shadow-xl animate-in slide-in-from-top duration-500">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                                <i className={`fas ${mission.paymentMethod.toUpperCase() === 'DINHEIRO' ? 'fa-money-bill-1' : 'fa-credit-card'} text-white text-2xl`}></i>
+                              </div>
+                              <div className="flex-1 text-left">
+                                <p className="text-white font-black uppercase text-[10px] tracking-widest opacity-80 mb-0.5">
+                                  Atenção: Cobrar do Cliente
+                                </p>
+                                <h3 className="text-white text-2xl font-black leading-tight italic">
+                                  R$ {(mission.deliveryValue || 0).toFixed(2)}
+                                </h3>
+                                {mission.paymentMethod.toUpperCase() === 'DINHEIRO' && (
+                                  <div className="flex items-center space-x-1 mt-1">
+                                    <div className="w-1 h-1 rounded-full bg-white animate-pulse"></div>
+                                    <p className="text-white text-[9px] font-bold uppercase tracking-tighter opacity-90">
+                                      Confira o troco e o dinheiro!
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className={`p-4 rounded-[24px] border mb-4 transition-all ${isCodeValid() ? 'bg-green-500/10 border-green-500/40' : 'bg-white/5 border-white/5'}`}>
+                          <p className={`text-[9px] font-black uppercase text-center mb-3 tracking-widest ${isCodeValid() ? 'text-green-500' : textMuted}`}>
+                            CÓDIGO DE ENTREGA (4 DÍGITOS DO CELULAR):
+                          </p>
                         <div className="flex justify-center space-x-2">
                           {[0, 1, 2, 3].map(i => (
                             <input
@@ -3397,7 +3426,8 @@ const App: React.FC = () => {
                           ))}
                         </div>
                       </div>
-                    )}
+                    </>
+                  )}
                   </div>
 
                   <div className="shrink-0 w-full">
