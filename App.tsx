@@ -168,7 +168,7 @@ const STATUS_RANK: Record<string, number> = {
   'cancelled': 10
 };
 
-const ACTIVE_DELIVERY_DB_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning', 'completed', 'cancelled'];
+const ACTIVE_DELIVERY_DB_STATUSES = ['accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'];
 
 const DRIVER_STATUS_RANK: Record<string, number> = {
   [DriverStatus.OFFLINE]: -1,
@@ -348,6 +348,7 @@ const App: React.FC = () => {
   const statusRef = useRef<DriverStatus>(DriverStatus.OFFLINE);
   useEffect(() => { statusRef.current = status; }, [status]);
   const [activeMissions, setActiveMissions] = useState<DeliveryMission[]>([]);
+  const missionRef = useRef<DeliveryMission | null>(null);
   const mission = React.useMemo(() => {
     if (activeMissions.length === 0) return null;
 
@@ -358,6 +359,8 @@ const App: React.FC = () => {
     // If all are returning, focus on the first one
     return activeMissions[0];
   }, [activeMissions]);
+
+  useEffect(() => { missionRef.current = mission; }, [mission]);
 
   const setMission = (m: DeliveryMission | null) => {
     if (m === null) setActiveMissions([]);
@@ -1434,18 +1437,18 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ACTIVE_DELIVERY_DB_STATUSES);
+            .in('status', ['accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
 
           const dbMissions = assignedOrders || [];
 
           // 2. Targeted check for the CURRENT mission (to catch 'completed' or 'cancelled' finalization)
-          if (mission?.id && !dbMissions.some(m => m.id === mission.id)) {
+          if (missionRef.current?.id && !dbMissions.some(m => m.id === missionRef.current.id)) {
             const { data: currentMissionStatus } = await supabaseClient.supabase
               .from('deliveries')
               .select('*')
-              .eq('id', mission.id)
+              .eq('id', missionRef.current.id)
               .single();
-            if (currentMissionStatus) {
+            if (currentMissionStatus && (currentMissionStatus.status === 'completed' || currentMissionStatus.status === 'cancelled' || currentMissionStatus.status === 'returning')) {
               dbMissions.push(currentMissionStatus);
             }
           }
