@@ -1999,9 +1999,14 @@ const App: React.FC = () => {
       const pendingOrTransit = syncMissions.filter(m => ACTIVE_DELIVERY_STATUSES.includes(m.status));
       const hasReturnMissions = syncMissions.some(m => m.status === 'returning');
 
-      // The driver ONLY returns to store if there are ABSOLUTELY NO MORE pending/transit deliveries
+      console.log('🧐 Flow Decision:', { pendingOrTransit: pendingOrTransit.length, hasReturnMissions });
+
+      // The driver ONLY returns to store if there are ABSOLUTELY NO MORE pending/transit deliveries in the WHOLE batch/session
       if (pendingOrTransit.length > 0) {
         const nextToMove = pendingOrTransit[0];
+        
+        // If we just finished a stop at a store, we should check if the next one is from the SAME store
+        // If it is, we are already "in_transit" for it usually
         const newTargetStatus = nextToMove.storeName === mission.storeName 
           ? DriverStatus.GOING_TO_CUSTOMER 
           : DriverStatus.GOING_TO_STORE;
@@ -2011,16 +2016,18 @@ const App: React.FC = () => {
         setMission(nextToMove);
         setShowPostDeliveryModal(false);
       } else if (hasReturnMissions) {
+        // If no more deliveries, but some deliveries need return phase
         const nextToMove = syncMissions.find(m => m.status === 'returning') || syncMissions[0];
-        console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
+        console.log(`🔙 No more deliveries. Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
         setStatus(DriverStatus.RETURNING);
         setMission(nextToMove);
         setShowPostDeliveryModal(false);
       } else {
-        console.log('✨ All missions including returns finished.');
+        console.log('✨ All missions including returns finished. Returning to ONLINE.');
         setStatus(DriverStatus.ONLINE);
         setMission(null);
         setBatchHasReturn(false);
+        setActiveMissions([]);
         playRugido();
         setShowPostDeliveryModal(true);
         setIsNavigating(false);
@@ -2183,35 +2190,52 @@ const App: React.FC = () => {
     if ((!mission && activeMissions.length === 0) || !userId) return;
     setBatchEarnings(0); // Reset batch earnings total
     try {
-      const missionsToAccept = activeMissions.length > 0 ? activeMissions : (mission ? [mission] : []);
-      console.log(`🎯 Attempting to accept ${missionsToAccept.length} missions in batch:`, missionsToAccept.map(m => m.id));
+      const sourceMission = mission || activeMissions[0];
+      let idsToAccept = activeMissions.map(m => m.id);
 
-      // 1. Perform atomic update for all missions in batch
+      // --- SHIELDED ACCEPT: Fetch ALL siblings from DB if it's a batch ---
+      if (sourceMission.batch_id) {
+        console.log(`🛡️ [SHIELDED ACCEPT] Fetching all siblings for batch ${sourceMission.batch_id}...`);
+        const { data: allBatchItems } = await supabaseClient.supabase
+          .from('deliveries')
+          .select('id')
+          .eq('batch_id', sourceMission.batch_id)
+          .eq('status', 'pending');
+        
+        if (allBatchItems && allBatchItems.length > 0) {
+          idsToAccept = Array.from(new Set([...idsToAccept, ...allBatchItems.map(item => item.id)]));
+        }
+      }
+
+      console.log(`🎯 Atomic acceptance for ${idsToAccept.length} missions:`, idsToAccept);
+
+      // 1. Perform atomic update for all missions
       const { error: acceptError } = await supabaseClient.supabase
         .from('deliveries')
         .update({ 
           driver_id: userId, 
           status: 'accepted',
+          accepted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .in('id', missionsToAccept.map(m => m.id));
+        .in('id', idsToAccept);
 
       if (acceptError) throw acceptError;
       console.log('✅ Missions accepted successfully in DB');
 
-      // 2. Fetch fresh state for the batch to ensure consistency
+      // 2. Fetch fresh state for the batch to ensure total consistency
       const { data: freshBatch } = await supabaseClient.supabase
         .from('deliveries')
         .select('*')
-        .in('id', missionsToAccept.map(m => m.id));
+        .in('id', idsToAccept);
       
       const mappedActive: DeliveryMission[] = (freshBatch || []).map(d => ({
         id: d.id,
-        storeName: d.store_name,
-        storeAddress: d.store_address,
-        customerName: d.customer_name,
-        customerAddress: d.customer_address,
-        customerPhoneSuffix: d.customer_phone_suffix,
+        storeName: d.store_name || 'Loja',
+        storeAddress: d.store_address || '',
+        customerName: d.customer_name || 'Cliente',
+        customerAddress: d.customer_address || '',
+        customerPhoneSuffix: d.customer_phone_suffix || '',
         items: d.items || [],
         collectionCode: d.collection_code || '0000',
         distanceToStore: d.distance_to_store || 0,
@@ -2221,13 +2245,15 @@ const App: React.FC = () => {
         timeLimit: 25,
         status: d.status || 'accepted',
         isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-        displayId: d.items?.displayId || d.id.slice(-4),
+        displayId: d.items?.displayId || d.id?.toString().slice(-4),
         batch_id: d.batch_id,
         destinationLat: d.destination_lat,
         destinationLng: d.destination_lng,
         stopNumber: d.stop_number || d.items?.stopNumber || 1,
         deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-        paymentMethod: d.items?.paymentMethod || 'PIX'
+        paymentMethod: d.items?.paymentMethod || 'PIX',
+        storePhone: d.store_phone || '',
+        customerPhone: d.customer_phone || ''
       })).sort((a,b) => (a.stopNumber || 1) - (b.stopNumber || 1));
 
       setActiveMissions(mappedActive);
