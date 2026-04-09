@@ -1366,9 +1366,9 @@ const App: React.FC = () => {
               customerPhoneSuffix: d.customer_phone_suffix || '',
               items: d.items || [],
               collectionCode: d.collection_code || '0000',
-              distanceToStore: d.distance_to_store || 1.5,
-              deliveryDistance: d.delivery_distance || 2.0,
-              totalDistance: d.total_distance || 3.5,
+              distanceToStore: d.distance_to_store || 0,
+              deliveryDistance: d.delivery_distance || 0,
+              totalDistance: d.total_distance || 0,
               earnings: parseFloat(d.earnings || '0'),
               timeLimit: 25,
               storePhone: '',
@@ -1380,7 +1380,8 @@ const App: React.FC = () => {
               destinationLat: d.destination_lat,
               destinationLng: d.destination_lng,
               deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-              paymentMethod: d.items?.paymentMethod || 'PIX'
+              paymentMethod: d.items?.paymentMethod || 'PIX',
+              stopNumber: d.stop_number || d.items?.stopNumber || 1
             }));
 
             if (syncMissions.length > 0) {
@@ -1475,7 +1476,7 @@ const App: React.FC = () => {
 
                 if (firstPending.batch_id) {
                   const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
-                  missionsToAlert = batchItems.map((d: any) => ({
+                  missionsToAlert = batchItems.map((d: any, idx: number) => ({
                     id: d.id,
                     storeName: d.store_name || 'Loja',
                     storeAddress: d.store_address || '',
@@ -1484,9 +1485,9 @@ const App: React.FC = () => {
                     customerPhoneSuffix: d.customer_phone_suffix || '',
                     items: d.items || [],
                     collectionCode: d.collection_code || '0000',
-                    distanceToStore: d.distance_to_store || 1.5,
-                    deliveryDistance: d.delivery_distance || 2.0,
-                    totalDistance: d.total_distance || 3.5,
+                    distanceToStore: d.distance_to_store || 0,
+                    deliveryDistance: d.delivery_distance || 0,
+                    totalDistance: d.total_distance || 0,
                     earnings: parseFloat(d.earnings || '0'),
                     timeLimit: 25,
                     status: d.status || 'pending',
@@ -1495,7 +1496,7 @@ const App: React.FC = () => {
                     batch_id: d.batch_id,
                     destinationLat: d.destination_lat,
                     destinationLng: d.destination_lng,
-                    stopNumber: d.stop_number || d.items?.stopNumber || 1,
+                    stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
                     storePhone: d.store_phone || '',
                     customerPhone: d.customer_phone || ''
                   })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
@@ -1509,9 +1510,9 @@ const App: React.FC = () => {
                     customerPhoneSuffix: firstPending.customer_phone_suffix || '',
                     items: firstPending.items || [],
                     collectionCode: firstPending.collection_code || '0000',
-                    distanceToStore: firstPending.distance_to_store || 1.5,
-                    deliveryDistance: firstPending.delivery_distance || 2.0,
-                    totalDistance: firstPending.total_distance || 3.5,
+                    distanceToStore: firstPending.distance_to_store || 0,
+                    deliveryDistance: firstPending.delivery_distance || 0,
+                    totalDistance: firstPending.total_distance || 0,
                     earnings: parseFloat(firstPending.earnings || '0'),
                     timeLimit: 25,
                     status: firstPending.status || 'pending',
@@ -1815,9 +1816,9 @@ const App: React.FC = () => {
         customerPhoneSuffix: d.customer_phone_suffix || '',
         items: d.items || [],
         collectionCode: d.collection_code || '0000',
-        distanceToStore: d.distance_to_store || 1.5,
-        deliveryDistance: d.delivery_distance || 2.0,
-        totalDistance: d.total_distance || 3.5,
+        distanceToStore: d.distance_to_store || 0,
+        deliveryDistance: d.delivery_distance || 0,
+        totalDistance: d.total_distance || 0,
         earnings: parseFloat(d.earnings || '0'),
         timeLimit: 25,
         storePhone: '',
@@ -4666,10 +4667,10 @@ const App: React.FC = () => {
                   const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
                   const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
                   
-                  // Se for um lote (batch), cada missão já contém a distância TOTAL da rota. 
-                  // Portanto, NÃO devemos somar, ou triplicaremos a distância real na tela.
-                  // Tomamos apenas a distância da primeira rota como referência do trajeto total.
-                  const totalD = mToShow.length > 0 ? (mToShow[0]?.totalDistance || 0) : 0;
+                  // Calculamos a distância total somando o trajeto até a loja + todas as entregas do lote
+                  const distToStore = mToShow[0]?.distanceToStore || 0;
+                  const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
+                  const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
                   const isB = mToShow.length > 1;
 
                   return (
@@ -4677,13 +4678,15 @@ const App: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <h2 className={`text-4xl font-black italic ${textPrimary}`}>{formatCurrency(totalE)}</h2>
                         <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
-                          {totalD.toFixed(1)} KM TOTAL
+                          {totalD > 0 ? `${totalD.toFixed(1)} KM TOTAL` : 'DISTÂNCIA N/A'}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 mt-2">
                         <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
                         <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                          {isB ? `${mToShow.length} entregas em lote` : `${mission?.distanceToStore?.toFixed(1)}km até loja + ${mission?.deliveryDistance?.toFixed(1)}km entrega`}
+                          {isB 
+                            ? `${mToShow.length} entregas (${distToStore.toFixed(1)}km coleta + ${totalDeliveryDist.toFixed(1)}km entregas)` 
+                            : `${mission?.distanceToStore?.toFixed(1)}km até loja + ${mission?.deliveryDistance?.toFixed(1)}km entrega`}
                         </span>
                       </div>
                     </>
@@ -4707,9 +4710,24 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Entrega</span>
-                  <span className="text-sm font-bold truncate">
-                    {activeMissions.length > 1 ? `${activeMissions.length} destinos diferentes` : mission.customerAddress}
-                  </span>
+                  {activeMissions.length > 1 ? (
+                    <div className="flex flex-col gap-1.5 mt-1 max-h-32 overflow-y-auto pr-2">
+                      {activeMissions.map((m, idx) => (
+                        <div key={m.id} className="flex gap-2 items-start bg-white/5 p-2 rounded-xl border border-white/5">
+                          <div className="flex flex-col min-w-[50px]">
+                            <span className="text-[8px] font-black text-orange-500 uppercase">Parada</span>
+                            <span className="text-xs font-black text-white">{idx + 1}</span>
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                             <span className="text-[10px] font-bold text-white truncate">{m.customerName}</span>
+                             <span className="text-[9px] font-medium text-zinc-500 truncate">{m.customerAddress}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm font-bold truncate">{mission.customerAddress}</span>
+                  )}
                 </div>
               </div>
             </div>
