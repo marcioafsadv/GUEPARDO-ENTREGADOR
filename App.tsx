@@ -168,7 +168,7 @@ const STATUS_RANK: Record<string, number> = {
   'cancelled': 10
 };
 
-const ACTIVE_DELIVERY_DB_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'];
+const ACTIVE_DELIVERY_DB_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning', 'completed', 'cancelled'];
 
 const DRIVER_STATUS_RANK: Record<string, number> = {
   [DriverStatus.OFFLINE]: -1,
@@ -1478,8 +1478,8 @@ const App: React.FC = () => {
               destinationLng: d.destination_lng,
               deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
               paymentMethod: d.items?.paymentMethod || 'PIX',
-              stopNumber: d.stop_number || d.items?.stopNumber || 1
-            }));
+              stopNumber: d.stop_number || d.items?.stopNumber || 0
+            })).sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
 
             if (syncMissions.length > 0) {
               // --- SIDE EFFECTS & STATUS TRANSITIONS (Handled outside the state setter) ---
@@ -1958,7 +1958,7 @@ const App: React.FC = () => {
         query = query.eq('driver_id', userId);
       }
 
-      const { data: remainingMissions, error: fetchErr } = await query.order('created_at', { ascending: true });
+      const { data: remainingMissions, error: fetchErr } = await query.order('stop_number', { ascending: true });
 
       if (fetchErr) {
         console.error('Error fetching remaining missions:', fetchErr);
@@ -2249,12 +2249,12 @@ const App: React.FC = () => {
         batch_id: d.batch_id,
         destinationLat: d.destination_lat,
         destinationLng: d.destination_lng,
-        stopNumber: d.stop_number || d.items?.stopNumber || 1,
+        stopNumber: d.stop_number || d.items?.stopNumber || 0,
         deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
         paymentMethod: d.items?.paymentMethod || 'PIX',
         storePhone: d.store_phone || '',
         customerPhone: d.customer_phone || ''
-      })).sort((a,b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+      })).sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
 
       setActiveMissions(mappedActive);
       setMission(mappedActive[0]);
