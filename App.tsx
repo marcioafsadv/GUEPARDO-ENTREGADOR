@@ -1620,6 +1620,10 @@ const App: React.FC = () => {
           } else if (newStatus === 'ready_for_pickup') {
             console.log("✅ [REALTIME] Store marked order as READY!");
             setIsOrderReady(true);
+            // Also force status update to READY_FOR_PICKUP if we were waiting at store
+            if (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP) {
+               setStatus(DriverStatus.READY_FOR_PICKUP);
+            }
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           } else if (
             newStatus === 'in_transit' &&
@@ -2647,6 +2651,7 @@ const App: React.FC = () => {
                         ? preloadedCoords.customer?.lng
                         : null
                   }
+                  missions={activeMissions}
                   showHeatMap={showHeatMap}
                   mapMode={mapMode}
                   showTraffic={showTraffic}

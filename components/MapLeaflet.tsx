@@ -23,21 +23,8 @@ const _mbp3 = '.8-AMsHfLyfddpH7PPo1U7g';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || (_mbp2 + _mbp1 + _mbp3);
 
 
-interface MapLeafletProps {
-    status: string;
-    showRoute?: boolean;
-    theme?: 'dark' | 'light';
-    showHeatMap?: boolean;
-    mapMode?: 'standard' | 'satellite';
-    showTraffic?: boolean;
-    destinationAddress?: string | null;
-    pickupAddress?: string | null;
-    // Preloaded coords (optional, skips geocoding for faster route switch)
-    preloadedDestinationLat?: number | null;
-    preloadedDestinationLng?: number | null;
-    preloadedPickupLat?: number | null;
-    preloadedPickupLng?: number | null;
     reCenterTrigger?: number;
+    missions?: any[] | null;
 }
 
 const COLORS = {
@@ -54,11 +41,36 @@ const courierIcon = L.icon({
     className: 'courier-icon-transition'
 });
 
-const storeIcon = L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png',
-    iconSize: [40, 40],
     iconAnchor: [20, 20],
 });
+
+const createStopMarker = (num: number, label: string) => {
+    const isPrimary = num === 1;
+    const pinColor = isPrimary ? '#FF6B00' : '#CCFF00';
+    const labelText = `PARADA ${num}${label && label !== 'Cliente' && label !== 'Destino Princ.' ? ' - ' + label : ''}`;
+
+    return L.divIcon({
+        html: `
+        <div style="display: flex; flex-direction: column; align-items: center; position: relative; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
+          <!-- Label -->
+          <div style="padding: 5px 12px; background: rgba(20, 10, 0, 0.9); backdrop-filter: blur(10px); border: 2.5px solid ${pinColor}; color: white; font-size: 11px; font-weight: 900; border-radius: 14px; margin-bottom: 4px; white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 15px ${pinColor}44;">
+            ${labelText}
+          </div>
+          
+          <!-- Pin (Alfinete) -->
+          <div style="position: relative; width: 30px; height: 38px;">
+            <svg viewBox="0 0 24 24" width="30" height="38" fill="${pinColor}" stroke="black" stroke-width="0.5" style="filter: drop-shadow(0 0 5px ${pinColor}aa);">
+              <path d="M12 0C7.58 0 4 3.58 4 8c0 5.25 7 13 8 16 1-3 8-10.75 8-16 0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+            </svg>
+            <!-- Center Dot -->
+            <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: white; border-radius: 50%; box-shadow: 0 0 5px white;"></div>
+          </div>
+        </div>`,
+        className: 'stop-marker-pin',
+        iconSize: [120, 60],
+        iconAnchor: [60, 56]
+    });
+};
 
 const destIcon = L.divIcon({
     html: `
@@ -102,13 +114,10 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     showHeatMap = false,
     mapMode = 'standard',
     showTraffic = false,
-    destinationAddress,
-    pickupAddress,
-    preloadedDestinationLat,
-    preloadedDestinationLng,
     preloadedPickupLat,
     preloadedPickupLng,
-    reCenterTrigger
+    reCenterTrigger,
+    missions = []
 }) => {
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
     const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -183,7 +192,6 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         }
     }, [destinationAddress, preloadedDestinationLat, preloadedDestinationLng]);
 
-    // Resolve pickup location: use preloaded coords first, then geocode
     useEffect(() => {
         if (preloadedPickupLat != null && preloadedPickupLng != null &&
             !isNaN(preloadedPickupLat) && !isNaN(preloadedPickupLng)) {
@@ -192,10 +200,39 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             geocode(pickupAddress).then(loc => {
                 if (loc) setPickupLocation(loc);
             });
+        } else if (missions && missions.length > 0) {
+            // If we have missions but no specific pickupAddress/preloaded, 
+            // use storeAddress from the first mission
+            geocode(missions[0].storeAddress).then(loc => {
+                if (loc) setPickupLocation(loc);
+            });
         } else {
             setPickupLocation(null);
         }
-    }, [pickupAddress, preloadedPickupLat, preloadedPickupLng]);
+    }, [pickupAddress, preloadedPickupLat, preloadedPickupLng, missions]);
+
+    // Handle multiple stop locations
+    const [stopLocations, setStopLocations] = useState<{ id: string; lat: number; lng: number; name: string; stopNumber: number }[]>([]);
+
+    useEffect(() => {
+        if (missions && missions.length > 0) {
+            const resolveStops = async () => {
+                const resolved = await Promise.all(missions.map(async (m) => {
+                    // Try to get coords from mission object first (items or custom field)
+                    if (m.destinationLat && m.destinationLng) {
+                        return { id: m.id, lat: m.destinationLat, lng: m.destinationLng, name: m.customerName, stopNumber: m.stopNumber };
+                    }
+                    // Fallback to geocoding
+                    const loc = await geocode(m.customerAddress);
+                    return { id: m.id, lat: loc?.lat || 0, lng: loc?.lng || 0, name: m.customerName, stopNumber: m.stopNumber };
+                }));
+                setStopLocations(resolved.filter(s => s.lat !== 0));
+            };
+            resolveStops();
+        } else {
+            setStopLocations([]);
+        }
+    }, [missions]);
 
     // --- Routing: Mapbox Directions API (with OSRM fallback) ---
     useEffect(() => {
@@ -253,8 +290,12 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         if (currentLocation) pts.push([currentLocation.lat, currentLocation.lng]);
         if (pickupLocation) pts.push([pickupLocation.lat, pickupLocation.lng]);
         if (destinationLocation) pts.push([destinationLocation.lat, destinationLocation.lng]);
+        
+        // Include all stops in fits
+        stopLocations.forEach(s => pts.push([s.lat, s.lng]));
+        
         return pts;
-    }, [currentLocation, pickupLocation, destinationLocation]);
+    }, [currentLocation, pickupLocation, destinationLocation, stopLocations]);
 
     // --- Tile Layer: Mapbox (with OSM/CartoDB fallback) ---
     const isDark = theme === 'dark';
@@ -313,11 +354,27 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                     </Marker>
                 )}
 
-                {destinationLocation && (
+                {destinationLocation && !missions?.length && (
                     <Marker position={[destinationLocation.lat, destinationLocation.lng]} icon={destIcon}>
                         <Popup>Entrega: {destinationAddress}</Popup>
                     </Marker>
                 )}
+
+                {/* Multiple Stop Markers */}
+                {stopLocations.map(stop => (
+                    <Marker 
+                        key={stop.id} 
+                        position={[stop.lat, stop.lng]} 
+                        icon={createStopMarker(stop.stopNumber || 1, stop.name)}
+                    >
+                        <Popup>
+                            <div className="text-xs font-black">
+                                <p className="uppercase tracking-widest text-guepardo-accent">{stop.name}</p>
+                                <p className="text-white/40 mt-1 uppercase text-[8px]">Parada #{stop.stopNumber}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
 
                 {route && (
                     <Polyline
