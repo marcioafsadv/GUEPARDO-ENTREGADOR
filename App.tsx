@@ -215,7 +215,7 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     batch_id: d.batch_id,
     destinationLat: d.destination_lat,
     destinationLng: d.destination_lng,
-    stopNumber: d.stop_number || 1,
+    stopNumber: d.stop_number || d.items?.stopNumber || 1,
     storePhone: d.store_phone || '',
     customerPhone: d.customer_phone || ''
   };
@@ -674,7 +674,7 @@ const App: React.FC = () => {
               .select('*')
               .eq('batch_id', activeDbDelivery.batch_id)
               .not('status', 'in', '("completed","cancelled")')
-              .order('stop_number', { ascending: true });
+              .order('created_at', { ascending: true });
             
             if (batchData && batchData.length > 0) {
               missionsToSet = batchData.map(mapDbDeliveryToMission);
@@ -1036,8 +1036,12 @@ const App: React.FC = () => {
       .eq('id', mission.id)
       .single()
       .then(({ data }) => {
-        if (data?.status === 'ready_for_pickup') {
+          if (data?.status === 'ready_for_pickup') {
           console.log('✅ [READY_CHECK] Pedido já estava pronto no banco');
+          setIsOrderReady(true);
+          // Opcionalmente, pode-se atualizar o status global aqui se necessário
+        } else if (data?.status === 'in_transit') {
+          // Se já saiu, não precisa mais esperar "Pronto"
           setIsOrderReady(true);
         }
       });
@@ -1227,10 +1231,10 @@ const App: React.FC = () => {
                     batch_id: d.batch_id,
                     destinationLat: d.destination_lat,
                     destinationLng: d.destination_lng,
-                    stopNumber: d.stop_number || 1,
+                    stopNumber: d.stop_number || d.items?.stopNumber || 1,
                     storePhone: d.store_phone || '',
                     customerPhone: d.customer_phone || ''
-                  })).sort((a: any, b: any) => a.stopNumber - b.stopNumber);
+                  })).sort((a: any, b: any) => (a.stopNumber || 1) - (b.stopNumber || 1));
 
                   setActiveMissions(mappedBatch);
                   setMission(mappedBatch[0]);
@@ -1447,10 +1451,10 @@ const App: React.FC = () => {
                     batch_id: d.batch_id,
                     destinationLat: d.destination_lat,
                     destinationLng: d.destination_lng,
-                    stopNumber: d.stop_number || 1,
+                    stopNumber: d.stop_number || d.items?.stopNumber || 1,
                     storePhone: d.store_phone || '',
                     customerPhone: d.customer_phone || ''
-                  })).sort((a, b) => a.stopNumber - b.stopNumber);
+                  })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
                 } else {
                   missionsToAlert = [{
                     id: firstPending.id,
@@ -1608,13 +1612,15 @@ const App: React.FC = () => {
         // CASE 2: Active delivery — handle cancellation, completion and merchant validation
         else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE) {
           if (newStatus === 'cancelled') {
-            console.log("⚠️ Active delivery cancelled by store.");
-            alert('Pedido cancelado pelo lojista. Você não está mais em rota.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
           } else if (newStatus === 'completed' && currentStatus === DriverStatus.RETURNING) {
             console.log("✅ Return confirmed by merchant.");
             processDeliverySuccess();
+          } else if (newStatus === 'ready_for_pickup') {
+            console.log("✅ [REALTIME] Store marked order as READY!");
+            setIsOrderReady(true);
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           } else if (
             newStatus === 'in_transit' &&
             (
@@ -1745,7 +1751,6 @@ const App: React.FC = () => {
         .select('*')
         .eq('driver_id', userId)
         .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning'])
-        .order('stop_number', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (fetchErr) {
@@ -1775,6 +1780,7 @@ const App: React.FC = () => {
         batch_id: d.batch_id,
         destinationLat: d.destination_lat,
         destinationLng: d.destination_lng,
+        stopNumber: d.stop_number || d.items?.stopNumber || 1,
         deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
         paymentMethod: d.items?.paymentMethod || 'PIX'
       }));
@@ -2106,11 +2112,42 @@ const App: React.FC = () => {
             .eq('id', mission.id)
             .eq('driver_id', userId);
           console.log('✅ Updated delivery status to in_transit after code validation');
+
+          // --- FIX BUG #2: BATCHING AGILITY ---
+          // Check if there's another mission in the current batch that needs pickup
+          // (at the same store) before moving to GOING_TO_CUSTOMER
+          const { data: batchMissions } = await supabaseClient.supabase
+            .from('deliveries')
+            .select('id, status, store_name')
+            .eq('driver_id', userId)
+            .in('status', ['accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup']);
+          
+          const othersAtStore = (batchMissions || []).filter(m => m.id !== mission.id && m.store_name === mission.storeName);
+          
+          if (othersAtStore.length > 0) {
+            console.log(`📦 Still have ${othersAtStore.length} items to pick up at the same store. Staying in PICKING_UP.`);
+            // Update local state to next mission in batch
+            const nextMissionId = othersAtStore[0].id;
+            const updatedActive = activeMissions.map(m => m.id === mission.id ? { ...m, status: 'in_transit' } : m);
+            setActiveMissions(updatedActive);
+            const nextM = updatedActive.find(m => m.id === nextMissionId);
+            if (nextM) setMission(nextM);
+            // Stay in PICKING_UP, but reset code input
+            setTypedCode(['', '', '', '']);
+          } else {
+            console.log('🚀 All items for this store collected! Transitioning to GOING_TO_CUSTOMER.');
+            // Update local mission status before transitioning global state
+            const updatedActive = activeMissions.map(m => m.id === mission.id ? { ...m, status: 'in_transit' } : m);
+            setActiveMissions(updatedActive);
+            setStatus(DriverStatus.GOING_TO_CUSTOMER);
+          }
         } catch (error) {
           console.error('❌ Error updating delivery status:', error);
+          setStatus(DriverStatus.GOING_TO_CUSTOMER); // Fallback to avoid getting stuck
         }
+      } else {
+        setStatus(DriverStatus.GOING_TO_CUSTOMER);
       }
-      setStatus(DriverStatus.GOING_TO_CUSTOMER);
     }
     else if (status === DriverStatus.GOING_TO_CUSTOMER) {
       // Update database when courier arrives at customer
