@@ -136,7 +136,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
-            center: currentLocation ? [currentLocation.lng, currentLocation.lat] : [-46.6333, -23.5505],
+            center: currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
             zoom: 18,
             pitch: 60,
             bearing: 0,
@@ -210,7 +210,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             rotationAlignment: 'map',
             pitchAlignment: 'map'
         })
-            .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : [-46.6333, -23.5505])
+            .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]))
             .addTo(map.current);
 
         // Create Destination Marker

@@ -39,6 +39,7 @@ interface MapLeafletProps {
     preloadedPickupLng?: number | null;
     reCenterTrigger?: number;
     missions?: any[] | null;
+    currentLocation?: { lat: number; lng: number; speed?: number | null } | null;
 }
 
 const COLORS = {
@@ -136,29 +137,15 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     preloadedPickupLat,
     preloadedPickupLng,
     reCenterTrigger,
-    missions = []
+    missions = [],
+    currentLocation: propLocation
 }) => {
-    const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
     const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [route, setRoute] = useState<[number, number][] | null>(null);
 
-    // Sync Location via GPS
-    useEffect(() => {
-        if (navigator.geolocation) {
-            const watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setCurrentLocation({ lat: latitude, lng: longitude });
-                },
-                (error) => {
-                    console.error("Error watching position:", error);
-                },
-                { enableHighAccuracy: true }
-            );
-            return () => navigator.geolocation.clearWatch(watchId);
-        }
-    }, []);
+    // Use geolocation from props
+    const currentLocation = propLocation;
 
     // Geocoding helper with cache — uses Mapbox if token available, fallback to Nominatim
     const geocode = async (address: string): Promise<{ lat: number; lng: number } | null> => {
@@ -353,7 +340,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     return (
         <div className="w-full h-full relative">
             <MapContainer
-                center={currentLocation ? [currentLocation.lat, currentLocation.lng] : [-23.5505, -46.6333]}
+                center={currentLocation ? [currentLocation.lat, currentLocation.lng] : (pickupLocation ? [pickupLocation.lat, pickupLocation.lng] : (destinationLocation ? [destinationLocation.lat, destinationLocation.lng] : [-23.5505, -46.6333]))}
                 zoom={15}
                 style={{ width: '100%', height: '100%' }}
                 zoomControl={false}

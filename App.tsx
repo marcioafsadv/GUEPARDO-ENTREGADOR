@@ -190,6 +190,8 @@ const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
     case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
     case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
     case 'returning': return DriverStatus.RETURNING;
+    case 'completed': return DriverStatus.ONLINE;  // Will be caught by success logic
+    case 'cancelled': return DriverStatus.ONLINE;
     default: return DriverStatus.ONLINE;
   }
 };
@@ -286,6 +288,7 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<DriverStatus>(DriverStatus.OFFLINE);
   // Ref to always have the latest status inside realtime callbacks (avoids stale closure)
   const statusRef = useRef<DriverStatus>(DriverStatus.OFFLINE);
+  useEffect(() => { statusRef.current = status; }, [status]);
   const [activeMissions, setActiveMissions] = useState<DeliveryMission[]>([]);
   const mission = React.useMemo(() => {
     if (activeMissions.length === 0) return null;
@@ -687,8 +690,43 @@ const App: React.FC = () => {
             setActiveMissions(missionsToSet);
             setMission(missionsToSet[0]);
             
-            const recoveredStatus = mapDbStatusToDriverStatus(activeDbDelivery.status);
-            setStatus(recoveredStatus);
+            // --- FIX STATE REVERSION BUG ---
+            // Determine the "best" status from the recovered missions (especially for batches)
+            const getBestStatus = (missions: DeliveryMission[]) => {
+              let highestRank = -2;
+              let bestStatus = DriverStatus.ONLINE;
+              
+              missions.forEach(m => {
+                const s = mapDbStatusToDriverStatus(m.status || 'pending');
+                const r = DRIVER_STATUS_RANK[s] || 0;
+                if (r > highestRank) {
+                  highestRank = r;
+                  bestStatus = s;
+                }
+              });
+              return bestStatus;
+            };
+
+            const recoveredStatus = getBestStatus(missionsToSet);
+            const currentStatus = statusRef.current;
+            
+            // State Protection: Only revert if we are NOT in an active delivery
+            // OR if the recovered status is actually MORE advanced than our local state.
+            const isLocked = [
+              DriverStatus.READY_FOR_PICKUP,
+              DriverStatus.PICKING_UP,
+              DriverStatus.GOING_TO_CUSTOMER,
+              DriverStatus.ARRIVED_AT_CUSTOMER,
+              DriverStatus.RETURNING
+            ].includes(currentStatus);
+
+            if (!isLocked || DRIVER_STATUS_RANK[recoveredStatus] > DRIVER_STATUS_RANK[currentStatus]) {
+              console.log(`✅ Status Recovery: ${currentStatus} -> ${recoveredStatus}`);
+              setStatus(recoveredStatus);
+            } else {
+              console.log(`🛡️ State Protection: Blocked revert from ${currentStatus} to ${recoveredStatus}`);
+            }
+            
             setIsNavigating(true);
 
             // Geocode para garantir que o mapa carregue o destino imediatamente
@@ -1297,7 +1335,7 @@ const App: React.FC = () => {
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup', 'in_transit', 'arrived_at_customer', 'returning']);
+            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup', 'in_transit', 'arrived_at_customer', 'returning', 'completed', 'cancelled']);
 
           if (assignedOrders && assignedOrders.length > 0) {
             // Filter out missions the driver has already rejected locally
@@ -1330,83 +1368,79 @@ const App: React.FC = () => {
             }));
 
             if (syncMissions.length > 0) {
+              // --- SIDE EFFECTS & STATUS TRANSITIONS (Handled outside the state setter) ---
+              const currentRank = DRIVER_STATUS_RANK[status] || 0;
+              const mainServerMission = syncMissions.find(m => m.id === (mission?.id || syncMissions[0].id));
+
+              if (mainServerMission && currentRank > 0 && currentRank < 10) {
+                const serverRank = STATUS_RANK[mainServerMission.status] || 0;
+                
+                if (serverRank > currentRank) {
+                  console.log(`🚀 [POLLING] Status advance detected: ${status} -> ${mainServerMission.status}. Syncing...`);
+                  
+                  // Handle Success/Completion logic (Side Effects)
+                  if (mainServerMission.status === 'completed' && (status === DriverStatus.RETURNING || status === DriverStatus.ARRIVED_AT_CUSTOMER)) {
+                    console.log("✅ [POLLING] Return/Delivery confirmed by merchant! Auto-finalizing...");
+                    processDeliverySuccess();
+                  } else if (mainServerMission.status === 'cancelled') {
+                    console.log("⚠️ [POLLING] Mission cancelled on server.");
+                    setMission(null);
+                    setStatus(DriverStatus.ONLINE);
+                  } else {
+                    // Standard status update
+                    const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
+                    
+                    if (nextStatus === DriverStatus.GOING_TO_CUSTOMER && status !== DriverStatus.GOING_TO_CUSTOMER) {
+                      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                      playSuccess();
+                    }
+                    
+                    setStatus(nextStatus);
+                    setMission(mainServerMission);
+                  }
+                } else if (serverRank < currentRank) {
+                  console.log(`🛡️ [POLLING] Blocked status regression: Local is ${status} (${currentRank}), Server is ${mainServerMission.status} (${serverRank})`);
+                }
+              }
+
+              // Also handle first mission detection if was ONLINE
+              if (status === DriverStatus.ONLINE && syncMissions.length > 0) {
+                const firstNew = syncMissions[0];
+                if (firstNew.status === 'pending') {
+                  setMission(firstNew);
+                  setStatus(DriverStatus.ALERTING);
+                } else {
+                  const nextStatus = mapDbStatusToDriverStatus(firstNew.status);
+                  setStatus(nextStatus);
+                  setMission(firstNew);
+                }
+              }
+
+              // --- PURE STATE UPDATES ONLY HERE ---
               setActiveMissions(prev => {
                 const syncIds = new Set(syncMissions.map(m => m.id));
                 
                 // 1. Update existing missions with new data (status, etc.)
-                // BUT: only update status fields if we're not in a locked delivery state
                 const updatedPrev = prev.map(oldMission => {
                   const serverMission = syncMissions.find(m => m.id === oldMission.id);
-                  if (serverMission) {
-                    // Update relevant fields while keeping local status intact if in locked state
-                    return { ...oldMission, ...serverMission };
-                  }
-                  return oldMission;
+                  return serverMission ? { ...oldMission, ...serverMission } : oldMission;
                 });
 
-                // 2. Filter out missions that were finished/cancelled on server but are still in our local state
-                // Note: Only remove if we aren't in a state that requires keeping them (like RETURNING)
-                // but usually the server status 'completed' or 'cancelled' handles this.
+                // 2. Filter out finished/cancelled missions
                 const filteredPrev = updatedPrev.filter(m => syncIds.has(m.id));
 
-                // 3. Find truly new missions
+                // 3. Detect batching notifications
                 const prevIds = new Set(prev.map(m => m.id));
                 const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
                 
-                if (newOnly.length === 0 && filteredPrev.length === prev.length) return prev;
-
-                // Detect batching while already in route
-                if ((status as any) !== DriverStatus.ONLINE && (status as any) !== DriverStatus.OFFLINE && (status as any) !== DriverStatus.ALERTING && newOnly.length > 0) {
+                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnly.length > 0) {
                   const addedEarnings = newOnly.reduce((acc, m) => acc + m.earnings, 0);
                   setNewBatchEarnings(addedEarnings);
                   setShowBatchAlert(true);
                   setTimeout(() => setShowBatchAlert(false), 8000);
                 }
 
-                // PROGRESSIVE SYNC LOGIC:
-                // If we are in an active delivery, only update the local status if the server is AHEAD.
-                // This prevents "flickering" back to previous states while enabling automation.
-                const currentRank = DRIVER_STATUS_RANK[status] || 0;
-                
-                if (currentRank > 0 && currentRank < 10) {
-                  // We are in a delivery. Check first mission's status (main anchor)
-                  const mainServerMission = syncMissions.find(m => m.id === (mission?.id || syncMissions[0].id));
-                  if (mainServerMission) {
-                    const serverRank = STATUS_RANK[mainServerMission.status] || 0;
-                    
-                    if (serverRank > currentRank) {
-                      console.log(`🚀 [POLLING] Status advance detected: ${status} -> ${mainServerMission.status}. Syncing...`);
-                      const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
-                      
-                      // Trigger notifications if transitioning to key states
-                      if (nextStatus === DriverStatus.GOING_TO_CUSTOMER && status !== DriverStatus.GOING_TO_CUSTOMER) {
-                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                        playSuccess();
-                      }
-                      
-                      setStatus(nextStatus);
-                      setMission(mainServerMission);
-                    } else if (serverRank < currentRank) {
-                      console.log(`🛡️ [POLLING] Blocked status regression: Local is ${status} (${currentRank}), Server is ${mainServerMission.status} (${serverRank})`);
-                    }
-                  }
-                  
-                  return [...filteredPrev, ...newOnly];
-                }
-
-                // If we were ONLINE and suddenly have missions, transition status
-                if (status === DriverStatus.ONLINE && (filteredPrev.length === 0 && newOnly.length > 0)) {
-                  const firstNew = newOnly[0];
-                  if (firstNew.status === 'pending') {
-                    setMission(firstNew);
-                    setStatus(DriverStatus.ALERTING);
-                  } else {
-                    const nextStatus = mapDbStatusToDriverStatus(firstNew.status);
-                    setStatus(nextStatus);
-                  }
-                }
-
-                return [...filteredPrev, ...newOnly];
+                return syncMissions; // Direct sync with server is safest here
               });
             }
           }
@@ -1498,7 +1532,7 @@ const App: React.FC = () => {
     }
 
     return () => clearInterval(pollingInterval);
-  }, [status, activeMissions.length, currentUser, rejectedMissions, userId]);
+  }, [status, mission?.id, activeMissions.length, currentUser, rejectedMissions, userId]);
 
 
   useEffect(() => {
@@ -1614,7 +1648,7 @@ const App: React.FC = () => {
           if (newStatus === 'cancelled') {
             setMission(null);
             setStatus(DriverStatus.ONLINE);
-          } else if (newStatus === 'completed' && currentStatus === DriverStatus.RETURNING) {
+          } else if (newStatus === 'completed' && (currentStatus === DriverStatus.RETURNING || currentStatus === DriverStatus.ARRIVED_AT_CUSTOMER)) {
             console.log("✅ Return confirmed by merchant.");
             processDeliverySuccess();
           } else if (newStatus === 'ready_for_pickup') {
@@ -2090,7 +2124,7 @@ const App: React.FC = () => {
         }
       }
     }
-    else if (status === DriverStatus.ARRIVED_AT_STORE) {
+    else if (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) {
       // Fix Bug 3: Persistir 'picking_up' no banco para evitar que o polling (5s) reverta
       // o status para ARRIVED_AT_STORE ao ler 'arrived_pickup' desatualizado do servidor.
       if (mission && userId) {
@@ -2609,13 +2643,13 @@ const App: React.FC = () => {
                   theme={mapTheme}
                   onUpdateMetrics={(m) => setNavMetrics(m)}
                   destinationAddress={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
                       ? mission?.storeAddress || null
                       : mission?.customerAddress || null
                   }
                   currentLocation={currentLocation}
                   preloadedDestination={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
                       ? preloadedCoords.store
                       : preloadedCoords.customer
                   }
@@ -2629,7 +2663,7 @@ const App: React.FC = () => {
                   destinationAddress={
                     status === DriverStatus.ALERTING
                       ? mission?.customerAddress
-                      : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                      : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
                         ? mission?.storeAddress
                         : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                           ? mission?.customerAddress
@@ -2638,7 +2672,7 @@ const App: React.FC = () => {
                   pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
                   // Pass pre-geocoded coords for instant route switch (no geocoding delay)
                   preloadedDestinationLat={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
                       ? preloadedCoords.store?.lat
                       : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                         ? preloadedCoords.customer?.lat
@@ -2656,6 +2690,7 @@ const App: React.FC = () => {
                   mapMode={mapMode}
                   showTraffic={showTraffic}
                   reCenterTrigger={reCenterTrigger}
+                  currentLocation={currentLocation}
                 />
               )}
 
@@ -3023,10 +3058,10 @@ const App: React.FC = () => {
                     <div className="px-1 flex justify-between items-start">
                       <div>
                          <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-                          {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeName : mission?.customerName)}
+                          {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission?.storeName : mission?.customerName)}
                          </h3>
                          <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-                          {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission?.storeAddress : mission?.customerAddress)}
+                          {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission?.storeAddress : mission?.customerAddress)}
                          </p>
                       </div>
                       {activeMissions.length > 1 && (
@@ -3036,7 +3071,7 @@ const App: React.FC = () => {
                       )}
                     </div>
 
-                    {status === DriverStatus.ARRIVED_AT_STORE && (
+                    {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
                       <div className={`p-4 rounded-[24px] border border-dashed flex items-center space-x-4 transition-all duration-500 ${isOrderReady ? 'bg-[#FFD700]/10 border-[#FFD700]/40' : `${theme === 'dark' ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-100 border-zinc-300'}`}`}>
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isOrderReady ? 'bg-[#FFD700]/20' : 'bg-[#FF6B00]/10'}`}>
                           <i className={`fas ${isOrderReady ? 'fa-check-double text-[#FFD700] blink-soft' : 'fa-utensils text-[#FF6B00] animate-pulse'} text-xl`}></i>
@@ -3060,7 +3095,7 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    {status === DriverStatus.PICKING_UP && (
+                    {(status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) && (
                       <div className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-[#FF6B00]/40 bg-[#FF6B00]/5 p-6 flex flex-col items-center text-center animate-in zoom-in duration-300">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent opacity-50"></div>
 
@@ -3122,14 +3157,14 @@ const App: React.FC = () => {
                       label={
                         status === DriverStatus.GOING_TO_STORE ? 'Segure p/ Chegar na Loja' :
                           status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
-                            status === DriverStatus.PICKING_UP ? 'Segure p/ Confirmar Coleta' :
+                            status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'Segure p/ Confirmar Coleta' :
                               status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
                                 status === DriverStatus.RETURNING ? 'Aguardando Lojista (Retorno)' :
                                   'Segure p/ Finalizar Entrega'
                       }
                       disabled={((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()) || status === DriverStatus.RETURNING}
-                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER || status === DriverStatus.RETURNING ? '#FFD700' : '#FF6B00'}
-                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP ? 'fa-check' : 'fa-chevron-right'}
+                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER || status === DriverStatus.RETURNING ? '#FFD700' : '#FF6B00'}
+                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right'}
                       fillDuration={1500}
                     />
                   </div>
