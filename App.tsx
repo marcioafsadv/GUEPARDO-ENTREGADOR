@@ -1793,8 +1793,11 @@ const App: React.FC = () => {
 
         // CASE 1: While alerting, if mission is taken by someone else or cancelled
         if (currentStatus === DriverStatus.ALERTING) {
-          if (newStatus !== 'pending') {
-            console.log("⚠️ Alerting mission is no longer pending. Removing alert.");
+          // If the new status is not pending, but the driver_id is MINE, it means I just accepted it.
+          // In this case, ignore the alert and let handleAcceptMission finish the transition.
+          const payloadDriverId = (arguments[0] as any)?.new?.driver_id;
+          if (newStatus !== 'pending' && payloadDriverId !== userId) {
+            console.log("⚠️ Alerting mission is no longer pending (taken by someone else). Removing alert.");
             setMission(null);
             setStatus(DriverStatus.ONLINE);
             setAlertCountdown(0);
@@ -1994,7 +1997,9 @@ const App: React.FC = () => {
       setActiveMissions(syncMissions);
 
       const pendingOrTransit = syncMissions.filter(m => ACTIVE_DELIVERY_STATUSES.includes(m.status));
+      const hasReturnMissions = syncMissions.some(m => m.status === 'returning');
 
+      // The driver ONLY returns to store if there are ABSOLUTELY NO MORE pending/transit deliveries
       if (pendingOrTransit.length > 0) {
         const nextToMove = pendingOrTransit[0];
         const newTargetStatus = nextToMove.storeName === mission.storeName 
@@ -2005,7 +2010,7 @@ const App: React.FC = () => {
         setStatus(newTargetStatus);
         setMission(nextToMove);
         setShowPostDeliveryModal(false);
-      } else if (syncMissions.some(m => m.status === 'returning')) {
+      } else if (hasReturnMissions) {
         const nextToMove = syncMissions.find(m => m.status === 'returning') || syncMissions[0];
         console.log(`🔙 Entering return phase for mission: ${nextToMove.id.slice(-4)}`);
         setStatus(DriverStatus.RETURNING);
@@ -2357,16 +2362,26 @@ const App: React.FC = () => {
             .eq('driver_id', userId);
           console.log('✅ Updated delivery status to in_transit after code validation');
 
-          // --- FIX BUG #2: BATCHING AGILITY ---
-          // Check if there's another mission in the current batch that needs pickup
-          // (at the same store) before moving to GOING_TO_CUSTOMER
-          const { data: batchMissions } = await supabaseClient.supabase
+          // --- FIX BUG #2: BATCHING AGILITY & BULK TRANSIT ---
+          // Mark ALL missions of this batch from the same store as in_transit
+          const { data: batchItemsToUpdate } = await supabaseClient.supabase
             .from('deliveries')
             .select('id, status, store_name')
             .eq('driver_id', userId)
             .in('status', ['accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup']);
           
-          const othersAtStore = (batchMissions || []).filter(m => m.id !== mission.id && m.store_name === mission.storeName);
+          const sameStoreItems = (batchItemsToUpdate || []).filter(m => m.store_name === mission.storeName);
+          const sameStoreIds = sameStoreItems.map(m => m.id);
+
+          if (sameStoreIds.length > 0) {
+            console.log(`📦 Marking ${sameStoreIds.length} batch items as in_transit...`);
+            await supabaseClient.supabase
+              .from('deliveries')
+              .update({ status: 'in_transit' })
+              .in('id', sameStoreIds);
+          }
+
+          const othersAtStore = sameStoreItems.filter(m => m.id !== mission.id);
           
           if (othersAtStore.length > 0) {
             console.log(`📦 Still have ${othersAtStore.length} items to pick up at the same store. Staying in PICKING_UP.`);
