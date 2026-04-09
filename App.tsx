@@ -168,6 +168,8 @@ const STATUS_RANK: Record<string, number> = {
   'cancelled': 10
 };
 
+const ACTIVE_DELIVERY_DB_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'];
+
 const DRIVER_STATUS_RANK: Record<string, number> = {
   [DriverStatus.OFFLINE]: -1,
   [DriverStatus.ONLINE]: 0,
@@ -1330,16 +1332,30 @@ const App: React.FC = () => {
             return items.displayId || items.id?.toString().slice(-4);
           };
 
-          // 1. Check for orders DIRECTLY ASSIGNED to this driver (Batching)
+          // 1. Check for orders DIRECTLY ASSIGNED to this driver (Active only to avoid ghost orders)
           const { data: assignedOrders } = await supabaseClient.supabase
             .from('deliveries')
             .select('*')
             .eq('driver_id', userId)
-            .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup', 'in_transit', 'arrived_at_customer', 'returning', 'completed', 'cancelled']);
+            .in('status', ACTIVE_DELIVERY_DB_STATUSES);
 
-          if (assignedOrders && assignedOrders.length > 0) {
+          const dbMissions = assignedOrders || [];
+
+          // 2. Targeted check for the CURRENT mission (to catch 'completed' or 'cancelled' finalization)
+          if (mission?.id && !dbMissions.some(m => m.id === mission.id)) {
+            const { data: currentMissionStatus } = await supabaseClient.supabase
+              .from('deliveries')
+              .select('*')
+              .eq('id', mission.id)
+              .single();
+            if (currentMissionStatus) {
+              dbMissions.push(currentMissionStatus);
+            }
+          }
+
+          if (dbMissions.length >= 0) { // Always sync, even if 0
             // Filter out missions the driver has already rejected locally
-            const filteredAssigned = assignedOrders.filter(d => !rejectedMissions.includes(String(d.id)));
+            const filteredAssigned = dbMissions.filter(d => !rejectedMissions.includes(String(d.id)));
 
             const syncMissions: DeliveryMission[] = filteredAssigned.map(d => ({
               id: d.id,
@@ -1404,8 +1420,10 @@ const App: React.FC = () => {
               }
 
               // Also handle first mission detection if was ONLINE
-              if (status === DriverStatus.ONLINE && syncMissions.length > 0) {
-                const firstNew = syncMissions[0];
+              const activeOnlySyncMissions = syncMissions.filter(m => ACTIVE_DELIVERY_DB_STATUSES.includes(m.status));
+
+              if (status === DriverStatus.ONLINE && activeOnlySyncMissions.length > 0) {
+                const firstNew = activeOnlySyncMissions[0];
                 if (firstNew.status === 'pending') {
                   setMission(firstNew);
                   setStatus(DriverStatus.ALERTING);
@@ -1418,30 +1436,22 @@ const App: React.FC = () => {
 
               // --- PURE STATE UPDATES ONLY HERE ---
               setActiveMissions(prev => {
-                const syncIds = new Set(syncMissions.map(m => m.id));
-                
-                // 1. Update existing missions with new data (status, etc.)
-                const updatedPrev = prev.map(oldMission => {
-                  const serverMission = syncMissions.find(m => m.id === oldMission.id);
-                  return serverMission ? { ...oldMission, ...serverMission } : oldMission;
-                });
-
-                // 2. Filter out finished/cancelled missions
-                const filteredPrev = updatedPrev.filter(m => syncIds.has(m.id));
-
-                // 3. Detect batching notifications
+                // Determine truly new active missions for notifications
                 const prevIds = new Set(prev.map(m => m.id));
-                const newOnly = syncMissions.filter(m => !prevIds.has(m.id));
+                const newOnlyActive = activeOnlySyncMissions.filter(m => !prevIds.has(m.id));
                 
-                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnly.length > 0) {
-                  const addedEarnings = newOnly.reduce((acc, m) => acc + m.earnings, 0);
+                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnlyActive.length > 0) {
+                  const addedEarnings = newOnlyActive.reduce((acc, m) => acc + m.earnings, 0);
                   setNewBatchEarnings(addedEarnings);
                   setShowBatchAlert(true);
                   setTimeout(() => setShowBatchAlert(false), 8000);
                 }
 
-                return syncMissions; // Direct sync with server is safest here
+                return activeOnlySyncMissions;
               });
+            } else {
+              // Ensure we clear missions if none are found in DB
+              setActiveMissions([]);
             }
           }
 
