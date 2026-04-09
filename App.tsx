@@ -1545,11 +1545,27 @@ const App: React.FC = () => {
                   setTimeout(() => setShowBatchAlert(false), 8000);
                 }
 
+                // SECURITY: If we were previously showing 2 items (batch) and now we see 1,
+                // we might be in a temporary half-synced DB state. If status is NOT ONLINE,
+                // we prefer to keep the larger set until explicit completion.
+                if (prev.length > activeOnlySyncMissions.length && status !== DriverStatus.ONLINE && activeOnlySyncMissions.length > 0) {
+                  const currentRemainingIds = new Set(activeOnlySyncMissions.map(m => m.id));
+                  const isActuallyCompleted = prev.some(m => !currentRemainingIds.has(m.id) && (m.status === 'completed' || m.status === 'cancelled'));
+                  
+                  if (!isActuallyCompleted) {
+                    console.log("🛡️ [POLLING] Protected batch state from partial DB sync.");
+                    return prev;
+                  }
+                }
+
                 return activeOnlySyncMissions;
               });
             } else {
-              // Ensure we clear missions if none are found in DB
-              setActiveMissions([]);
+              // Ensure we clear missions if none are found in DB, 
+              // BUT ONLY if we are not currently ALERTING (to avoid flickering R$ 3.88)
+              if (statusRef.current !== DriverStatus.ALERTING) {
+                setActiveMissions([]);
+              }
             }
           }
 
@@ -1927,12 +1943,19 @@ const App: React.FC = () => {
       // This eliminates all React state batching and stale closure issues across the multi-stop sequencing.
       const ACTIVE_DELIVERY_STATUSES = ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'ready_for_pickup'];
       
-      const { data: remainingMissions, error: fetchErr } = await supabaseClient.supabase
+      // Look for missions assigned to me OR belonging to the same batch (even if somehow missing driver_id)
+      let query = supabaseClient.supabase
         .from('deliveries')
         .select('*')
-        .eq('driver_id', userId)
-        .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning'])
-        .order('created_at', { ascending: true });
+        .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning']);
+      
+      if (mission.batch_id) {
+        query = query.or(`driver_id.eq.${userId},batch_id.eq.${mission.batch_id}`);
+      } else {
+        query = query.eq('driver_id', userId);
+      }
+
+      const { data: remainingMissions, error: fetchErr } = await query.order('created_at', { ascending: true });
 
       if (fetchErr) {
         console.error('Error fetching remaining missions:', fetchErr);
@@ -2158,15 +2181,55 @@ const App: React.FC = () => {
       const missionsToAccept = activeMissions.length > 0 ? activeMissions : (mission ? [mission] : []);
       console.log(`🎯 Attempting to accept ${missionsToAccept.length} missions in batch:`, missionsToAccept.map(m => m.id));
 
-      await Promise.all(missionsToAccept.map(m => supabaseClient.acceptMission(m.id, userId)));
-      console.log('✅ Missions accepted successfully');
+      // 1. Perform atomic update for all missions in batch
+      const { error: acceptError } = await supabaseClient.supabase
+        .from('deliveries')
+        .update({ 
+          driver_id: userId, 
+          status: 'accepted',
+          updated_at: new Date().toISOString()
+        })
+        .in('id', missionsToAccept.map(m => m.id));
 
-      setBatchHasReturn(missionsToAccept.some(m => m.isReturnRequired));
-      setDailyStats(s => ({ ...s, accepted: s.accepted + missionsToAccept.length }));
+      if (acceptError) throw acceptError;
+      console.log('✅ Missions accepted successfully in DB');
+
+      // 2. Fetch fresh state for the batch to ensure consistency
+      const { data: freshBatch } = await supabaseClient.supabase
+        .from('deliveries')
+        .select('*')
+        .in('id', missionsToAccept.map(m => m.id));
+      
+      const mappedActive: DeliveryMission[] = (freshBatch || []).map(d => ({
+        id: d.id,
+        storeName: d.store_name,
+        storeAddress: d.store_address,
+        customerName: d.customer_name,
+        customerAddress: d.customer_address,
+        customerPhoneSuffix: d.customer_phone_suffix,
+        items: d.items || [],
+        collectionCode: d.collection_code || '0000',
+        distanceToStore: d.distance_to_store || 0,
+        deliveryDistance: d.delivery_distance || 0,
+        totalDistance: d.total_distance || 0,
+        earnings: parseFloat(d.earnings || '0'),
+        timeLimit: 25,
+        status: d.status || 'accepted',
+        isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+        displayId: d.items?.displayId || d.id.slice(-4),
+        batch_id: d.batch_id,
+        destinationLat: d.destination_lat,
+        destinationLng: d.destination_lng,
+        stopNumber: d.stop_number || d.items?.stopNumber || 1,
+        deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
+        paymentMethod: d.items?.paymentMethod || 'PIX'
+      })).sort((a,b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+
+      setActiveMissions(mappedActive);
+      setMission(mappedActive[0]);
+      setBatchHasReturn(mappedActive.some(m => m.isReturnRequired));
+      setDailyStats(s => ({ ...s, accepted: s.accepted + mappedActive.length }));
       setStatus(DriverStatus.GOING_TO_STORE);
-
-      const targetMission = mission || missionsToAccept[0];
-      if (!mission) setMission(targetMission);
 
       // Stop the sound immediately
       if (alertAudioRef.current) {
