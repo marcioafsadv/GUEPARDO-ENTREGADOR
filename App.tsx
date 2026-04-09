@@ -208,9 +208,9 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     customerPhoneSuffix: d.customer_phone_suffix || '',
     items: d.items || [],
     collectionCode: d.collection_code || '0000',
-    distanceToStore: d.distance_to_store || 1.5,
-    deliveryDistance: d.delivery_distance || 2.0,
-    totalDistance: d.total_distance || 3.5,
+    distanceToStore: d.distance_to_store || 0,
+    deliveryDistance: d.delivery_distance || 0,
+    totalDistance: d.total_distance || 0,
     earnings: parseFloat(d.earnings || '0'),
     timeLimit: 25,
     status: d.status || 'pending',
@@ -232,6 +232,62 @@ const App: React.FC = () => {
     const t = setTimeout(() => setShowSplash(false), 3000);
     return () => clearTimeout(t);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      if (typeof playClick === 'function') playClick();
+      await supabaseClient.signOut();
+      
+      // Reset Auth State
+      setIsAuthenticated(false);
+      setUserId(null);
+      setAuthScreen('LOGIN');
+      
+      // Reset User Profile
+      setCurrentUser({
+        name: '',
+        email: '',
+        phone: '',
+        cpf: '',
+        level: 'Guepardo PRO',
+        avatar: DEFAULT_AVATAR,
+        region: 'Itu - SP',
+        vehicle: 'moto',
+        verified: false,
+        bank: {
+          name: "Banco Digital",
+          agency: "0001",
+          account: "00000-0",
+          type: "Conta Corrente",
+          pixKey: ""
+        },
+        cnh: {
+          number: "",
+          category: "A",
+          expiry: ""
+        },
+        preferredMap: 'internal',
+        status: null
+      });
+
+      // Reset Statistics & Financials
+      setBalance(0);
+      setDailyEarnings(0);
+      setDailyStats({ accepted: 0, finished: 0, rejected: 0, onlineTime: 0, earnings: 0 });
+      setHistory([]);
+      
+      // Reset Mission State
+      setActiveMissions([]);
+      setStatus(DriverStatus.OFFLINE);
+      setCurrentScreen('HOME');
+      
+      console.log('✅ Logout concluído com sucesso e estado limpo.');
+    } catch (error) {
+      console.error('❌ Erro durante o logout:', error);
+      setIsAuthenticated(false);
+      setAuthScreen('LOGIN');
+    }
+  };
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1158,7 +1214,48 @@ const App: React.FC = () => {
                 paymentMethod: firstPending.items?.paymentMethod || 'PIX'
               };
 
-              setMission(dynamicMission);
+              // If it's a batch, fetch all stops
+              if (firstPending.batch_id) {
+                console.log("📦 Initial fetch detected batch:", firstPending.batch_id);
+                const { data: batchData } = await supabaseClient.supabase
+                  .from('deliveries')
+                  .select('*')
+                  .eq('batch_id', firstPending.batch_id)
+                  .eq('status', 'pending');
+                
+                if (batchData && batchData.length > 0) {
+                  const mappedBatch = batchData.map((d: any) => ({
+                    id: d.id,
+                    storeName: d.store_name,
+                    storeAddress: d.store_address,
+                    customerName: d.customer_name,
+                    customerAddress: d.customer_address,
+                    customerPhoneSuffix: d.customer_phone_suffix,
+                    items: d.items || [],
+                    collectionCode: d.collection_code || '0000',
+                    distanceToStore: d.distance_to_store || 0,
+                    deliveryDistance: d.delivery_distance || 0,
+                    totalDistance: d.total_distance || 0,
+                    earnings: parseFloat(d.earnings || '0'),
+                    timeLimit: 25,
+                    status: d.status || 'pending',
+                    isReturnRequired: d.is_return_required || false,
+                    displayId: d.items?.displayId || d.id.slice(-4),
+                    batch_id: d.batch_id,
+                    deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
+                    paymentMethod: d.items?.paymentMethod || 'PIX'
+                  }));
+                  setActiveMissions(mappedBatch);
+                  setMission(mappedBatch[0]);
+                } else {
+                  setMission(dynamicMission);
+                  setActiveMissions([dynamicMission]);
+                }
+              } else {
+                setMission(dynamicMission);
+                setActiveMissions([dynamicMission]);
+              }
+              
               setStatus(DriverStatus.ALERTING);
               setAlertCountdown(30);
             } else {
@@ -1475,31 +1572,66 @@ const App: React.FC = () => {
                 let missionsToAlert: DeliveryMission[] = [];
 
                 if (firstPending.batch_id) {
-                  const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
-                  missionsToAlert = batchItems.map((d: any, idx: number) => ({
-                    id: d.id,
-                    storeName: d.store_name || 'Loja',
-                    storeAddress: d.store_address || '',
-                    customerName: d.customer_name || 'Cliente',
-                    customerAddress: d.customer_address || '',
-                    customerPhoneSuffix: d.customer_phone_suffix || '',
-                    items: d.items || [],
-                    collectionCode: d.collection_code || '0000',
-                    distanceToStore: d.distance_to_store || 0,
-                    deliveryDistance: d.delivery_distance || 0,
-                    totalDistance: d.total_distance || 0,
-                    earnings: parseFloat(d.earnings || '0'),
-                    timeLimit: 25,
-                    status: d.status || 'pending',
-                    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                    displayId: getDisplayId(d.items),
-                    batch_id: d.batch_id,
-                    destinationLat: d.destination_lat,
-                    destinationLng: d.destination_lng,
-                    stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
-                    storePhone: d.store_phone || '',
-                    customerPhone: d.customer_phone || ''
-                  })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                  console.log("📦 Polling detected batch:", firstPending.batch_id);
+                  const { data: batchData } = await supabaseClient.supabase
+                    .from('deliveries')
+                    .select('*')
+                    .eq('batch_id', firstPending.batch_id)
+                    .eq('status', 'pending');
+
+                  if (batchData && batchData.length > 0) {
+                    missionsToAlert = batchData.map((d: any, idx: number) => ({
+                      id: d.id,
+                      storeName: d.store_name || 'Loja',
+                      storeAddress: d.store_address || '',
+                      customerName: d.customer_name || 'Cliente',
+                      customerAddress: d.customer_address || '',
+                      customerPhoneSuffix: d.customer_phone_suffix || '',
+                      items: d.items || [],
+                      collectionCode: d.collection_code || '0000',
+                      distanceToStore: d.distance_to_store || 0,
+                      deliveryDistance: d.delivery_distance || 0,
+                      totalDistance: d.total_distance || 0,
+                      earnings: parseFloat(d.earnings || '0'),
+                      timeLimit: 25,
+                      status: d.status || 'pending',
+                      isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+                      displayId: d.items?.displayId || d.id?.toString().slice(-4),
+                      batch_id: d.batch_id,
+                      destinationLat: d.destination_lat,
+                      destinationLng: d.destination_lng,
+                      stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
+                      storePhone: d.store_phone || '',
+                      customerPhone: d.customer_phone || ''
+                    })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                  } else {
+                    // Fallback to the subset if batch fetch fails
+                    const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
+                    missionsToAlert = batchItems.map((d: any, idx: number) => ({
+                      id: d.id,
+                      storeName: d.store_name || 'Loja',
+                      storeAddress: d.store_address || '',
+                      customerName: d.customer_name || 'Cliente',
+                      customerAddress: d.customer_address || '',
+                      customerPhoneSuffix: d.customer_phone_suffix || '',
+                      items: d.items || [],
+                      collectionCode: d.collection_code || '0000',
+                      distanceToStore: d.distance_to_store || 0,
+                      deliveryDistance: d.delivery_distance || 0,
+                      totalDistance: d.total_distance || 0,
+                      earnings: parseFloat(d.earnings || '0'),
+                      timeLimit: 25,
+                      status: d.status || 'pending',
+                      isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+                      displayId: d.items?.displayId || d.id?.toString().slice(-4),
+                      batch_id: d.batch_id,
+                      destinationLat: d.destination_lat,
+                      destinationLng: d.destination_lng,
+                      stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
+                      storePhone: d.store_phone || '',
+                      customerPhone: d.customer_phone || ''
+                    })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                  }
                 } else {
                   missionsToAlert = [{
                     id: firstPending.id,
@@ -3671,45 +3803,7 @@ const App: React.FC = () => {
                   </div>
                 </section>
 
-                <button onClick={async () => {
-                  try {
-                    await supabaseClient.signOut();
-                    setIsAuthenticated(false);
-                    setUserId(null);
-                    setAuthScreen('LOGIN');
-                    setCurrentUser({
-                      name: '',
-                      email: '',
-                      phone: '',
-                      cpf: '',
-                      level: 'Guepardo PRO',
-                      avatar: DEFAULT_AVATAR,
-                      region: 'Itu - SP',
-                      vehicle: 'moto',
-                      verified: false,
-                      bank: {
-                        name: "Banco Digital",
-                        agency: "0001",
-                        account: "00000-0",
-                        type: "Conta Corrente",
-                        pixKey: ""
-                      },
-                      cnh: {
-                        number: "",
-                        category: "A",
-                        expiry: ""
-                      },
-                      preferredMap: 'internal',
-                      status: null
-                    });
-                    setBalance(0);
-                    setDailyEarnings(0);
-                    setDailyStats({ accepted: 0, finished: 0, rejected: 0, onlineTime: 0, earnings: 0 });
-                    setHistory([]);
-                  } catch (error) {
-                    console.error('Logout error:', error);
-                  }
-                }} className="w-full h-14 rounded-2xl border border-red-500/30 text-red-500 font-black uppercase tracking-widest flex items-center justify-center hover:bg-red-500/10 transition-colors mt-4">
+                <button onClick={handleLogout} className="w-full h-14 rounded-2xl border border-red-500/30 text-red-500 font-black uppercase tracking-widest flex items-center justify-center hover:bg-red-500/10 transition-colors mt-4">
                   Sair da Conta
                 </button>
               </div>
@@ -4311,12 +4405,7 @@ const App: React.FC = () => {
                 </div>
 
                 <button 
-                  onClick={() => { 
-                    supabaseClient.signOut(); 
-                    setIsAuthenticated(false); 
-                    setUserId(null);
-                    setAuthScreen('LOGIN'); 
-                  }} 
+                  onClick={handleLogout} 
                   className="w-full h-16 bg-zinc-800 rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
                 >
                   Sair da Conta
