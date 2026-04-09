@@ -1745,6 +1745,7 @@ const App: React.FC = () => {
         .select('*')
         .eq('driver_id', userId)
         .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning'])
+        .order('stop_number', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (fetchErr) {
@@ -2739,7 +2740,7 @@ const App: React.FC = () => {
               <div 
                 className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
                 style={{ 
-                  transform: `translateY(${!isMissionExpanded ? 'calc(100% - 180px + ' + dragY + 'px)' : dragY + 'px'})`,
+                  transform: `translateY(${!isMissionExpanded ? 'calc(100% - 110px + ' + dragY + 'px)' : dragY + 'px'})`,
                   touchAction: 'none',
                   willChange: 'transform'
                 }}
@@ -2751,28 +2752,40 @@ const App: React.FC = () => {
                   <div 
                     onMouseDown={handleTouchStart}
                     onTouchStart={handleTouchStart}
-                    className="w-full py-4 cursor-grab active:cursor-grabbing mb-1 group"
+                    className="w-full py-2 cursor-grab active:cursor-grabbing mb-0 group"
                   >
-                    <div className="w-16 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto opacity-40 group-hover:opacity-70 transition-opacity"></div>
+                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-800 rounded-full mx-auto opacity-30 group-hover:opacity-60 transition-opacity"></div>
                   </div>
 
                   <div className="flex justify-between items-center mb-3 shrink-0">
                     {/* Minimal 99-style Header when collapsed */}
                     {!isMissionExpanded ? (
                       <div className="flex flex-col w-full px-1 cursor-pointer" onClick={() => setIsMissionExpanded(true)}>
-                        <div className="flex flex-col items-center justify-center w-full mb-5">
-                           <h3 className={`font-bold text-[15px] leading-tight mb-1 ${textPrimary}`}>Entrega em andamento</h3>
-                           <div className="flex items-center gap-1.5 mt-0.5">
-                             <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]"></div>
-                             <span className="text-[#FF6B00] text-[11px] font-bold">Chegada prevista: {navMetrics?.time || '--'}</span>
+                        {isNavigating ? (
+                           // In-Transit Minimal View
+                           <div className="flex flex-col items-center justify-center w-full py-2">
+                              <h3 className={`font-black text-[10px] uppercase tracking-[0.2em] mb-1.5 ${textMuted}`}>Entrega em andamento</h3>
+                              <div className="flex items-center gap-2 bg-[#FF6B00]/10 px-4 py-1.5 rounded-full border border-[#FF6B00]/20">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
+                                <span className="text-[#FF6B00] text-[13px] font-black italic">Chegada: {navMetrics?.time || '--'}</span>
+                              </div>
                            </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-start w-full pb-2">
-                           <h2 className={`font-black text-lg leading-tight mb-1 ${textPrimary}`}>{mission?.customerName}</h2>
-                           <p className={`text-[11px] font-medium line-clamp-1 ${textMuted}`}>{mission?.customerAddress}</p>
-                           <div className="w-12 h-[3px] bg-[#FF6B00] mt-3 rounded-full"></div>
-                        </div>
+                        ) : (
+                          // Standard Collapsed View (Arrived or Picking Up)
+                          <>
+                            <div className="flex flex-col items-center justify-center w-full mb-3">
+                               <h3 className={`font-bold text-[14px] leading-tight mb-1 ${textPrimary}`}>
+                                 {status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP ? 'Retirada na Loja' : 'Entrega p/ Cliente'}
+                               </h3>
+                            </div>
+                            
+                            <div className="flex flex-col items-start w-full pb-1">
+                               <h2 className={`font-black text-base leading-tight mb-1 ${textPrimary}`}>{mission?.customerName}</h2>
+                               <p className={`text-[10px] font-medium line-clamp-1 ${textMuted}`}>{mission?.customerAddress}</p>
+                               <div className="w-8 h-[2px] bg-[#FF6B00] mt-2 rounded-full"></div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <>

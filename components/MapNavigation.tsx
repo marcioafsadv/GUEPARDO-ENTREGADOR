@@ -489,49 +489,49 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         <div className="w-full h-full relative overflow-hidden bg-zinc-950">
             <div ref={mapContainer} className="w-full h-full" />
 
-            {/* 99-style Header Instructions */}
+            {/* 99-style Header Instructions - COMPACTED */}
             <div className="absolute top-0 left-0 right-0 z-20">
-                <div className="bg-[#0b0b0b] rounded-b-[32px] shadow-[0_15px_30px_rgba(0,0,0,0.4)] pb-5 pt-8 px-6 flex flex-col uppercase transition-all">
+                <div className="bg-[#0b0b0b] rounded-b-[24px] shadow-[0_10px_20px_rgba(0,0,0,0.4)] pb-3 pt-6 px-5 flex flex-col uppercase transition-all">
                     {/* Main Instruction */}
-                    <div className="flex items-start">
-                        <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-16">
+                    <div className="flex items-center">
+                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-12">
                             {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-5xl"></i>
+                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-3xl"></i>
                             ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-turn-down text-5xl fa-rotate-180"></i>
+                                <i className="fas fa-arrow-turn-down text-3xl fa-rotate-180"></i>
                             ) : instruction?.modifier.includes('uturn') ? (
-                                <i className="fas fa-arrow-rotate-left text-5xl"></i>
+                                <i className="fas fa-arrow-rotate-left text-3xl"></i>
                             ) : (
-                                <i className="fas fa-arrow-up text-5xl"></i>
+                                <i className="fas fa-arrow-up text-3xl"></i>
                             )}
                         </div>
-                        <div className="flex flex-col flex-1 pb-4">
-                            <h1 className="text-white text-[42px] font-black leading-none tracking-tight">
+                        <div className="flex flex-col flex-1">
+                            <h1 className="text-white text-[32px] font-black leading-none tracking-tight">
                                 {instruction?.distanceText || '-- m'}
                             </h1>
-                            <p className="text-white/90 text-[18px] font-semibold leading-tight line-clamp-2 mt-2">
+                            <p className="text-white/80 text-[14px] font-bold leading-tight line-clamp-1 mt-1">
                                 {instruction?.roadName || 'Calculando...'}
                             </p>
                         </div>
                     </div>
                     {/* Secondary Instruction (If available) */}
                     {instruction?.nextRoadName ? (
-                        <div className="border-t border-white/10 pt-4 flex items-center gap-3">
-                            <i className="fas fa-arrow-turn-up text-zinc-400 rotate-90 text-sm"></i>
-                            <p className="text-zinc-400 text-base font-semibold truncate leading-none">
+                        <div className="border-t border-white/5 pt-2 mt-2 flex items-center gap-2">
+                            <i className="fas fa-arrow-turn-up text-zinc-500 rotate-90 text-[10px]"></i>
+                            <p className="text-zinc-500 text-xs font-bold truncate leading-none">
                                 {instruction.nextRoadName}
                             </p>
                         </div>
                     ) : (
-                        <div className="border-t border-white/10 pt-4 flex items-center justify-between">
-                            <p className="text-zinc-500 text-xs font-bold leading-none tracking-widest">
-                                MANTENHA A ATENÇÃO NA VIA
+                        <div className="border-t border-white/5 pt-2 mt-2 flex items-center justify-between">
+                            <p className="text-zinc-600 text-[8px] font-black leading-none tracking-widest">
+                                MANTENHA A ATENÇÃO
                             </p>
                             <button 
                                 onClick={() => setVoiceEnabled(!voiceEnabled)}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-zinc-800 text-white' : 'bg-transparent border border-zinc-700 text-zinc-600'}`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-zinc-800 text-white' : 'bg-transparent border border-zinc-800 text-zinc-700'}`}
                             >
-                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
+                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-[10px]`}></i>
                             </button>
                         </div>
                     )}
@@ -558,22 +558,21 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Left Side: Shield + Speedometer */}
-            <div className="absolute left-4 bottom-[200px] z-[1000] flex flex-col gap-3 items-center">
-                <div className="w-12 h-12 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
-                    <i className="fas fa-shield-halved text-xl"></i>
+            {/* Left Side: Shield + Speedometer - COMPACTED */}
+            <div className="absolute left-3 bottom-[180px] z-[1000] flex flex-col gap-2 items-center">
+                <div className="w-10 h-10 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
+                    <i className="fas fa-shield-halved text-lg"></i>
                 </div>
-                <div className="bg-[#121212] border-2 border-zinc-800 rounded-full flex flex-col items-center justify-center w-20 h-20 shadow-[0_8px_20px_rgba(0,0,0,0.6)]">
-                    <span className="text-3xl font-black text-white">{currentSpeed}</span>
-                    <span className="text-[10px] text-zinc-400 font-bold tracking-wider pt-0.5">km/h</span>
+                <div className="bg-[#121212] border border-zinc-800 rounded-full flex flex-col items-center justify-center w-14 h-14 shadow-[0_5px_15px_rgba(0,0,0,0.6)]">
+                    <span className="text-xl font-black text-white leading-none">{currentSpeed}</span>
+                    <span className="text-[8px] text-zinc-500 font-black tracking-tighter pt-0.5">KM/H</span>
                 </div>
             </div>
 
-            {/* Right Edge: Vertical Progress Bar */}
-            <div className="absolute right-1 top-[30%] bottom-[250px] w-[4px] bg-zinc-800 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] z-[100] border border-white/5">
-                <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] shadow-[0_0_12px_rgba(255,107,0,0.8)] transition-all duration-1000" style={{ height: `${progressPct}%` }}></div>
-                <div className="absolute left-1/2 -ml-[8px] w-4 h-4 bg-white border-4 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000 flex items-center justify-center" style={{ bottom: `calc(${progressPct}% - 8px)` }}>
-                    <div className="w-1 h-1 bg-black rounded-full mix-blend-overlay"></div>
+            {/* Right Edge: Vertical Progress Bar - MINIMAL */}
+            <div className="absolute right-1 top-[35%] bottom-[220px] w-[3px] bg-zinc-900 rounded-full overflow-hidden z-[100]">
+                <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] transition-all duration-1000" style={{ height: `${progressPct}%` }}></div>
+                <div className="absolute left-1/2 -ml-[5px] w-2.5 h-2.5 bg-white border-2 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000" style={{ bottom: `calc(${progressPct}% - 5px)` }}>
                 </div>
             </div>
 
