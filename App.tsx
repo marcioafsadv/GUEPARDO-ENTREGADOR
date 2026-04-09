@@ -198,6 +198,20 @@ const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
   }
 };
 
+const getBestStatus = (missions: DeliveryMission[]) => {
+  // Priority 1: Any mission that is pending or in delivery
+  const activeDelivery = missions.find(m => m.status !== 'returning');
+  if (activeDelivery) {
+    return mapDbStatusToDriverStatus(activeDelivery.status);
+  }
+  
+  // Priority 2: Return phase
+  const returnMission = missions.find(m => m.status === 'returning');
+  if (returnMission) return DriverStatus.RETURNING;
+  
+  return DriverStatus.ONLINE;
+};
+
 const mapDbDeliveryToMission = (d: any): DeliveryMission => {
   return {
     id: d.id,
@@ -221,7 +235,9 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     destinationLng: d.destination_lng,
     stopNumber: d.stop_number || d.items?.stopNumber || 1,
     storePhone: d.store_phone || '',
-    customerPhone: d.customer_phone || ''
+    customerPhone: d.customer_phone || '',
+    deliveryValue: parseFloat(d.delivery_value || '0'),
+    paymentMethod: d.payment_method || 'PIX'
   };
 };
 
@@ -748,27 +764,15 @@ const App: React.FC = () => {
           }
 
           if (missionsToSet.length > 0) {
-            setActiveMissions(missionsToSet);
-            setMission(missionsToSet[0]);
-            
-            // --- FIX STATE REVERSION BUG ---
-            // Determine the "best" status from the recovered missions (especially for batches)
-            const getBestStatus = (missions: DeliveryMission[]) => {
-              // Priority 1: Any mission that is pending or in delivery
-              const activeDelivery = missions.find(m => m.status !== 'returning');
-              if (activeDelivery) {
-                return mapDbStatusToDriverStatus(activeDelivery.status);
-              }
-              
-              // Priority 2: Return phase
-              const returnMission = missions.find(m => m.status === 'returning');
-              if (returnMission) return DriverStatus.RETURNING;
-              
-              return DriverStatus.ONLINE;
-            };
-
             const recoveredStatus = getBestStatus(missionsToSet);
             const currentStatus = statusRef.current;
+            
+            // Smart Selection: Prioritize the first mission that is NOT 'returning'
+            // This ensures Stop 2 is focused even if Stop 1 requires a return at the end.
+            const bestMission = missionsToSet.find(m => m.status !== 'returning') || missionsToSet[0];
+            
+            setActiveMissions(missionsToSet);
+            setMission(bestMission);
             
             // State Protection: Only revert if we are NOT in an active delivery
             // OR if the recovered status is actually MORE advanced than our local state.
@@ -1456,61 +1460,35 @@ const App: React.FC = () => {
             // Filter out missions the driver has already rejected locally
             const filteredAssigned = dbMissions.filter(d => !rejectedMissions.includes(String(d.id)));
 
-            const syncMissions: DeliveryMission[] = filteredAssigned.map(d => ({
-              id: d.id,
-              storeName: d.store_name || 'Loja',
-              storeAddress: d.store_address || '',
-              customerName: d.customer_name || 'Cliente',
-              customerAddress: d.customer_address || '',
-              customerPhoneSuffix: d.customer_phone_suffix || '',
-              items: d.items || [],
-              collectionCode: d.collection_code || '0000',
-              distanceToStore: d.distance_to_store || 0,
-              deliveryDistance: d.delivery_distance || 0,
-              totalDistance: d.total_distance || 0,
-              earnings: parseFloat(d.earnings || '0'),
-              timeLimit: 25,
-              storePhone: '',
-              customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
-              status: d.status || 'pending',
-              isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-              displayId: getDisplayId(d.items),
-              batch_id: d.batch_id,
-              destinationLat: d.destination_lat,
-              destinationLng: d.destination_lng,
-              deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-              paymentMethod: d.items?.paymentMethod || 'PIX',
-              stopNumber: d.stop_number || d.items?.stopNumber || 0
-            })).sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+            const syncMissions: DeliveryMission[] = filteredAssigned
+              .map(mapDbDeliveryToMission)
+              .sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+            
+            // Smart Selection: Prioritize the first mission that is NOT 'returning'
+            const bestMission = syncMissions.find(m => m.status !== 'returning') || syncMissions[0];
 
             if (syncMissions.length > 0) {
-              // --- SIDE EFFECTS & STATUS TRANSITIONS (Handled outside the state setter) ---
+              // Smart Selection: Prioritize the first mission that is NOT 'returning'
+              const bestMission = syncMissions.find(m => m.status !== 'returning') || syncMissions[0];
+              
+              // --- SIDE EFFECTS & STATUS TRANSITIONS ---
               const currentRank = DRIVER_STATUS_RANK[status] || 0;
-              const mainServerMission = syncMissions.find(m => m.id === (mission?.id || syncMissions[0].id));
+              // We sync against our current mission if it exists, or the best available one
+              const mainServerMission = syncMissions.find(m => m.id === (mission?.id)) || bestMission;
 
               if (mainServerMission && currentRank > 0 && currentRank < 10) {
                 const serverRank = STATUS_RANK[mainServerMission.status] || 0;
                 
                 if (serverRank > currentRank) {
-                  console.log(`🚀 [POLLING] Status advance detected: ${status} -> ${mainServerMission.status}. Syncing...`);
+                  console.log(`🚀 [POLLING] Status advance detected for mission ${mainServerMission.id}: ${status} -> ${mainServerMission.status}`);
                   
-                  // Handle Success/Completion logic (Side Effects)
                   if (mainServerMission.status === 'completed' && (status === DriverStatus.RETURNING || status === DriverStatus.ARRIVED_AT_CUSTOMER)) {
-                    console.log("✅ [POLLING] Return/Delivery confirmed by merchant! Auto-finalizing...");
                     processDeliverySuccess();
                   } else if (mainServerMission.status === 'cancelled') {
-                    console.log("⚠️ [POLLING] Mission cancelled on server.");
                     setMission(null);
                     setStatus(DriverStatus.ONLINE);
                   } else {
-                    // Standard status update
                     const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
-                    
-                    if (nextStatus === DriverStatus.GOING_TO_CUSTOMER && status !== DriverStatus.GOING_TO_CUSTOMER) {
-                      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                      playSuccess();
-                    }
-                    
                     setStatus(nextStatus);
                     setMission(mainServerMission);
                   }
@@ -1519,22 +1497,22 @@ const App: React.FC = () => {
                 }
               }
 
-              // Also handle first mission detection if was ONLINE
+              // Detection if was ONLINE
               const activeOnlySyncMissions = syncMissions.filter(m => ACTIVE_DELIVERY_DB_STATUSES.includes(m.status));
+              const bestActive = activeOnlySyncMissions.find(m => m.status !== 'returning') || activeOnlySyncMissions[0];
 
               if (status === DriverStatus.ONLINE && activeOnlySyncMissions.length > 0) {
-                const firstNew = activeOnlySyncMissions[0];
-                if (firstNew.status === 'pending') {
-                  setMission(firstNew);
+                if (bestActive.status === 'pending') {
+                  setMission(bestActive);
                   setStatus(DriverStatus.ALERTING);
                 } else {
-                  const nextStatus = mapDbStatusToDriverStatus(firstNew.status);
+                  const nextStatus = mapDbStatusToDriverStatus(bestActive.status);
                   setStatus(nextStatus);
-                  setMission(firstNew);
+                  setMission(bestActive);
                 }
               }
 
-              // --- PURE STATE UPDATES ONLY HERE ---
+              // --- PURE STATE UPDATES ---
               setActiveMissions(prev => {
                 // Determine truly new active missions for notifications
                 const prevIds = new Set(prev.map(m => m.id));
@@ -1967,32 +1945,9 @@ const App: React.FC = () => {
         throw fetchErr;
       }
 
-      const syncMissions: DeliveryMission[] = (remainingMissions || []).map(d => ({
-        id: d.id,
-        storeName: d.store_name || 'Loja',
-        storeAddress: d.store_address || '',
-        customerName: d.customer_name || 'Cliente',
-        customerAddress: d.customer_address || '',
-        customerPhoneSuffix: d.customer_phone_suffix || '',
-        items: d.items || [],
-        collectionCode: d.collection_code || '0000',
-        distanceToStore: d.distance_to_store || 0,
-        deliveryDistance: d.delivery_distance || 0,
-        totalDistance: d.total_distance || 0,
-        earnings: parseFloat(d.earnings || '0'),
-        timeLimit: 25,
-        storePhone: '',
-        customerPhone: d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : '',
-        status: d.status || 'pending',
-        isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-        displayId: d.items?.displayId || d.id?.toString().slice(-4),
-        batch_id: d.batch_id,
-        destinationLat: d.destination_lat,
-        destinationLng: d.destination_lng,
-        stopNumber: d.stop_number || d.items?.stopNumber || 1,
-        deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-        paymentMethod: d.items?.paymentMethod || 'PIX'
-      }));
+      const syncMissions: DeliveryMission[] = (remainingMissions || [])
+        .map(mapDbDeliveryToMission)
+        .sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
 
       console.log('📝 Reliable DB Missions Remaining:', syncMissions.length, syncMissions.map(m => `${m.id.slice(-4)}:${m.status}`));
       
