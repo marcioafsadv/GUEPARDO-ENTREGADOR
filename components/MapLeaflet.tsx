@@ -54,7 +54,9 @@ const courierIcon = L.icon({
     iconSize: [60, 48],
     className: 'courier-icon-transition'
 });
-
+const storeIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png',
+    iconSize: [40, 40],
     iconAnchor: [20, 20],
 });
 
@@ -120,7 +122,6 @@ const MapUpdater: React.FC<{ points: [number, number][], reCenterTrigger?: numbe
 
 // In-memory geocoding cache to avoid repeated API calls
 const geocodeCache = new Map<string, { lat: number; lng: number }>();
-
 export const MapLeaflet: React.FC<MapLeafletProps> = ({
     status,
     showRoute = false,
@@ -128,6 +129,10 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     showHeatMap = false,
     mapMode = 'standard',
     showTraffic = false,
+    destinationAddress,
+    pickupAddress,
+    preloadedDestinationLat,
+    preloadedDestinationLng,
     preloadedPickupLat,
     preloadedPickupLng,
     reCenterTrigger,
