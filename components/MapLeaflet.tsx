@@ -23,6 +23,20 @@ const _mbp3 = '.8-AMsHfLyfddpH7PPo1U7g';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || (_mbp2 + _mbp1 + _mbp3);
 
 
+interface MapLeafletProps {
+    status: string;
+    showRoute?: boolean;
+    theme?: 'dark' | 'light';
+    showHeatMap?: boolean;
+    mapMode?: 'standard' | 'satellite';
+    showTraffic?: boolean;
+    destinationAddress?: string | null;
+    pickupAddress?: string | null;
+    // Preloaded coords (optional, skips geocoding for faster route switch)
+    preloadedDestinationLat?: number | null;
+    preloadedDestinationLng?: number | null;
+    preloadedPickupLat?: number | null;
+    preloadedPickupLng?: number | null;
     reCenterTrigger?: number;
     missions?: any[] | null;
 }
