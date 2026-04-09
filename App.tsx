@@ -1286,16 +1286,7 @@ const App: React.FC = () => {
               .eq('status', 'pending')
               .then(({ data: batchMissions }) => {
                 if (batchMissions && batchMissions.length > 0) {
-                  const getDisplayId = (items: any) => {
-                    if (!items) return undefined;
-                    if (Array.isArray(items)) {
-                      return items[0]?.displayId || items[0]?.id?.toString().slice(-4);
-                    }
-                    return items.displayId || items.id?.toString().slice(-4);
-                  };
-
-                  const mappedBatch: DeliveryMission[] = batchMissions.map((d: any) => ({
-                  const mappedBatch = data.map(mapDbDeliveryToMission)
+                  const mappedBatch = batchMissions.map(mapDbDeliveryToMission)
                     .sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
 
                   setActiveMissions(mappedBatch);
