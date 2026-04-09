@@ -738,7 +738,7 @@ const App: React.FC = () => {
               .select('*')
               .eq('batch_id', activeDbDelivery.batch_id)
               .not('status', 'in', '("completed","cancelled")')
-              .order('created_at', { ascending: true });
+              .order('stop_number', { ascending: true });
             
             if (batchData && batchData.length > 0) {
               missionsToSet = batchData.map(mapDbDeliveryToMission);
@@ -754,18 +754,17 @@ const App: React.FC = () => {
             // --- FIX STATE REVERSION BUG ---
             // Determine the "best" status from the recovered missions (especially for batches)
             const getBestStatus = (missions: DeliveryMission[]) => {
-              let highestRank = -2;
-              let bestStatus = DriverStatus.ONLINE;
+              // Priority 1: Any mission that is pending or in delivery
+              const activeDelivery = missions.find(m => m.status !== 'returning');
+              if (activeDelivery) {
+                return mapDbStatusToDriverStatus(activeDelivery.status);
+              }
               
-              missions.forEach(m => {
-                const s = mapDbStatusToDriverStatus(m.status || 'pending');
-                const r = DRIVER_STATUS_RANK[s] || 0;
-                if (r > highestRank) {
-                  highestRank = r;
-                  bestStatus = s;
-                }
-              });
-              return bestStatus;
+              // Priority 2: Return phase
+              const returnMission = missions.find(m => m.status === 'returning');
+              if (returnMission) return DriverStatus.RETURNING;
+              
+              return DriverStatus.ONLINE;
             };
 
             const recoveredStatus = getBestStatus(missionsToSet);
