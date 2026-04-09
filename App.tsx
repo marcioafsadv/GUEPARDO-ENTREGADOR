@@ -1197,28 +1197,8 @@ const App: React.FC = () => {
             if (firstPending) {
               console.log("✅ Found valid pending delivery:", firstPending);
 
-              // Transform to DeliveryMission format with safe defaults
-              const dynamicMission: DeliveryMission = {
-                id: firstPending.id,
-                storeName: firstPending.store_name || 'Loja',
-                storeAddress: firstPending.store_address || '',
-                customerName: firstPending.customer_name || 'Cliente',
-                customerAddress: firstPending.customer_address || '',
-                customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-                items: Array.isArray(firstPending.items) ? firstPending.items : (firstPending.items?.items || []),
-                collectionCode: firstPending.collection_code || '0000',
-                distanceToStore: firstPending.distance_to_store || 1.5,
-                deliveryDistance: firstPending.delivery_distance || 2.0,
-                totalDistance: firstPending.total_distance || 3.5,
-                earnings: parseFloat(firstPending.earnings || '0'),
-                timeLimit: 25,
-                storePhone: '', // Not in DB yet
-                customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
-                status: firstPending.status || 'pending',
-                displayId: getDisplayId(firstPending.items),
-                deliveryValue: parseFloat(firstPending.items?.deliveryValue || '0'),
-                paymentMethod: firstPending.items?.paymentMethod || 'PIX'
-              };
+              // Transform to DeliveryMission format using the centralized mapper
+              const dynamicMission: DeliveryMission = mapDbDeliveryToMission(firstPending);
 
               // If it's a batch, fetch all stops
               if (firstPending.batch_id) {
@@ -1227,32 +1207,14 @@ const App: React.FC = () => {
                   .from('deliveries')
                   .select('*')
                   .eq('batch_id', firstPending.batch_id)
-                  .eq('status', 'pending');
+                  .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
                 
                 if (batchData && batchData.length > 0) {
-                  const mappedBatch = batchData.map((d: any) => ({
-                    id: d.id,
-                    storeName: d.store_name,
-                    storeAddress: d.store_address,
-                    customerName: d.customer_name,
-                    customerAddress: d.customer_address,
-                    customerPhoneSuffix: d.customer_phone_suffix,
-                    items: d.items || [],
-                    collectionCode: d.collection_code || '0000',
-                    distanceToStore: d.distance_to_store || 0,
-                    deliveryDistance: d.delivery_distance || 0,
-                    totalDistance: d.total_distance || 0,
-                    earnings: parseFloat(d.earnings || '0'),
-                    timeLimit: 25,
-                    status: d.status || 'pending',
-                    isReturnRequired: d.is_return_required || false,
-                    displayId: d.items?.displayId || d.id.slice(-4),
-                    batch_id: d.batch_id,
-                    deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-                    paymentMethod: d.items?.paymentMethod || 'PIX'
-                  }));
+                  const mappedBatch = batchData.map(mapDbDeliveryToMission);
                   setActiveMissions(mappedBatch);
-                  setMission(mappedBatch[0]);
+                  // Smart Selection for the mission
+                  const bestStartMission = mappedBatch.find(m => m.status !== 'returning') || mappedBatch[0];
+                  setMission(bestStartMission);
                 } else {
                   setMission(dynamicMission);
                   setActiveMissions([dynamicMission]);
@@ -1312,29 +1274,7 @@ const App: React.FC = () => {
           };
 
           // Transform Supabase data to App's DeliveryMission format
-          const dynamicMission: DeliveryMission = {
-            id: newMissionPayload.id,
-            storeName: newMissionPayload.store_name,
-            storeAddress: newMissionPayload.store_address,
-            customerName: newMissionPayload.customer_name,
-            customerAddress: newMissionPayload.customer_address,
-            customerPhoneSuffix: newMissionPayload.customer_phone_suffix,
-            items: Array.isArray(newMissionPayload.items) ? newMissionPayload.items : (newMissionPayload.items?.items || []),
-            collectionCode: newMissionPayload.collection_code || '0000',
-            distanceToStore: newMissionPayload.distance_to_store || 1.5,
-            deliveryDistance: newMissionPayload.delivery_distance || 2.0,
-            totalDistance: parseFloat(newMissionPayload.total_distance || '3.5'),
-            earnings: parseFloat(newMissionPayload.earnings || '0'),
-            timeLimit: 25,
-            storePhone: newMissionPayload.store_phone || '',
-            customerPhone: newMissionPayload.customer_phone_suffix ? `+55${newMissionPayload.customer_phone_suffix}` : '',
-            status: newMissionPayload.status || 'pending',
-            isReturnRequired: newMissionPayload.is_return_required || (newMissionPayload.items?.isReturnRequired) || false,
-            displayId: getDisplayId(newMissionPayload.items),
-            batch_id: newMissionPayload.batch_id,
-            deliveryValue: parseFloat(newMissionPayload.items?.deliveryValue || '0'),
-            paymentMethod: newMissionPayload.items?.paymentMethod || 'PIX'
-          };
+          const dynamicMission: DeliveryMission = mapDbDeliveryToMission(newMissionPayload);
 
           // If it's a batch, fetch all stops to ensure we accept/reject them together
           if (newMissionPayload.batch_id) {
@@ -1355,29 +1295,8 @@ const App: React.FC = () => {
                   };
 
                   const mappedBatch: DeliveryMission[] = batchMissions.map((d: any) => ({
-                    id: d.id,
-                    storeName: d.store_name || 'Loja',
-                    storeAddress: d.store_address || '',
-                    customerName: d.customer_name || 'Cliente',
-                    customerAddress: d.customer_address || '',
-                    customerPhoneSuffix: d.customer_phone_suffix || '',
-                    items: d.items || [],
-                    collectionCode: d.collection_code || '0000',
-                    distanceToStore: d.distance_to_store || 1.5,
-                    deliveryDistance: d.delivery_distance || 2.0,
-                    totalDistance: d.total_distance || 3.5,
-                    earnings: parseFloat(d.earnings || '0'),
-                    timeLimit: 25,
-                    status: d.status || 'pending',
-                    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                    displayId: getDisplayId(d.items),
-                    batch_id: d.batch_id,
-                    destinationLat: d.destination_lat,
-                    destinationLng: d.destination_lng,
-                    stopNumber: d.stop_number || d.items?.stopNumber || 1,
-                    storePhone: d.store_phone || '',
-                    customerPhone: d.customer_phone || ''
-                  })).sort((a: any, b: any) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                  const mappedBatch = data.map(mapDbDeliveryToMission)
+                    .sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
 
                   setActiveMissions(mappedBatch);
                   setMission(mappedBatch[0]);
@@ -2186,32 +2105,8 @@ const App: React.FC = () => {
         .select('*')
         .in('id', idsToAccept);
       
-      const mappedActive: DeliveryMission[] = (freshBatch || []).map(d => ({
-        id: d.id,
-        storeName: d.store_name || 'Loja',
-        storeAddress: d.store_address || '',
-        customerName: d.customer_name || 'Cliente',
-        customerAddress: d.customer_address || '',
-        customerPhoneSuffix: d.customer_phone_suffix || '',
-        items: d.items || [],
-        collectionCode: d.collection_code || '0000',
-        distanceToStore: d.distance_to_store || 0,
-        deliveryDistance: d.delivery_distance || 0,
-        totalDistance: d.total_distance || 0,
-        earnings: parseFloat(d.earnings || '0'),
-        timeLimit: 25,
-        status: d.status || 'accepted',
-        isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-        displayId: d.items?.displayId || d.id?.toString().slice(-4),
-        batch_id: d.batch_id,
-        destinationLat: d.destination_lat,
-        destinationLng: d.destination_lng,
-        stopNumber: d.stop_number || d.items?.stopNumber || 0,
-        deliveryValue: parseFloat(d.items?.deliveryValue || '0'),
-        paymentMethod: d.items?.paymentMethod || 'PIX',
-        storePhone: d.store_phone || '',
-        customerPhone: d.customer_phone || ''
-      })).sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+      const mappedActive: DeliveryMission[] = (freshBatch || []).map(mapDbDeliveryToMission)
+        .sort((a, b) => (a.stopNumber || 0) - (b.stopNumber || 0));
 
       setActiveMissions(mappedActive);
       setMission(mappedActive[0]);
