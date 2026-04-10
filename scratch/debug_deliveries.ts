@@ -27,10 +27,11 @@ async function checkDeliveries() {
     return;
   }
 
-  console.log(`Total deliveries found: ${data.length}`);
+  console.log(`Total deliveries found: ${data?.length || 0}`);
   
-  const stats = data.reduce((acc, d) => {
-    acc[d.status] = (acc[d.status] || 0) + 1;
+  const stats = (data || []).reduce((acc: Record<string, number>, d) => {
+    const status = d.status as string;
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
 
@@ -39,12 +40,13 @@ async function checkDeliveries() {
   const assigned = data.filter(d => d.driver_id);
   console.log(`Assigned deliveries: ${assigned.length}`);
   
-  const assignedByDriver = assigned.reduce((acc, d) => {
-    acc[d.driver_id] = (acc[d.driver_id] || 0) + 1;
+  const assignedByDriver = assigned.reduce((acc: Record<string, number>, d) => {
+    const driverId = d.driver_id as string;
+    acc[driverId] = (acc[driverId] || 0) + 1;
     return acc;
   }, {});
   
-  console.log("Assigned by driver (top 5):", Object.entries(assignedByDriver).sort((a,b) => b[1] - a[1]).slice(0, 5));
+  console.log("Assigned by driver (top 5):", Object.entries(assignedByDriver).sort((a: [string, number], b: [string, number]) => b[1] - a[1]).slice(0, 5));
 
   const activeStatuses = ['pending', 'accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'];
   const activeAssigned = assigned.filter(d => activeStatuses.includes(d.status));

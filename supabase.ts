@@ -228,7 +228,7 @@ export const subscribeToAvailableMissions = (
 
 export const subscribeToActiveMission = (
   missionId: string,
-  onStatusChange: (status: string) => void
+  onUpdate: (payload: any) => void
 ) => {
   return supabase
     .channel(`public:deliveries:${missionId}`)
@@ -241,7 +241,7 @@ export const subscribeToActiveMission = (
         filter: `id=eq.${missionId}`
       },
       (payload) => {
-        onStatusChange(payload.new.status);
+        onUpdate(payload);
       }
     )
     .subscribe();

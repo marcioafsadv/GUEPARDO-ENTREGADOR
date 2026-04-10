@@ -228,7 +228,7 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     earnings: parseFloat(d.earnings || '0'),
     timeLimit: 25,
     status: d.status || 'pending',
-    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
+    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || ['DINHEIRO', 'CASH'].includes(d.payment_method?.toUpperCase()) || false,
     displayId: getDisplayId(d.items),
     batch_id: d.batch_id,
     destinationLat: d.destination_lat,
@@ -795,13 +795,13 @@ const App: React.FC = () => {
             setIsNavigating(true);
 
             // Geocode para garantir que o mapa carregue o destino imediatamente
-            const destAddr = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP)
+            const destAddr = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING)
               ? missionsToSet[0].storeAddress
               : missionsToSet[0].customerAddress;
             
             geocodeAddress(destAddr).then(coords => {
               if (coords) {
-                if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP) {
+                if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING) {
                   setPreloadedCoords(prev => ({ ...prev, store: coords }));
                 } else {
                   setPreloadedCoords(prev => ({ ...prev, customer: coords }));
@@ -1362,7 +1362,7 @@ const App: React.FC = () => {
           const dbMissions = assignedOrders || [];
 
           // 2. Targeted check for the CURRENT mission (to catch 'completed' or 'cancelled' finalization)
-          if (missionRef.current?.id && !dbMissions.some(m => m.id === missionRef.current.id)) {
+          if (missionRef.current?.id && !dbMissions.some(m => m.id === missionRef.current?.id)) {
             const { data: currentMissionStatus } = await supabaseClient.supabase
               .from('deliveries')
               .select('*')
@@ -1435,7 +1435,7 @@ const App: React.FC = () => {
                 const prevIds = new Set(prev.map(m => m.id));
                 const newOnlyActive = activeOnlySyncMissions.filter(m => !prevIds.has(m.id));
                 
-                if (status !== DriverStatus.ONLINE && status !== DriverStatus.OFFLINE && status !== DriverStatus.ALERTING && newOnlyActive.length > 0) {
+                if ((status as string) !== DriverStatus.ONLINE && (status as string) !== DriverStatus.OFFLINE && (status as string) !== DriverStatus.ALERTING && newOnlyActive.length > 0) {
                   const addedEarnings = newOnlyActive.reduce((acc, m) => acc + m.earnings, 0);
                   setNewBatchEarnings(addedEarnings);
                   setShowBatchAlert(true);
@@ -1639,16 +1639,13 @@ const App: React.FC = () => {
     if (mission) {
       console.log(`👀 Monitoring active mission: ${mission.id}`);
 
-      subscription = supabaseClient.subscribeToActiveMission(mission.id, (newStatus) => {
-        // Always read the CURRENT status from the ref, not from the stale closure
+      subscription = supabaseClient.subscribeToActiveMission(mission.id, (payload) => {
+        const newStatus = payload.new.status;
         const currentStatus = statusRef.current;
         console.log(`📢 Mission ${mission.id} status update: ${newStatus} (local: ${currentStatus})`);
 
-        // CASE 1: While alerting, if mission is taken by someone else or cancelled
         if (currentStatus === DriverStatus.ALERTING) {
-          // If the new status is not pending, but the driver_id is MINE, it means I just accepted it.
-          // In this case, ignore the alert and let handleAcceptMission finish the transition.
-          const payloadDriverId = (arguments[0] as any)?.new?.driver_id;
+          const payloadDriverId = payload.new.driver_id;
           if (newStatus !== 'pending' && payloadDriverId !== userId) {
             console.log("⚠️ Alerting mission is no longer pending (taken by someone else). Removing alert.");
             setMission(null);
@@ -1794,20 +1791,10 @@ const App: React.FC = () => {
           .eq('driver_id', userId);
         console.log('✅ Mission set to returning (awaiting end of batch)');
       } else {
-        // 🎯 ATOMIC BATCH FINALIZATION: Complete all associated missions in the batch/session
-        if (mission.batch_id) {
-          console.log(`🎯 Completing ALL missions for batch ${mission.batch_id}...`);
-          await supabaseClient.supabase
-            .from('deliveries')
-            .update({ 
-              status: 'completed',
-              completed_at: new Date().toISOString()
-            })
-            .eq('batch_id', mission.batch_id);
-        } else {
-          await supabaseClient.completeMission(mission.id, userId);
-        }
-        console.log('✅ Mission(s) completed (phase finalized)');
+        // 🎯 INDIVIDUAL MISSION FINALIZATION: Complete only the current mission
+        await supabaseClient.completeMission(mission.id, userId);
+        console.log('✅ Mission completed (phase finalized)');
+
       }
 
       // 🎯 FORCE RELIABLE STATE BY FETCHING DIRECTLY FROM DATABASE
@@ -2092,7 +2079,8 @@ const App: React.FC = () => {
       }
 
       // Pre-geocode both addresses in parallel for instant route switching
-      if (targetMission) {
+      if (mappedActive.length > 0) {
+        const targetMission = mappedActive[0];
         const [storeCoords, customerCoords] = await Promise.all([
           targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null),
           (targetMission.destinationLat && targetMission.destinationLng)
@@ -2707,13 +2695,13 @@ const App: React.FC = () => {
                   theme={mapTheme}
                   onUpdateMetrics={(m) => setNavMetrics(m)}
                   destinationAddress={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? mission?.storeAddress || null
                       : mission?.customerAddress || null
                   }
                   currentLocation={currentLocation}
                   preloadedDestination={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? preloadedCoords.store
                       : preloadedCoords.customer
                   }
@@ -2727,7 +2715,7 @@ const App: React.FC = () => {
                   destinationAddress={
                     status === DriverStatus.ALERTING
                       ? mission?.customerAddress
-                      : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
+                      : (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                         ? mission?.storeAddress
                         : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                           ? mission?.customerAddress
@@ -2736,14 +2724,14 @@ const App: React.FC = () => {
                   pickupAddress={status === DriverStatus.ALERTING ? mission?.storeAddress : null}
                   // Pass pre-geocoded coords for instant route switch (no geocoding delay)
                   preloadedDestinationLat={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? preloadedCoords.store?.lat
                       : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                         ? preloadedCoords.customer?.lat
                         : null
                   }
                   preloadedDestinationLng={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP)
+                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.RETURNING)
                       ? preloadedCoords.store?.lng
                       : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                         ? preloadedCoords.customer?.lng
@@ -3199,7 +3187,7 @@ const App: React.FC = () => {
                           <div className="mb-4 p-4 rounded-[24px] bg-[#FF6B00] border-2 border-white/20 shadow-xl animate-in slide-in-from-top duration-500">
                             <div className="flex items-center space-x-3">
                               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                                <i className={`fas ${['DINHEIRO', 'CASH'].includes(mission.paymentMethod.toUpperCase()) ? 'fa-money-bill-1' : 'fa-credit-card'} text-white text-2xl`}></i>
+                                <i className={`fas ${['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase() || '') ? 'fa-money-bill-1' : 'fa-credit-card'} text-white text-2xl`}></i>
                               </div>
                               <div className="flex-1 text-left">
                                 <p className="text-white font-black uppercase text-[10px] tracking-widest opacity-80 mb-0.5">
@@ -3208,7 +3196,7 @@ const App: React.FC = () => {
                                 <h3 className="text-white text-2xl font-black leading-tight italic">
                                   R$ {(mission.deliveryValue || 0).toFixed(2)}
                                 </h3>
-                                {['DINHEIRO', 'CASH'].includes(mission.paymentMethod.toUpperCase()) && (
+                                {['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase() || '') && (
                                   <div className="flex items-center space-x-1 mt-1">
                                     <div className="w-1 h-1 rounded-full bg-white animate-pulse"></div>
                                     <p className="text-white text-[9px] font-bold uppercase tracking-tighter opacity-90">

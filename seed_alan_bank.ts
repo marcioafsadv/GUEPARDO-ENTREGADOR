@@ -12,7 +12,7 @@ async function seedAlanBank() {
     return;
   }
   
-  const alan = profiles.find(p => p.full_name?.includes('Alan') || p.full_name?.includes('Allan') || p.name?.includes('Alan'));
+  const alan = profiles.find((p: any) => p.full_name?.includes('Alan') || p.full_name?.includes('Allan'));
   if (!alan) {
     console.log("Alan not found.");
     return;
