@@ -2784,7 +2784,7 @@ const App: React.FC = () => {
                 <div 
                   className="absolute left-4 z-[1002]" 
                   style={{ 
-                    bottom: isMissionExpanded ? 'calc(100vh - 100px)' : '200px',
+                    bottom: isMissionExpanded ? 'calc(100vh - 100px)' : '140px',
                     transition: 'bottom 0.3s ease-out'
                   }}
                 >
@@ -2895,7 +2895,7 @@ const App: React.FC = () => {
               <div 
                 className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
                 style={{ 
-                  transform: `translateY(${!isMissionExpanded ? 'calc(100% - 110px + ' + dragY + 'px)' : dragY + 'px'})`,
+                  transform: `translateY(${!isMissionExpanded ? 'calc(100% - 85px + ' + dragY + 'px)' : dragY + 'px'})`,
                   touchAction: 'none',
                   willChange: 'transform'
                 }}
@@ -4364,8 +4364,8 @@ const App: React.FC = () => {
 
   return (
     <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 bg-transparent ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
-      <header className={`z-[1002] flex flex-col items-center justify-between backdrop-blur-2xl border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
-        <div className="w-full px-6 py-4 flex items-center justify-between relative h-20">
+      <header className={`z-[1002] ${isNavigating ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-between backdrop-blur-2xl border-b transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
+        <div className="w-full px-6 py-2 sm:py-4 flex items-center justify-between relative h-16 sm:h-20">
           <div className="flex items-center justify-center">
             <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
               <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
@@ -4439,12 +4439,14 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
-      <nav className={`h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
-        <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
-        <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
-        <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
-        <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-xl"></i><span className="text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
-      </nav>
+      {!isNavigating && (
+        <nav className={`h-20 sm:h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
+          <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
+          <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
+          <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
+          <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
+        </nav>
+      )}
 
 
       {showSOSModal && (

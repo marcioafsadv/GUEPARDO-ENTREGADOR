@@ -494,22 +494,22 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 <div className="bg-[#0b0b0b] rounded-b-[24px] shadow-[0_10px_20px_rgba(0,0,0,0.4)] pb-3 pt-6 px-5 flex flex-col uppercase transition-all">
                     {/* Main Instruction */}
                     <div className="flex items-center">
-                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-12">
+                        <div className="mr-3 sm:mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-8 sm:w-10 h-10 sm:h-12">
                             {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-3xl"></i>
+                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-2xl sm:text-3xl"></i>
                             ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-turn-down text-3xl fa-rotate-180"></i>
+                                <i className="fas fa-arrow-turn-down text-2xl sm:text-3xl fa-rotate-180"></i>
                             ) : instruction?.modifier.includes('uturn') ? (
-                                <i className="fas fa-arrow-rotate-left text-3xl"></i>
+                                <i className="fas fa-arrow-rotate-left text-2xl sm:text-3xl"></i>
                             ) : (
-                                <i className="fas fa-arrow-up text-3xl"></i>
+                                <i className="fas fa-arrow-up text-2xl sm:text-3xl"></i>
                             )}
                         </div>
                         <div className="flex flex-col flex-1">
-                            <h1 className="text-white text-[32px] font-black leading-none tracking-tight">
+                            <h1 className="text-white text-[24px] sm:text-[32px] font-black leading-none tracking-tight">
                                 {instruction?.distanceText || '-- m'}
                             </h1>
-                            <p className="text-white/80 text-[14px] font-bold leading-tight line-clamp-1 mt-1">
+                            <p className="text-white/80 text-[12px] sm:text-[14px] font-bold leading-tight line-clamp-1 mt-0.5">
                                 {instruction?.roadName || 'Calculando...'}
                             </p>
                         </div>
@@ -559,7 +559,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             )}
 
             {/* Left Side: Shield + Speedometer - COMPACTED */}
-            <div className="absolute left-3 bottom-[180px] z-[1000] flex flex-col gap-2 items-center">
+            <div className="absolute left-3 bottom-[110px] z-[1000] flex flex-col gap-2 items-center">
                 <div className="w-10 h-10 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
                     <i className="fas fa-shield-halved text-lg"></i>
                 </div>
