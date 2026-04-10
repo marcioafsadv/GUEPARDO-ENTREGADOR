@@ -516,6 +516,7 @@ const App: React.FC = () => {
   // Estados para Alerta de Nova Missão na Rota (Batching)
   const [showBatchAlert, setShowBatchAlert] = useState(false);
   const [newBatchEarnings, setNewBatchEarnings] = useState(0);
+  const isCompletingMission = useRef(false);
 
   // Auth Inputs
   const [loginEmail, setLoginEmail] = useState('');
@@ -1334,6 +1335,12 @@ const App: React.FC = () => {
 
     if (status !== DriverStatus.OFFLINE && userId && currentUser) {
       const checkForDeliveries = async () => {
+        // Skip if currently processing a completion to avoid race conditions
+        if (isCompletingMission.current) {
+          console.log('⏳ Skipping polling update: Mission completion in progress...');
+          return;
+        }
+
         try {
           // No longer skipping poll entirely. We fetch and compare ranks.
 
@@ -1486,57 +1493,13 @@ const App: React.FC = () => {
                     .eq('status', 'pending');
 
                   if (batchData && batchData.length > 0) {
-                    missionsToAlert = batchData.map((d: any, idx: number) => ({
-                      id: d.id,
-                      storeName: d.store_name || 'Loja',
-                      storeAddress: d.store_address || '',
-                      customerName: d.customer_name || 'Cliente',
-                      customerAddress: d.customer_address || '',
-                      customerPhoneSuffix: d.customer_phone_suffix || '',
-                      items: d.items || [],
-                      collectionCode: d.collection_code || '0000',
-                      distanceToStore: d.distance_to_store || 0,
-                      deliveryDistance: d.delivery_distance || 0,
-                      totalDistance: d.total_distance || 0,
-                      earnings: parseFloat(d.earnings || '0'),
-                      timeLimit: 25,
-                      status: d.status || 'pending',
-                      isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                      displayId: d.items?.displayId || d.id?.toString().slice(-4),
-                      batch_id: d.batch_id,
-                      destinationLat: d.destination_lat,
-                      destinationLng: d.destination_lng,
-                      stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
-                      storePhone: d.store_phone || '',
-                      customerPhone: d.customer_phone || ''
-                    })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                    missionsToAlert = batchData.map(mapDbDeliveryToMission)
+                      .sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
                   } else {
                     // Fallback to the subset if batch fetch fails
                     const batchItems = availablePending.filter(d => d.batch_id === firstPending.batch_id);
-                    missionsToAlert = batchItems.map((d: any, idx: number) => ({
-                      id: d.id,
-                      storeName: d.store_name || 'Loja',
-                      storeAddress: d.store_address || '',
-                      customerName: d.customer_name || 'Cliente',
-                      customerAddress: d.customer_address || '',
-                      customerPhoneSuffix: d.customer_phone_suffix || '',
-                      items: d.items || [],
-                      collectionCode: d.collection_code || '0000',
-                      distanceToStore: d.distance_to_store || 0,
-                      deliveryDistance: d.delivery_distance || 0,
-                      totalDistance: d.total_distance || 0,
-                      earnings: parseFloat(d.earnings || '0'),
-                      timeLimit: 25,
-                      status: d.status || 'pending',
-                      isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || false,
-                      displayId: d.items?.displayId || d.id?.toString().slice(-4),
-                      batch_id: d.batch_id,
-                      destinationLat: d.destination_lat,
-                      destinationLng: d.destination_lng,
-                      stopNumber: d.stop_number || d.items?.stopNumber || (idx + 1),
-                      storePhone: d.store_phone || '',
-                      customerPhone: d.customer_phone || ''
-                    })).sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
+                    missionsToAlert = batchItems.map(mapDbDeliveryToMission)
+                      .sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
                   }
                 } else {
                   missionsToAlert = [{
@@ -1745,6 +1708,9 @@ const App: React.FC = () => {
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
     
+    console.log('✅ Finalizing mission(s) - Clearing states...');
+    isCompletingMission.current = true;
+    
     if (isProcessingDeliveryRef.current) {
         console.log('⏳ Delivery already processing. Skipping.');
         return;
@@ -1901,6 +1867,7 @@ const App: React.FC = () => {
       }
 
       console.log('🚀 Success processing finished.');
+      isCompletingMission.current = false;
 
     } catch (error: any) {
       console.error('Error completing mission:', error);
@@ -1915,6 +1882,7 @@ const App: React.FC = () => {
       const errorMsg = error?.message || 'Erro desconhecido';
       alert(`Erro ao finalizar entrega: ${errorMsg}\n\nTente novamente.`);
     } finally {
+      isCompletingMission.current = false;
       setTimeout(() => {
         isProcessingDeliveryRef.current = false;
       }, 1000);
@@ -3220,8 +3188,8 @@ const App: React.FC = () => {
                     {status === DriverStatus.ARRIVED_AT_CUSTOMER && (
                       <>
                         {/* ALERTA DE COBRANÇA - NOVO */}
-                        {(['DINHEIRO', 'CASH'].includes(mission?.paymentMethod?.toUpperCase() || '') || 
-                          mission?.paymentMethod?.toUpperCase()?.includes('CART')) && (
+                        {(['DINHEIRO', 'CASH', 'CARD', 'CARTAO', 'CARTÃO'].some(p => mission?.paymentMethod?.toUpperCase()?.includes(p)) || 
+                          mission?.paymentMethod?.toUpperCase()?.includes('MAQUIN')) && (
                           <div className="mb-4 p-4 rounded-[24px] bg-[#FF6B00] border-2 border-white/20 shadow-xl animate-in slide-in-from-top duration-500">
                             <div className="flex items-center space-x-3">
                               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
