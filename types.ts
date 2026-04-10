@@ -160,9 +160,22 @@ export interface RegistrationData {
   documents: DocumentUpload;
 }
 
-export interface City {
+
+export type SenderType = 'STORE' | 'COURIER' | 'CLIENT';
+export type ChatRoomType = 'STORE_COURIER' | 'COURIER_CLIENT';
+
+export interface ChatMessage {
   id: string;
-  name: string;
-  state: string;
-  displayName: string;
+  orderId: string;
+  senderType: SenderType;
+  senderName: string;
+  text: string;
+  timestamp: Date;
+  room: ChatRoomType;
+}
+
+export interface ChatRoom {
+  orderId: string;
+  type: ChatRoomType;
+  messages: ChatMessage[];
 }

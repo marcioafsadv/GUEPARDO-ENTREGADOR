@@ -11,6 +11,7 @@ import { Logo } from './components/Logo';
 import * as supabaseClient from './supabase';
 import WizardContainer, { WizardData } from './components/onboarding/WizardContainer';
 import CitySelection from './components/onboarding/CitySelection';
+import { ChatMultilateralModal } from './components/ChatMultilateralModal';
 import { processWizardRegistration } from './utils/wizardProcessor';
 
 
@@ -459,6 +460,8 @@ const App: React.FC = () => {
   // Settings
   /* Delivery Help States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatTab, setChatTab] = useState<ChatRoomType>('STORE_COURIER');
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
   const [customerMessage, setCustomerMessage] = useState('');
@@ -3057,53 +3060,32 @@ const App: React.FC = () => {
                           <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400"><i className="fas fa-times text-[10px]"></i></button>
                         </div>
 
-                        {activeHelpOption === null ? (
                           <div className="grid grid-cols-2 gap-3">
                             <button
-                              onClick={() => setActiveHelpOption('customer_not_found')}
+                              onClick={() => { 
+                                playClick(); 
+                                setChatTab('COURIER_CLIENT');
+                                setShowChatModal(true);
+                                setShowDeliveryHelpModal(false);
+                              }}
                               className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
                             >
-                              <div className="w-10 h-10 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]"><i className="fas fa-user-slash"></i></div>
-                              <span className={`text-[10px] font-bold ${textPrimary}`}>Cliente não localizado</span>
+                              <div className="w-10 h-10 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.1)]"><i className="fas fa-user"></i></div>
+                              <span className={`text-[10px] font-black uppercase tracking-tighter ${textPrimary}`}>Falar com Cliente</span>
                             </button>
                             <button
-                              onClick={() => setActiveHelpOption('talk_to_store')}
+                              onClick={() => { 
+                                playClick(); 
+                                setChatTab('STORE_COURIER');
+                                setShowChatModal(true);
+                                setShowDeliveryHelpModal(false);
+                              }}
                               className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
                             >
-                              <div className="w-10 h-10 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700]"><i className="fas fa-store"></i></div>
-                              <span className={`text-[10px] font-bold ${textPrimary}`}>Falar com Lojista</span>
+                              <div className="w-10 h-10 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.1)]"><i className="fas fa-store"></i></div>
+                              <span className={`text-[10px] font-black uppercase tracking-tighter ${textPrimary}`}>Falar com Loja</span>
                             </button>
                           </div>
-                        ) : activeHelpOption === 'customer_not_found' ? (
-                          <div className="space-y-3 animate-in slide-in-from-right">
-                            <p className={`${textMuted} text-[10px]`}>Envie uma mensagem direta para o cliente:</p>
-                            <textarea
-                              value={customerMessage}
-                              onChange={(e) => setCustomerMessage(e.target.value)}
-                              placeholder="Olá, estou em frente ao endereço mas não encontrei ninguém..."
-                              className={`w-full h-20 rounded-xl p-3 text-xs outline-none resize-none border focus:border-[#FF6B00] ${theme === 'dark' ? 'bg-black text-white border-zinc-700' : 'bg-white text-black border-zinc-300'}`}
-                            />
-                            <div className="flex space-x-2">
-                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase ${textMuted} border border-transparent hover:border-zinc-700`}>Voltar</button>
-                              <button onClick={handleSendCustomerMessage} className="flex-[2] h-10 bg-[#FF6B00] rounded-xl font-black text-white text-xs uppercase shadow-lg flex items-center justify-center space-x-2">
-                                <i className="fab fa-whatsapp"></i>
-                                <span>Enviar Mensagem</span>
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3 animate-in slide-in-from-right text-center">
-                            <p className={`${textMuted} text-[10px]`}>Número do Lojista:</p>
-                            <p className={`text-xl font-black ${textPrimary} mb-2`}>{mission.storePhone}</p>
-                            <div className="flex space-x-2">
-                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase ${textMuted} border border-transparent hover:border-zinc-700`}>Voltar</button>
-                              <button onClick={handleCallStore} className="flex-[2] h-10 bg-[#FFD700] rounded-xl font-black text-black text-xs uppercase shadow-lg flex items-center justify-center space-x-2">
-                                <i className="fas fa-phone"></i>
-                                <span>Ligar Agora</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -4770,6 +4752,15 @@ const App: React.FC = () => {
 
       {/* Splash Screen — exibido por 3s ao iniciar */}
       {showSplash && <SplashScreen />}
+
+      {/* Modal de Chat Multilateral */}
+      <ChatMultilateralModal 
+        order={mission}
+        onClose={() => setShowChatModal(false)}
+        currentUser={currentUser}
+        initialTab={chatTab}
+        theme={theme}
+      />
 
     </div>
   );
