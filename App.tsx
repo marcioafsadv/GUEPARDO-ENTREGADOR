@@ -1794,8 +1794,20 @@ const App: React.FC = () => {
           .eq('driver_id', userId);
         console.log('✅ Mission set to returning (awaiting end of batch)');
       } else {
-        await supabaseClient.completeMission(mission.id, userId);
-        console.log('✅ Mission completed (phase finalized)');
+        // 🎯 ATOMIC BATCH FINALIZATION: Complete all associated missions in the batch/session
+        if (mission.batch_id) {
+          console.log(`🎯 Completing ALL missions for batch ${mission.batch_id}...`);
+          await supabaseClient.supabase
+            .from('deliveries')
+            .update({ 
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('batch_id', mission.batch_id);
+        } else {
+          await supabaseClient.completeMission(mission.id, userId);
+        }
+        console.log('✅ Mission(s) completed (phase finalized)');
       }
 
       // 🎯 FORCE RELIABLE STATE BY FETCHING DIRECTLY FROM DATABASE
@@ -2265,10 +2277,9 @@ const App: React.FC = () => {
       handleFinishDelivery();
     }
     else if (status === DriverStatus.RETURNING) {
-      // In returning state, the driver has reached the store
-      // But we wait for the Lojista to confirm.
-      // However, we can also let the driver "claim" they arrived at store to notify lojista.
-      alert("Aguardando confirmação do lojista para encerrar o pedido.");
+      // In returning state, the driver has reached the store.
+      // We now allow the driver to finalize the mission directly.
+      handleFinishDelivery();
     }
   };
 
@@ -3247,12 +3258,12 @@ const App: React.FC = () => {
                           status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
                             status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'Segure p/ Confirmar Coleta' :
                               status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
-                                status === DriverStatus.RETURNING ? 'Aguardando Lojista (Retorno)' :
+                                status === DriverStatus.RETURNING ? 'Segure p/ Finalizar Retorno na Loja' :
                                   'Segure p/ Finalizar Entrega'
                       }
-                      disabled={((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()) || status === DriverStatus.RETURNING}
+                      disabled={((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid())}
                       color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER || status === DriverStatus.RETURNING ? '#FFD700' : '#FF6B00'}
-                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right'}
+                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING ? 'fa-check' : 'fa-chevron-right'}
                       fillDuration={1500}
                     />
                   </div>

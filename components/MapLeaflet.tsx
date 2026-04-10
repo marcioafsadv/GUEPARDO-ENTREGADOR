@@ -223,7 +223,12 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     useEffect(() => {
         if (missions && missions.length > 0) {
             const resolveStops = async () => {
-                const resolved = await Promise.all(missions.map(async (m) => {
+                // Filter out missions that are finished, returning or cancelled
+                const nonGhostMissions = missions.filter(m => 
+                    !['returning', 'delivered', 'completed', 'cancelled'].includes(m.status?.toLowerCase())
+                );
+
+                const resolved = await Promise.all(nonGhostMissions.map(async (m) => {
                     // Try to get coords from mission object first (items or custom field)
                     if (m.destinationLat && m.destinationLng) {
                         return { id: m.id, lat: m.destinationLat, lng: m.destinationLng, name: m.customerName, stopNumber: m.stopNumber };
