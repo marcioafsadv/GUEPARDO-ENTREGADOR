@@ -461,6 +461,7 @@ const App: React.FC = () => {
   /* Delivery Help States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [historicalOrder, setHistoricalOrder] = useState<DeliveryMission | null>(null);
   const [chatTab, setChatTab] = useState<ChatRoomType>('STORE_COURIER');
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
@@ -479,6 +480,28 @@ const App: React.FC = () => {
   const handleCallStore = () => {
     if (!mission) return;
     window.location.href = `tel:${mission.storePhone}`;
+  };
+
+  const handleOpenHistoricalChat = (transaction: Transaction) => {
+    if (!transaction || !transaction.type) return;
+    
+    // O order_id está guardado no campo 'type' da transação
+    const orderId = transaction.type;
+    
+    // Objeto mínimo necessário para o ChatMultilateralModal
+    // Note: Campos como storeName e customerName podem não ser precisos, 
+    // mas o ID é o que importa para puxar as mensagens do Supabase.
+    const skeletonOrder: any = {
+      id: orderId,
+      status: 'completed',
+      displayId: orderId.slice(-4),
+      items: [],
+      storeName: 'Pedido Anterior',
+      customerName: 'Histórico de Chat'
+    };
+    
+    setHistoricalOrder(skeletonOrder);
+    setShowChatModal(true);
   };
 
   const [emergencyContact, setEmergencyContact] = useState({ name: '', phone: '', relation: '', isBeneficiary: false });
@@ -4655,8 +4678,15 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className={`p-6 border-t border-white/5 ${innerBg}`}>
-              <button onClick={() => setSelectedTransaction(null)} className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs tracking-widest shadow-xl">Fechar Detalhes</button>
+            <div className={`p-6 border-t border-white/5 ${innerBg} flex gap-3`}>
+              <button 
+                onClick={() => handleOpenHistoricalChat(selectedTransaction)}
+                className="flex-1 h-14 bg-white/10 rounded-2xl font-black text-white uppercase text-[10px] tracking-widest border border-white/10 flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
+                <i className="fas fa-comments text-sm text-[#FF6B00]"></i>
+                Ver Chat
+              </button>
+              <button onClick={() => setSelectedTransaction(null)} className="flex-[2] h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all">Fechar</button>
             </div>
 
           </div>
@@ -4754,13 +4784,18 @@ const App: React.FC = () => {
       {showSplash && <SplashScreen />}
 
       {/* Modal de Chat Multilateral */}
-      <ChatMultilateralModal 
-        order={mission}
-        onClose={() => setShowChatModal(false)}
-        currentUser={currentUser}
-        initialTab={chatTab}
-        theme={theme}
-      />
+      {showChatModal && (
+        <ChatMultilateralModal 
+          order={historicalOrder || mission}
+          onClose={() => {
+            setShowChatModal(false);
+            setHistoricalOrder(null);
+          }}
+          currentUser={currentUser}
+          initialTab={chatTab}
+          theme={theme}
+        />
+      )}
 
     </div>
   );

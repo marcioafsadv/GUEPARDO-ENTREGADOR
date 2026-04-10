@@ -116,6 +116,7 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
   if (!isOpen || !order) return null;
 
   const currentMessages = messages.filter(m => m.room === activeTab);
+  const isHistorical = order.status === 'completed' || order.status === 'cancelled';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -131,7 +132,12 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
             </div>
             <div>
               <h3 className="text-lg font-black italic tracking-tighter uppercase text-white leading-none">Chat Multilateral</h3>
-              <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.2em] mt-1.5">Pedido #{order.displayId || order.id.slice(-4)}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.2em]">Pedido #{order.displayId || order.id.slice(-4)}</p>
+                {isHistorical && (
+                  <span className="bg-white/10 text-white/40 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-white/5">Histórico</span>
+                )}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-white flex items-center justify-center">
@@ -214,25 +220,35 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
         </div>
 
         {/* INPUT AREA */}
-        <div className="p-6 bg-[#2D0F00]/40 border-t border-white/5 backdrop-blur-3xl pb-10">
-          <div className="flex gap-3 bg-black/60 p-2 rounded-[1.8rem] border border-white/10 focus-within:border-[#FF6B00]/50 transition-all duration-300">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Digite sua mensagem..."
-              className="flex-1 bg-transparent border-none focus:outline-none text-[14px] font-bold text-white px-4 placeholder:text-white/20"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!message.trim()}
-              className="w-12 h-12 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-[0_8px_15px_rgba(255,107,0,0.3)]"
-            >
-              <i className="fas fa-paper-plane text-lg"></i>
-            </button>
+        {!isHistorical ? (
+          <div className="p-6 bg-[#2D0F00]/40 border-t border-white/5 backdrop-blur-3xl pb-10">
+            <div className="flex gap-3 bg-black/60 p-2 rounded-[1.8rem] border border-white/10 focus-within:border-[#FF6B00]/50 transition-all duration-300">
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 bg-transparent border-none focus:outline-none text-[14px] font-bold text-white px-4 placeholder:text-white/20"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!message.trim()}
+                className="w-12 h-12 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-[0_8px_15px_rgba(255,107,0,0.3)]"
+              >
+                <i className="fas fa-paper-plane text-lg"></i>
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-8 bg-[#1A0900] border-t border-white/5 backdrop-blur-3xl pb-12 flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center gap-2 text-white/20">
+              <i className="fas fa-lock text-xs"></i>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Chat Encerrado</p>
+            </div>
+            <p className="text-[9px] font-bold text-white/10 text-center uppercase tracking-widest leading-relaxed">Este pedido já foi finalizado.<br/>O chat está disponível apenas para consulta.</p>
+          </div>
+        )}
       </div>
     </div>
   );
