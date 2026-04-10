@@ -2276,11 +2276,6 @@ const App: React.FC = () => {
     else if (mission && status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
       handleFinishDelivery();
     }
-    else if (status === DriverStatus.RETURNING) {
-      // In returning state, the driver has reached the store.
-      // We now allow the driver to finalize the mission directly.
-      handleFinishDelivery();
-    }
   };
 
 
@@ -3258,12 +3253,12 @@ const App: React.FC = () => {
                           status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
                             status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'Segure p/ Confirmar Coleta' :
                               status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
-                                status === DriverStatus.RETURNING ? 'Segure p/ Finalizar Retorno na Loja' :
+                                status === DriverStatus.RETURNING ? 'Aguardando Confirmação do Lojista...' :
                                   'Segure p/ Finalizar Entrega'
                       }
-                      disabled={((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid())}
-                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER || status === DriverStatus.RETURNING ? '#FFD700' : '#FF6B00'}
-                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING ? 'fa-check' : 'fa-chevron-right'}
+                      disabled={ status === DriverStatus.RETURNING || ((status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid())}
+                      color={status === DriverStatus.RETURNING ? '#A0A0A0' : (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00')}
+                      icon={status === DriverStatus.RETURNING ? 'fa-clock' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')}
                       fillDuration={1500}
                     />
                   </div>
