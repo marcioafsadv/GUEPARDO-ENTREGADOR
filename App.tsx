@@ -2824,6 +2824,7 @@ const App: React.FC = () => {
                           <i className="fas fa-headset text-[10px]"></i>
                         </button>
                       </div>
+                    </div>
                   </div>
 
                   <div className="flex-1 space-y-4 mb-6 pr-1 overflow-y-auto">
