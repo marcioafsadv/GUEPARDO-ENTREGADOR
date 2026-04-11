@@ -2870,10 +2870,10 @@ const App: React.FC = () => {
 
                     <div className="px-1">
                       <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
-                        {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeName : mission.customerName}
+                        {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
                       </h3>
                       <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
-                        {status.includes('STORE') || status === DriverStatus.PICKING_UP ? mission.storeAddress : mission.customerAddress}
+                        {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeAddress : mission.customerAddress}
                       </p>
                     </div>
 
@@ -2891,7 +2891,7 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    {status === DriverStatus.PICKING_UP && (
+                    {(status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) && (
                       <div className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-[#FF6B00]/40 bg-[#FF6B00]/5 p-6 flex flex-col items-center text-center animate-in zoom-in duration-300">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent opacity-50"></div>
 
@@ -2941,8 +2941,8 @@ const App: React.FC = () => {
                       onConfirm={handleMainAction}
                       label={
                         status === DriverStatus.GOING_TO_STORE ? 'Segure p/ Chegar na Loja' :
-                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Saída' : 'Aguardando Preparo...') :
-                            status === DriverStatus.PICKING_UP ? 'Segure p/ Confirmar Coleta' :
+                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady ? 'Segure p/ Iniciar Coleta' : 'Aguardando Preparo...') :
+                            (status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) ? 'Segure p/ Confirmar Coleta' :
                               status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
                                 'Segure p/ Finalizar Entrega'
                       }
