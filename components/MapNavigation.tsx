@@ -489,60 +489,43 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         <div className="w-full h-full relative overflow-hidden bg-zinc-950">
             <div ref={mapContainer} className="w-full h-full" />
 
-            {/* 99-style Header Instructions - COMPACTED */}
-            <div className="absolute top-0 left-0 right-0 z-20 transition-all duration-500">
-                <div className="chocolate-bottom-panel rounded-b-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.6)] pb-4 pt-8 px-6 flex flex-col uppercase border-t-0 border-b border-orange-500/20">
-                    {/* Main Instruction */}
+            {/* Print 3 style Header Instructions */}
+            <div className="absolute top-0 left-0 right-0 z-20">
+                <div className="bg-[#0a0502]/95 backdrop-blur-md rounded-b-[40px] shadow-[0_15px_45px_rgba(0,0,0,0.8)] pb-6 pt-10 px-8 flex flex-col uppercase border-b border-orange-500/10">
                     <div className="flex items-center">
-                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-10 bg-[#FF6B00]/10 rounded-xl border border-[#FF6B00]/20 shadow-[0_0_15px_rgba(255,107,0,0.1)]">
-                            {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-2xl text-[#FF6B00]"></i>
+                        <div className="mr-6 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                             {instruction?.modifier.includes('left') ? (
+                                <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-orange-500"></i>
                             ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-turn-down text-2xl fa-rotate-180 text-[#FF6B00]"></i>
-                            ) : instruction?.modifier.includes('uturn') ? (
-                                <i className="fas fa-arrow-rotate-left text-2xl text-[#FF6B00]"></i>
+                                <i className="fas fa-arrow-up rotate-[90deg] text-3xl text-orange-500"></i>
                             ) : (
-                                <i className="fas fa-arrow-up text-2xl text-[#FF6B00]"></i>
+                                <i className="fas fa-arrow-up text-3xl text-orange-500"></i>
                             )}
                         </div>
                         <div className="flex flex-col flex-1">
-                            <h1 className="text-white text-[24px] sm:text-[32px] font-black leading-none tracking-tight neon-orange-glow-text">
-                                {instruction?.distanceText || '-- m'}
+                            <h1 className="text-white text-4xl font-[900] leading-none tracking-tighter italic">
+                                {instruction?.distanceText || '0 M'}
                             </h1>
-                            <p className="text-chocolate-primary text-[12px] sm:text-[14px] font-bold leading-tight line-clamp-1 mt-0.5 opacity-80">
-                                {instruction?.roadName || 'Calculando rota...'}
+                            <p className="text-orange-500/80 text-xs font-black leading-tight tracking-[0.2em] mt-1.5 line-clamp-1">
+                                {instruction?.roadName || 'SIGA EM FRENTE'}
                             </p>
                         </div>
+                        {/* Speaker Button on the right (Print 3 style) */}
+                         <button 
+                            onClick={() => setVoiceEnabled(!voiceEnabled)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-orange-600/20 text-orange-500 border border-orange-500/30 shadow-[0_0_15px_rgba(255,107,0,0.2)]' : 'bg-white/5 border border-white/10 text-white/20'}`}
+                        >
+                            <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-sm`}></i>
+                        </button>
                     </div>
-                    {/* Secondary Instruction (If available) */}
-                    {instruction?.nextRoadName ? (
-                        <div className="border-t border-white/5 pt-3 mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <i className="fas fa-arrow-turn-up text-[#FF6B00]/40 rotate-90 text-[10px]"></i>
-                                <p className="text-chocolate-muted text-xs font-bold truncate leading-none">
-                                    {instruction.nextRoadName}
-                                </p>
-                            </div>
-                            <button 
-                                onClick={() => setVoiceEnabled(!voiceEnabled)}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30' : 'bg-transparent border border-white/10 text-white/20'}`}
-                            >
-                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="border-t border-white/5 pt-3 mt-3 flex items-center justify-between">
-                            <p className="text-chocolate-muted text-[8px] font-black leading-none tracking-[0.3em]">
-                                GUEPARDO NAVIGATION SYSTEM
-                            </p>
-                            <button 
-                                onClick={() => setVoiceEnabled(!voiceEnabled)}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30' : 'bg-transparent border border-white/10 text-white/20'}`}
-                            >
-                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
-                            </button>
-                        </div>
-                    )}
+
+                    {/* Lower bar for secondary instructions if they exist, or just decoration */}
+                    <div className="flex items-center mt-6 pt-4 border-t border-white/5 space-x-3 opacity-40">
+                         <i className="fas fa-location-arrow text-[10px] text-orange-500 rotate-45"></i>
+                         <p className="text-[10px] font-black tracking-[0.3em] overflow-hidden truncate">
+                             {instruction?.nextRoadName || 'GUEPARDO MAPS ADVANCED NAVIGATION'}
+                         </p>
+                    </div>
                 </div>
             </div>
 

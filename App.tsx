@@ -2774,45 +2774,56 @@ const App: React.FC = () => {
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex p-4 pb-6">
                 <div className={`w-full max-w-md mx-auto rounded-[40px] p-6 shadow-2xl border-t border-white/10 transition-colors flex flex-col overflow-hidden ${cardBg}`}>
                   
-                  {/* Print 3 Header: Metrics & Quick Actions */}
-                  <div className="flex items-center space-x-2 mb-4 shrink-0">
-                    <div className={`flex-1 h-12 rounded-[22px] ${innerBg} flex items-center px-4 space-x-4 border border-white/5`}>
-                      <div className="flex items-center space-x-2">
-                        <i className="far fa-clock text-[#FF6B00] text-sm"></i>
-                        <span className="text-xs font-black text-white">{navMetrics?.time || '0 min'}</span>
-                      </div>
-                      <div className="w-px h-4 bg-white/10"></div>
-                      <div className="flex items-center space-x-2">
-                        <i className="fas fa-road text-[#FF6B00] text-sm"></i>
-                        <span className="text-xs font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
-                      </div>
+                  {/* Handle Bar (Print 3 style) */}
+                  <div className="w-10 h-1 rounded-full bg-white/10 mx-auto mb-6 shrink-0" />
+
+                  {/* Print 3 Header: Two Columns Layout */}
+                  <div className="flex items-start justify-between mb-6 shrink-0 gap-4">
+                    {/* Left Column: Status & Value */}
+                    <div className="flex flex-col space-y-2">
+                       <span className={`w-fit px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_4px_15px_rgba(255,215,0,0.2)]' : 'bg-[#FF6B00] text-white shadow-[0_4px_15px_rgba(255,107,0,0.3)]'}`}>
+                        {getStatusLabel(status)}
+                      </span>
+                      <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
+                        VALOR TOTAL: {formatCurrency(mission.deliveryValue || mission.earnings || 0)}
+                      </span>
                     </div>
-                    
-                    <button className={`w-12 h-12 rounded-[22px] ${innerBg} flex items-center justify-center text-white border border-white/5 active:scale-90 transition-transform`}>
-                      <i className="fas fa-suitcase text-sm text-zinc-400"></i>
-                    </button>
-                    
-                    <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`w-12 h-12 rounded-[22px] flex items-center justify-center transition-all active:scale-90 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : `${innerBg} text-white border border-white/5`}`}>
-                      <i className="fas fa-location-arrow text-sm"></i>
-                    </button>
-                    
-                    <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`w-12 h-12 rounded-[22px] flex items-center justify-center transition-all active:scale-90 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : `${innerBg} text-white border border-white/5`}`}>
-                      <i className="fas fa-circle-question text-sm"></i>
-                    </button>
 
-                    <button onClick={() => setShowSOSModal(true)} className={`w-12 h-12 rounded-[22px] ${innerBg} flex items-center justify-center text-red-500 border border-white/5 active:scale-90 transition-transform`}>
-                      <i className="fas fa-headset text-sm"></i>
-                    </button>
-                  </div>
+                    {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
+                    <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
+                      {/* Nav Metrics (Time | Dist) */}
+                      <div className="flex items-center px-4 space-x-4 border-r border-white/10 shrink-0">
+                        <div className="flex items-center space-x-2">
+                          <i className="far fa-clock text-zinc-400 text-xs"></i>
+                          <span className="text-xs font-black text-white">{navMetrics?.time || '0 min'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <i className="fas fa-road text-zinc-400 text-xs"></i>
+                          <span className="text-xs font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons with Text Labels (Print 3) */}
+                      <div className="flex items-center p-1 space-x-1 shrink-0">
+                        <button className="px-3 h-9 rounded-xl bg-white/5 flex items-center space-x-2 text-white/30 active:scale-95 transition-all">
+                          <i className="fas fa-suitcase text-[10px]"></i>
+                          <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
+                        </button>
+                        
+                        <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40'}`}>
+                          <i className="fas fa-location-arrow text-[10px]"></i>
+                          <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
+                        </button>
+                        
+                        <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
+                          <i className="fas fa-circle-question text-[10px]"></i>
+                          <span className="text-[10px] font-black uppercase tracking-tighter">AJUDA</span>
+                        </button>
 
-                  {/* Context Badge & Total Value Header */}
-                  <div className="flex items-center justify-between px-1 mb-4">
-                    <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_0_10px_rgba(255,215,0,0.3)]' : 'bg-[#FF6B00] text-white shadow-[0_0_10px_rgba(255,107,0,0.3)]'}`}>
-                      {getStatusLabel(status)}
-                    </span>
-                    <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic">
-                      VALOR TOTAL: {formatCurrency(mission.deliveryValue || mission.earnings || 0)}
-                    </span>
+                        <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
+                          <i className="fas fa-headset text-[10px]"></i>
+                        </button>
+                      </div>
                   </div>
 
                   <div className="flex-1 space-y-4 mb-6 pr-1 overflow-y-auto">
@@ -2840,20 +2851,20 @@ const App: React.FC = () => {
                         </div>
 
                         {activeHelpOption === null ? (
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-6">
                             <button
                               onClick={() => setActiveHelpOption('customer_not_found')}
-                              className={`p-5 rounded-2xl border flex flex-col items-center text-center space-y-3 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white'}`}
+                              className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white shadow-xl'}`}
                             >
-                              <div className="w-12 h-12 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-inner"><i className="fas fa-user-slash"></i></div>
-                              <span className={`text-[11px] font-black uppercase tracking-tighter ${textPrimary}`}>Cliente não localizado</span>
+                              <div className="w-14 h-14 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-2xl"><i className="fas fa-user-slash text-xl"></i></div>
+                              <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Cliente não localizado</span>
                             </button>
                             <button
                               onClick={() => setActiveHelpOption('talk_to_store')}
-                              className={`p-5 rounded-2xl border flex flex-col items-center text-center space-y-3 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white'}`}
+                              className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white shadow-xl'}`}
                             >
-                              <div className="w-12 h-12 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-inner"><i className="fas fa-store"></i></div>
-                              <span className={`text-[11px] font-black uppercase tracking-tighter ${textPrimary}`}>Falar com Lojista</span>
+                              <div className="w-14 h-14 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-2xl"><i className="fas fa-store text-xl"></i></div>
+                              <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Falar com Lojista</span>
                             </button>
                           </div>
                         ) : activeHelpOption === 'customer_not_found' ? (
@@ -2889,38 +2900,36 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Mission Details Header */}
+                    {/* Mission Details Header (Print 3 Style) */}
                     <div className="px-1 flex justify-between items-start">
                       <div className="flex-1 min-w-0">
-                        <h3 className={`text-2xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate`}>
+                        <h3 className={`text-3xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0.5`}>
                           {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
                         </h3>
-                        <p className={`${textMuted} text-xs font-bold mt-0.5 leading-snug line-clamp-1`}>
+                        <p className={`${textMuted} text-xs font-bold leading-snug line-clamp-2 opacity-60`}>
                           {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeAddress : mission.customerAddress}
                         </p>
                       </div>
-                      <div className="bg-[#FF6B00] text-white px-2.5 py-1 rounded-xl text-[10px] font-black italic shadow-lg shrink-0 ml-4">
+                      <div className="bg-[#FF6B00] text-white px-3 py-1.5 rounded-2xl text-[10px] font-black italic shadow-lg shrink-0 ml-4 animate-pulse">
                         +2 Pedidos
                       </div>
                     </div>
 
-                    {/* Pickup Phase Card (Print 3 Style) */}
+                    {/* Pickup Phase Card (Print 3 Style Overhaul) */}
                     {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
-                      <div className={`p-5 rounded-[32px] border border-dashed flex items-center space-x-5 transition-all duration-500 ${isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'bg-[#FFD700]/10 border-[#FFD700]/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : `${theme === 'dark' ? 'bg-[#1a0c06]/30 border-[#FF6B00]/20' : 'bg-zinc-100 border-zinc-300'}`}`}>
-                        <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center transition-colors bg-[#1a0c06] border border-white/5 shadow-inner`}>
-                          <i className={`fas ${isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check text-[#FFD700] animate-pulse' : 'fa-utensils text-[#FF6B00]'} text-2xl`}></i>
+                      <div className={`p-6 rounded-[40px] border border-white/5 flex items-center space-x-6 transition-all duration-500 bg-[#1a0c06] shadow-[0_15px_35px_rgba(0,0,0,0.4)]`}>
+                        <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center transition-colors bg-black/40 border border-white/5 shadow-inner`}>
+                          <i className={`fas fa-utensils text-[#FF6B00] text-2xl`}></i>
                         </div>
-                        <div className="flex-1">
-                          <h4 className={`text-sm font-black uppercase italic ${textPrimary} tracking-tight mb-1`}>
+                        <div className="flex-1 flex flex-col justify-center">
+                          <h4 className={`text-sm font-black uppercase italic ${textPrimary} tracking-tight mb-0.5`}>
                             {isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Pedido Pronto' : 'Aguarde o Lojista'}
                           </h4>
-                          <div className="flex flex-col">
-                            <p className={`${textMuted} text-[10px] font-bold uppercase tracking-[0.1em]`}>ID: #{mission.displayId || mission.id.slice(-4).toUpperCase()}</p>
-                            <div className="flex items-center space-x-2 mt-1">
-                               <span className="text-green-500 font-black text-sm">+{formatCurrency(mission.deliveryValue || mission.earnings || 0)}</span>
-                               <span className="text-white/20 text-[8px]">•</span>
-                               <span className={`text-[9px] font-black uppercase ${textMuted} tracking-widest`}>{mission.paymentMethod || 'CARTÃO'}</span>
-                            </div>
+                          <span className={`text-[10px] font-black uppercase ${textMuted} tracking-[0.2em] mb-2 opacity-50`}>ID: #{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
+                          <div className="flex items-center space-x-2">
+                             <span className="text-[#33CC33] font-black text-xl italic tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">{formatCurrency(mission.deliveryValue || mission.earnings || 0)}</span>
+                             <span className="text-white/20 text-[8px]">•</span>
+                             <span className={`text-[9px] font-black uppercase ${textMuted} tracking-widest opacity-80`}>{mission.paymentMethod || 'CARD'}</span>
                           </div>
                         </div>
                       </div>
