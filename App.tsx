@@ -2854,34 +2854,55 @@ const App: React.FC = () => {
 
             {status !== DriverStatus.ALERTING && !mission && (
               <div className={`absolute bottom-0 left-0 right-0 z-[1001] transition-all duration-500 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4.5rem)]'}`}>
-                <div className={`p-6 pb-24 rounded-t-[40px] shadow-[0_-15px_40px_rgba(0,0,0,0.3)] border-t transition-colors duration-300 ${cardBg}`}>
-                  <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-2 cursor-pointer mb-2"><div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto opacity-30"></div></div>
+                <div className={`p-8 pb-20 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t border-white/5 transition-colors duration-300 bg-[#0f0502]/95 backdrop-blur-xl`}>
+                  <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-4 cursor-pointer mb-2">
+                    <div className="w-16 h-1.5 bg-[#FF6B00]/20 rounded-full mx-auto shadow-[0_0_10px_rgba(255,107,0,0.1)]"></div>
+                  </div>
 
-                  <div className="mb-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <h3 className={`text-xl font-black ${textPrimary}`}>Seus Ganhos</h3>
-                      <button onClick={() => setShowBalance(!showBalance)} className={`${textMuted} active:scale-90 transition-transform`}><i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'}`}></i></button>
+                  <div className="mb-6 flex justify-between items-end">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center border border-[#FF6B00]/20">
+                        <i className="fas fa-wallet text-[#FF6B00] text-xl"></i>
+                      </div>
+                      <div>
+                        <h3 className={`text-2xl font-black italic tracking-tighter text-white`}>Seus Ganhos</h3>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-chocolate-muted">Resumo de Hoje</p>
+                      </div>
                     </div>
-                    <button onClick={() => setCurrentScreen('WALLET')} className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] active:scale-95 transition-transform">Ver mais</button>
+                    <button onClick={() => setCurrentScreen('WALLET')} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-[#FF6B00] hover:bg-[#FF6B00]/10 transition-all active:scale-95">Painel Completo</button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-5 rounded-[28px] border flex flex-col justify-center ${innerBg} border-transparent`}>
-                      <p className={`${textMuted} text-[9px] font-black uppercase mb-1`}>Ganhos Hoje</p>
-                      <p className={`text-2xl font-black ${textPrimary}`}>{showBalance ? `R$ ${(dailyEarnings || 0).toFixed(2)}` : 'R$ ••••'}</p>
-                    </div>
-                    <div className={`p-5 rounded-[28px] border flex flex-col space-y-2 ${innerBg} border-transparent`}>
-                      <div className="flex justify-between items-center pb-1 border-b border-white/5">
-                        <span className={`${textMuted} text-[8px] font-black uppercase`}>Aceitas</span>
-                        <span className={`font-black text-xs ${textPrimary}`}>{dailyStats.accepted}</span>
+                    <div className={`p-6 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06] flex flex-col justify-center relative overflow-hidden group`}>
+                      <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#FF6B00]/5 rounded-full blur-2xl group-hover:bg-[#FF6B00]/10 transition-all"></div>
+                      <p className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest mb-1.5`}>Faturamento</p>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-sm font-black text-[#FF6B00]/60">R$</span>
+                        <p className={`text-3xl font-black italic tracking-tighter text-white`}>
+                          {showBalance ? (dailyEarnings || 0).toFixed(2) : '••••'}
+                        </p>
                       </div>
-                      <div className="flex justify-between items-center pb-1 border-b border-white/5">
-                        <span className={`${textMuted} text-[8px] font-black uppercase`}>Finalizadas</span>
-                        <span className={`font-black text-xs text-green-500`}>{dailyStats.finished}</span>
+                      <button onClick={() => setShowBalance(!showBalance)} className="absolute right-4 top-4 text-chocolate-muted/40 hover:text-[#FF6B00] transition-colors">
+                        <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-xs`}></i>
+                      </button>
+                    </div>
+
+                    <div className={`p-6 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06] space-y-3`}>
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className={`text-chocolate-muted text-[8px] font-black uppercase tracking-widest`}>Métricas</span>
+                        <i className="fas fa-chart-line text-[#00FF94] text-[10px]"></i>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className={`${textMuted} text-[8px] font-black uppercase`}>Recusadas</span>
-                        <span className={`font-black text-xs text-red-500`}>{dailyStats.rejected}</span>
+                        <span className={`text-chocolate-muted text-[8px] font-black uppercase`}>Finalizadas</span>
+                        <span className={`font-black text-xs text-[#00FF94]`}>{dailyStats.finished}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-chocolate-muted text-[8px] font-black uppercase`}>Taxa Aceite</span>
+                        <span className={`font-black text-xs text-[#FF6B00]`}>
+                          {dailyStats.accepted + dailyStats.rejected > 0 
+                            ? Math.round((dailyStats.accepted / (dailyStats.accepted + dailyStats.rejected)) * 100) + '%'
+                            : '100%'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -2901,7 +2922,7 @@ const App: React.FC = () => {
                 }}
               >
                 <div 
-                  className={`rounded-t-[40px] p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t transition-colors w-full flex flex-col overflow-hidden ${cardBg}`}
+                  className={`rounded-t-[40px] p-5 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t border-white/5 transition-colors w-full flex flex-col overflow-hidden bg-[#0f0502]/95 backdrop-blur-xl`}
                 >
                   {/* Handle de Arraste */}
                   <div 
@@ -3002,73 +3023,64 @@ const App: React.FC = () => {
 
                   <div className="flex-1 space-y-3 mb-4 pr-1">
                     {showMissionMapPicker && (
-                      <div className={`p-3 rounded-[20px] border border-white/5 flex justify-center space-x-5 ${innerBg}`}>
+                      <div className={`p-3 rounded-[24px] border border-white/5 flex justify-center space-x-6 bg-[#1a0c06] chocolate-inner-card-v2`}>
                         <button onClick={() => { setIsNavigating(true); setShowMissionMapPicker(false); }} className="flex flex-col items-center space-y-1 active:scale-90 transition-transform">
-                          <div className="w-11 h-11 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] border border-[#FF6B00]/30"><i className="fas fa-location-dot text-xl"></i></div>
-                          <span className="text-[8px] font-black text-[#FF6B00] uppercase">Guepardo</span>
+                          <div className="w-12 h-12 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] border border-[#FF6B00]/20 shadow-[0_0_15px_rgba(255,107,0,0.1)]"><i className="fas fa-location-dot text-xl"></i></div>
+                          <span className="text-[8px] font-black text-[#FF6B00] uppercase tracking-widest">Guepardo</span>
                         </button>
                         <button onClick={() => openNavigation('waze')} className="flex flex-col items-center space-y-1 active:scale-90 transition-transform">
-                          <div className="w-11 h-11 rounded-xl bg-[#33CCFF]/10 flex items-center justify-center text-[#33CCFF]"><i className="fab fa-waze text-xl"></i></div>
-                          <span className="text-[8px] font-black text-[#33CCFF] uppercase">Waze</span>
+                          <div className="w-12 h-12 rounded-2xl bg-[#33CCFF]/10 flex items-center justify-center text-[#33CCFF] border border-[#33CCFF]/20"><i className="fab fa-waze text-xl"></i></div>
+                          <span className="text-[8px] font-black text-[#33CCFF] uppercase tracking-widest">Waze</span>
                         </button>
                         <button onClick={() => openNavigation('google')} className="flex flex-col items-center space-y-1 active:scale-90 transition-transform">
-                          <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500"><i className="fas fa-map-marked-alt text-xl"></i></div>
-                          <span className="text-[8px] font-black text-green-500 uppercase">Maps</span>
+                          <div className="w-12 h-12 rounded-2xl bg-[#00FF94]/10 flex items-center justify-center text-[#00FF94] border border-[#00FF94]/20"><i className="fas fa-map-marked-alt text-xl"></i></div>
+                          <span className="text-[8px] font-black text-[#00FF94] uppercase tracking-widest">Maps</span>
                         </button>
                       </div>
                     )}
 
                     {showOrderDetails && (
-                      <div className={`p-4 rounded-[20px] space-y-4 chocolate-inner-card-v2 border-orange-500/20 animate-in fade-in slide-in-from-top-2 mb-3`}>
+                      <div className={`p-5 rounded-[32px] space-y-4 bg-[#1a0c06] chocolate-inner-card-v2 border-[#FF6B00]/20 animate-in fade-in slide-in-from-top-4 mb-4`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className={`text-xs font-black uppercase tracking-widest text-chocolate-primary flex items-center space-x-2`}>
+                          <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center space-x-2`}>
                             <i className="fas fa-list-check text-[#FF6B00]"></i>
-                            <span>Detalhes da Missão</span>
+                            <span>Itens da Missão</span>
                           </h3>
-                          <button onClick={() => setShowOrderDetails(false)} className="w-6 h-6 rounded-full bg-black/40 flex items-center justify-center text-zinc-400">
-                            <i className="fas fa-times text-[10px]"></i>
+                          <button onClick={() => setShowOrderDetails(false)} className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-zinc-500 hover:text-white transition-colors">
+                            <i className="fas fa-times text-xs"></i>
                           </button>
                         </div>
 
                         <div className="space-y-3">
-                          {/* Store Details */}
-                          <div className={`p-3 rounded-xl chocolate-inner-card-v2 bg-black/30 border-white/5`}>
-                            <p className={`text-[10px] font-black uppercase tracking-widest text-chocolate-muted mb-1`}>Retirar em</p>
-                            <p className={`text-sm font-black text-white truncate`}>{mission?.storeName}</p>
+                          <div className={`p-4 rounded-[24px] bg-black/40 border border-white/5`}>
+                            <p className={`text-[9px] font-black uppercase tracking-widest text-[#FF6B00] mb-1.5`}>Ponto de Retirada</p>
+                            <p className={`text-base font-black text-white truncate`}>{mission?.storeName}</p>
                             <p className={`text-xs font-bold text-chocolate-muted truncate`}>{mission?.storeAddress?.split(',')[0]}</p>
-                            <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
+                            
+                            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/5">
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Itens</p>
-                                <p className={`text-sm font-black text-chocolate-primary`}>{mission?.items?.length && mission.items.length > 1 ? mission.items.length : '1'}</p>
+                                <p className={`text-[8px] font-black uppercase tracking-widest text-chocolate-muted`}>Total Pedidos</p>
+                                <p className={`text-base font-black text-white`}>{activeMissions.length}</p>
                               </div>
-                              <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Total</p>
-                                <p className={`text-sm font-black text-chocolate-primary`}>{activeMissions.filter(m => m.storeName === mission?.storeName).length} Pedidos</p>
-                              </div>
-                              <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Pedido</p>
-                                <p className={`text-sm font-black text-chocolate-primary`}>#{mission?.displayId || mission?.id?.slice(-4)}</p>
-                              </div>
-                              <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Código</p>
-                                <p className={`text-sm font-black text-[#FF6B00] neon-orange-glow-text`}>{mission?.collectionCode}</p>
+                              <div className="text-right">
+                                <p className={`text-[8px] font-black uppercase tracking-widest text-chocolate-muted`}>Código</p>
+                                <p className={`text-xl font-black text-[#FF6B00] neon-orange-glow-text`}>{mission?.collectionCode}</p>
                               </div>
                             </div>
                           </div>
 
-                          {/* Customer Details - LOOP for Batch */}
-                          {activeMissions.filter(m => m.storeName === mission?.storeName).map((batchMission, idx) => (
-                            <div key={batchMission.id} className={`p-3 rounded-xl chocolate-inner-card-v2 bg-black/30 border-white/5`}>
-                              <div className="flex justify-between items-center mb-1">
-                                <p className={`text-[10px] font-black uppercase tracking-widest text-chocolate-muted`}>Entregar para ({idx + 1})</p>
-                                <span className="text-[10px] font-mono text-chocolate-muted">#{batchMission.displayId || batchMission.id.slice(-4)}</span>
-                              </div>
-                              <p className={`text-sm font-black text-white truncate`}>{batchMission.customerName}</p>
-                              <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
+                          {activeMissions.map((m, i) => (
+                            <div key={m.id} className={`p-4 rounded-[24px] bg-black/20 border border-white/5`}>
+                              <div className="flex justify-between items-start mb-2">
                                 <div>
-                                  <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Itens</p>
-                                  <p className={`text-sm font-black text-chocolate-primary`}>{batchMission.items?.length > 1 ? batchMission.items.length : '1'}</p>
+                                  <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Cliente {i + 1}</p>
+                                  <p className={`text-sm font-black text-white`}>{m.customerName}</p>
                                 </div>
+                                <span className="text-[10px] font-mono text-[#FF6B00]">#{m.displayId || m.id.slice(-4)}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-bold text-chocolate-muted pt-2 border-t border-white/5">
+                                <span>Distância: {m.distanceValue?.toFixed(1) || '0.0'} km</span>
+                                <span className="text-[#00FF94]">R$ {(m.earnings || 0).toFixed(2)}</span>
                               </div>
                             </div>
                           ))}
@@ -3313,15 +3325,12 @@ const App: React.FC = () => {
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]' : 'bg-zinc-700'}`}>
                           <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${mapMode === 'satellite' ? 'translate-x-5' : ''}`}></div>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            }
-          </div >
-        );
+                )
+              }
+            </div>
+          );
 
 
       case 'WALLET':
@@ -3331,33 +3340,33 @@ const App: React.FC = () => {
         const activeWeekLabel = MOCK_WEEKS.find(w => w.id === activeWeekId)?.range || 'Semana Atual';
 
         return (
-          <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
+          <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
             <div className="flex items-center justify-between mb-8">
-              <h1 className={`text-3xl font-black italic ${textPrimary}`}>Meus Ganhos</h1>
-              <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-[10px] font-black uppercase text-blue-500 tracking-wider">
+              <h1 className={`text-3xl font-black italic text-white tracking-tight`}>Meus Ganhos</h1>
+              <div className="px-4 py-1 bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-full text-[10px] font-black uppercase text-[#FF6B00] tracking-wider">
                 Versão 2.1
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>
-                <p className={`${textMuted} text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos da Semana</p>
-                <p className={`text-[10px] font-bold ${textMuted} mb-2`}>{activeWeekLabel}</p>
-                <p className={`text-xl font-black ${textPrimary}`}>R$ {(weeklyEarningsTotal || 0).toFixed(2)}</p>
+              <div className={`p-4 rounded-[28px] border chocolate-inner-card-v2 flex flex-col justify-center`}>
+                <p className={`text-chocolate-muted text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos da Semana</p>
+                <p className={`text-[10px] font-bold text-chocolate-muted mb-2`}>{activeWeekLabel}</p>
+                <p className={`text-xl font-black text-white`}>R$ {(weeklyEarningsTotal || 0).toFixed(2)}</p>
               </div>
-              <div className={`p-4 rounded-[28px] border flex flex-col justify-center ${cardBg}`}>
-                <p className={`${textMuted} text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos de Hoje</p>
+              <div className={`p-4 rounded-[28px] border chocolate-inner-card-v2 flex flex-col justify-center`}>
+                <p className={`text-chocolate-muted text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos de Hoje</p>
                 <p className="text-[10px] font-bold opacity-0 mb-2">Hoje</p>
-                <p className={`text-xl font-black ${textPrimary}`}>R$ {(dailyEarnings || 0).toFixed(2)}</p>
+                <p className={`text-xl font-black text-[#FF6B00] neon-orange-glow-text`}>R$ {(dailyEarnings || 0).toFixed(2)}</p>
               </div>
             </div>
 
-            <div className={`rounded-[32px] p-8 border mb-8 ${cardBg} relative overflow-hidden`}>
-              <div className="absolute -right-4 -top-4 opacity-10"><i className="fas fa-wallet text-8xl text-[#FF6B00]"></i></div>
-              <p className={`${textMuted} font-bold uppercase text-[10px] tracking-widest mb-2 relative z-10`}>Saldo Disponível</p>
-              <h2 className={`text-4xl font-black ${textPrimary} mb-6 relative z-10`}>R$ {(balance || 0).toFixed(2)}</h2>
+            <div className={`rounded-[32px] p-8 border mb-8 chocolate-inner-card-v2 relative overflow-hidden bg-[#1a0c06]/80`}>
+              <div className="absolute -right-4 -top-4 opacity-5"><i className="fas fa-wallet text-8xl text-[#FF6B00]"></i></div>
+              <p className={`text-chocolate-muted font-bold uppercase text-[10px] tracking-widest mb-2 relative z-10`}>Saldo Disponível</p>
+              <h2 className={`text-4xl font-black text-white mb-6 relative z-10 tracking-tighter`}>R$ {(balance || 0).toFixed(2)}</h2>
 
-              <button disabled={balance <= 0} onClick={() => setCurrentScreen('WITHDRAWAL_REQUEST')} className={`w-full h-14 rounded-2xl text-white font-black text-xs uppercase italic tracking-widest shadow-lg flex items-center justify-center space-x-2 transition-all relative z-10 ${balance <= 0 ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00] shadow-orange-900/30 active:scale-95'}`}>
+              <button disabled={balance <= 0} onClick={() => setCurrentScreen('WITHDRAWAL_REQUEST')} className={`w-full h-16 rounded-[24px] text-white font-black text-xs uppercase italic tracking-widest shadow-lg flex items-center justify-center space-x-2 transition-all relative z-10 btn-lava-accept ${balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
                 <i className="fas fa-hand-holding-dollar text-lg"></i>
                 <span>Antecipar Repasse</span>
               </button>
@@ -3365,19 +3374,19 @@ const App: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-sm font-black uppercase tracking-[0.2em] italic ${textPrimary}`}>Extrato</h3>
+                <h3 className={`text-sm font-black uppercase tracking-[0.2em] italic text-white`}>Extrato</h3>
               </div>
 
-              <div className={`flex p-1 rounded-2xl mb-6 ${innerBg}`}>
+              <div className={`flex p-1 rounded-2xl mb-6 bg-black/40 border border-white/5`}>
                 <button
                   onClick={() => setWalletTab('ENTRIES')}
-                  className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${walletTab === 'ENTRIES' ? 'bg-[#FF6B00] text-white shadow-lg' : `${textMuted}`}`}
+                  className={`flex-1 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${walletTab === 'ENTRIES' ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-chocolate-muted'}`}
                 >
                   Lançamentos
                 </button>
                 <button
                   onClick={() => setWalletTab('PAYOUTS')}
-                  className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${walletTab === 'PAYOUTS' ? 'bg-[#FF6B00] text-white shadow-lg' : `${textMuted}`}`}
+                  className={`flex-1 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${walletTab === 'PAYOUTS' ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-chocolate-muted'}`}
                 >
                   Repasses
                 </button>
@@ -3387,25 +3396,25 @@ const App: React.FC = () => {
                 {walletTab === 'ENTRIES' ? (
                   <>
                     <div className="flex items-center justify-between px-2 mb-2 relative">
-                      <span className={`text-[10px] font-bold ${textMuted} uppercase`}>Resumo da Semana</span>
+                      <span className={`text-[10px] font-bold text-chocolate-muted uppercase`}>Resumo da Semana</span>
 
                       <div className="relative z-20">
                         <button
                           onClick={() => setShowWeekSelector(!showWeekSelector)}
-                          className={`flex items-center space-x-2 px-3 py-1 rounded-full border transition-all active:scale-95 ${showWeekSelector ? 'border-[#FF6B00] text-[#FF6B00] bg-[#FF6B00]/10' : `${theme === 'dark' ? 'border-white/10 bg-zinc-900' : 'border-zinc-200 bg-white'}`}`}
+                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all active:scale-95 border-white/10 bg-black/40`}
                         >
-                          <i className="far fa-calendar text-xs"></i>
-                          <span className={`text-[9px] font-black ${showWeekSelector ? 'text-[#FF6B00]' : textPrimary}`}>{activeWeekLabel}</span>
-                          <i className={`fas fa-chevron-down text-[8px] transition-transform ${showWeekSelector ? 'rotate-180' : ''}`}></i>
+                          <i className="far fa-calendar text-xs text-[#FF6B00]"></i>
+                          <span className={`text-[9px] font-black text-white`}>{activeWeekLabel}</span>
+                          <i className={`fas fa-chevron-down text-[8px] text-chocolate-muted transition-transform ${showWeekSelector ? 'rotate-180' : ''}`}></i>
                         </button>
 
                         {showWeekSelector && (
-                          <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${cardBg}`}>
+                          <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 bg-[#1a0c06] z-50`}>
                             {MOCK_WEEKS.map(week => (
                               <button
                                 key={week.id}
                                 onClick={() => { setActiveWeekId(week.id); setShowWeekSelector(false); }}
-                                className={`w-full text-left px-4 py-3 text-[10px] font-bold border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${activeWeekId === week.id ? 'text-[#FF6B00]' : textPrimary}`}
+                                className={`w-full text-left px-4 py-4 text-[10px] font-bold border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${activeWeekId === week.id ? 'text-[#FF6B00]' : 'text-white'}`}
                               >
                                 {week.range}
                               </button>
@@ -3416,30 +3425,30 @@ const App: React.FC = () => {
                     </div>
 
                     {filteredHistory.length === 0 ? (
-                      <div className={`py-12 text-center rounded-[32px] border border-dashed ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-300'}`}>
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${innerBg} text-zinc-500`}>
+                      <div className={`py-12 text-center rounded-[32px] border border-dashed border-white/10 bg-white/5`}>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-black/40 text-chocolate-muted`}>
                           <i className="fas fa-receipt text-2xl"></i>
                         </div>
-                        <p className={`text-xs font-bold ${textMuted}`}>Nenhum registro encontrado.</p>
+                        <p className={`text-xs font-bold text-chocolate-muted`}>Nenhum registro encontrado.</p>
                       </div>
                     ) : (
                       filteredHistory.map((item, index) => (
                         <div
                           key={index}
                           onClick={() => setSelectedTransaction(item)}
-                          className={`p-4 rounded-[24px] border flex justify-between items-center transition-all active:scale-[0.98] cursor-pointer ${cardBg} hover:border-[#FF6B00]/30`}
+                          className={`p-4 rounded-[28px] border chocolate-list-item flex justify-between items-center transition-all cursor-pointer`}
                         >
                           <div className="flex items-center space-x-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.amount > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${item.amount > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
                               <i className={`fas ${item.amount > 0 ? 'fa-arrow-down' : 'fa-arrow-up'} rotate-45`}></i>
                             </div>
                             <div>
-                              <p className={`text-xs font-black ${textPrimary}`}>{item.type}</p>
-                              <p className={`text-[9px] font-bold ${textMuted}`}>{item.date}, {item.time} • Concluído</p>
+                              <p className={`text-sm font-black text-white`}>{item.type}</p>
+                              <p className={`text-[10px] font-bold text-chocolate-muted uppercase tracking-tighter`}>{item.date}, {item.time}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className={`font-black text-sm block ${item.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            <span className={`font-black text-lg block ${item.amount > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                               {item.amount > 0 ? '+' : ''} R$ {Math.abs(item.amount).toFixed(2)}
                             </span>
                           </div>
@@ -3450,32 +3459,45 @@ const App: React.FC = () => {
                 ) : (
                   <>
                     <div className="flex items-center justify-between px-2">
-                      <span className={`text-[10px] font-bold ${textMuted} uppercase`}>Histórico de Pagamentos</span>
-                      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${theme === 'dark' ? 'border-white/10 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
+                      <span className={`text-[10px] font-bold text-chocolate-muted uppercase`}>Histórico de Pagamentos</span>
+                      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border border-white/10 bg-white/5`}>
                         <i className="fas fa-filter text-xs text-[#FF6B00]"></i>
-                        <span className={`text-[9px] font-black ${textPrimary}`}>Filtrar Data</span>
+                        <span className={`text-[9px] font-black text-white`}>Filtrar</span>
                       </div>
                     </div>
                     {payoutsList.length === 0 ? (
-                      <div className={`py-12 text-center rounded-[32px] border border-dashed ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-300'}`}>
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${innerBg} text-zinc-500`}>
+                      <div className={`py-12 text-center rounded-[32px] border border-dashed border-white/10 bg-white/5`}>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-black/40 text-chocolate-muted`}>
                           <i className="fas fa-file-invoice-dollar text-2xl"></i>
                         </div>
-                        <p className={`text-xs font-bold ${textMuted}`}>Nenhum repasse realizado ainda.</p>
+                        <p className={`text-xs font-bold text-chocolate-muted`}>Nenhum repasse realizado ainda.</p>
                       </div>
                     ) : (
                       payoutsList.map((payout) => (
-                        <div key={payout.id} className={`p-4 rounded-[24px] border flex justify-between items-center ${cardBg}`}>
+                        <div key={payout.id} className={`p-4 rounded-[28px] border chocolate-inner-card-v2 flex justify-between items-center`}>
                           <div className="flex items-center space-x-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-[#FFD700]/10 text-[#FFD700]`}>
-                              <i className="fas fa-file-invoice-dollar"></i>
+                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-[#FFD700]/10 text-[#FFD700]`}>
+                              <i className="fas fa-file-invoice-dollar text-lg"></i>
                             </div>
                             <div>
-                              <p className={`text-xs font-black ${textPrimary}`}>Repasse Semanal</p>
-                              <p className={`text-[9px] font-bold ${textMuted}`}>{payout.period}</p>
+                              <p className={`text-sm font-black text-white`}>Repasse Semanal</p>
+                              <p className={`text-[10px] font-bold text-chocolate-muted`}>{payout.period}</p>
                             </div>
                           </div>
                           <div className="text-right">
+                            <p className={`font-black text-lg text-white`}>R$ {payout.amount.toFixed(2)}</p>
+                            <span className="text-[8px] font-black text-emerald-500 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full ml-auto inline-block">{payout.status}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+Name="text-right">
                             <p className={`font-black text-sm ${textPrimary}`}>R$ {payout.amount.toFixed(2)}</p>
                             <span className="text-[8px] font-bold text-green-500 uppercase bg-green-500/10 px-1.5 py-0.5 rounded ml-auto inline-block">{payout.status}</span>
                           </div>
@@ -3489,92 +3511,102 @@ const App: React.FC = () => {
           </div>
         );
       case 'WITHDRAWAL_REQUEST': return (
-        <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
+        <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
           <div className="flex items-center space-x-4 mb-8">
-            <button onClick={() => setCurrentScreen('WALLET')} className={`w-10 h-10 rounded-xl flex items-center justify-center border ${cardBg}`}>
-              <i className={`fas fa-chevron-left ${textPrimary}`}></i>
+            <button onClick={() => setCurrentScreen('WALLET')} className={`w-11 h-11 rounded-2xl flex items-center justify-center border chocolate-inner-card-v2`}>
+              <i className={`fas fa-chevron-left text-white`}></i>
             </button>
-            <h1 className={`text-2xl font-black italic ${textPrimary}`}>Antecipar Ganhos</h1>
+            <h1 className={`text-2xl font-black italic text-white tracking-tight`}>Antecipar Ganhos</h1>
           </div>
-          <div className={`rounded-[32px] p-6 border mb-6 ${cardBg} relative overflow-hidden`}>
-            <div className="absolute top-0 right-0 p-4 opacity-10"><i className="fas fa-building-columns text-6xl text-[#FF6B00]"></i></div>
-            <p className={`${textMuted} font-bold text-[9px] uppercase tracking-widest mb-3`}>Conta de Destino</p>
+          <div className={`rounded-[32px] p-6 border mb-6 chocolate-inner-card-v2 bg-[#1a0c06]/80 relative overflow-hidden`}>
+            <div className="absolute top-0 right-0 p-4 opacity-5"><i className="fas fa-building-columns text-6xl text-[#FF6B00]"></i></div>
+            <p className={`text-chocolate-muted font-bold text-[9px] uppercase tracking-widest mb-3`}>Conta de Destino</p>
             <div className="flex items-center space-x-4 relative z-10">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[#FF6B00] bg-[#FF6B00]/10`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[#FF6B00] bg-[#FF6B00]/10 border border-[#FF6B00]/20`}>
                 <i className="fas fa-bank text-xl"></i>
               </div>
-              <div>
-                <h3 className={`font-black text-lg ${textPrimary}`}>{currentUser.bank.name}</h3>
-                <p className={`${textMuted} font-bold text-[10px] uppercase`}>AG {currentUser.bank.agency} • CC {currentUser.bank.account}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className={`font-black text-lg text-white truncate`}>{currentUser.bank.name}</h3>
+                <p className={`text-chocolate-muted font-bold text-[10px] uppercase tracking-tighter`}>AG {currentUser.bank.agency} • CC {currentUser.bank.account}</p>
               </div>
-              <div className="ml-auto">
-                <i className="fas fa-check-circle text-green-500 text-xl"></i>
+              <div className="shrink-0">
+                <i className="fas fa-check-circle text-emerald-500 text-xl"></i>
               </div>
             </div>
           </div>
 
-          <div className={`rounded-[32px] p-8 border mb-8 ${cardBg}`}>
+          <div className={`rounded-[32px] p-8 border mb-8 chocolate-inner-card-v2 bg-black/20`}>
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                <span className={`${textMuted} font-bold text-xs uppercase tracking-widest`}>Saldo Disponível</span>
-                <span className={`text-xl font-black ${textPrimary}`}>R$ {balance.toFixed(2)}</span>
+                <span className={`text-chocolate-muted font-bold text-xs uppercase tracking-widest`}>Saldo Disponível</span>
+                <span className={`text-xl font-black text-white`}>R$ {balance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                <span className={`${textMuted} font-bold text-xs uppercase tracking-widest`}>Taxa de Antecipação</span>
-                <span className="text-green-500 font-black text-xl">GRÁTIS</span>
+                <span className={`text-chocolate-muted font-bold text-xs uppercase tracking-widest`}>Taxa de Antecipação</span>
+                <div className="flex flex-col items-end">
+                  <span className="text-emerald-500 font-black text-lg">GRÁTIS</span>
+                  <span className="text-[8px] font-bold text-chocolate-muted uppercase">Incentivo Guepardo</span>
+                </div>
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className={`${textPrimary} font-black text-sm uppercase tracking-widest`}>Você Recebe</span>
-                <span className="text-[#FFD700] font-black text-3xl italic">R$ {Math.max(0, balance - ANTICIPATION_FEE).toFixed(2)}</span>
+                <span className={`text-white font-black text-sm uppercase tracking-widest`}>Você Recebe</span>
+                <span className="text-[#FFD700] font-black text-3xl italic tracking-tighter">R$ {Math.max(0, balance - ANTICIPATION_FEE).toFixed(2)}</span>
               </div>
             </div>
           </div>
-          <button disabled={balance <= 0 || isAnticipating} onClick={handleAnticipateRequest} className={`w-full h-20 rounded-[28px] font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-3 transition-all ${balance <= 0 ? 'bg-zinc-700 opacity-50' : 'bg-[#FF6B00] active:scale-95'}`}>
-            {isAnticipating ? <><i className="fas fa-circle-notch animate-spin"></i><span>Processando...</span></> : <><i className="fas fa-bolt"></i><span>Confirmar Antecipação</span></>}
+          <button disabled={balance <= 0 || isAnticipating} onClick={handleAnticipateRequest} className={`w-full h-20 rounded-[32px] font-black text-white uppercase tracking-[0.1em] shadow-xl flex items-center justify-center space-x-3 transition-all btn-lava-accept ${balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
+            {isAnticipating ? <><i className="fas fa-circle-notch animate-spin"></i><span>Processando...</span></> : <><i className="fas fa-bolt text-xl"></i><span>Confirmar Antecipação</span></>}
           </button>
         </div>
       );
       case 'ORDERS': return (
-        <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
-          <h1 className={`text-2xl font-black italic mb-2 ${textPrimary}`}>Como podemos te ajudar?</h1>
-          <div className="relative mb-8 mt-4">
-            <div className={`absolute left-4 top-1/2 -translate-y-1/2 ${textMuted}`}>
-              <i className="fas fa-search"></i>
+        <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
+          <h1 className={`text-3xl font-black italic mb-2 text-white tracking-tight`}>Como podemos te ajudar?</h1>
+          <p className="text-chocolate-muted font-bold text-xs uppercase tracking-widest mb-8">Central de Ajuda Guepardo</p>
+
+          <div className="relative mb-10">
+            <div className={`absolute left-5 top-1/2 -translate-y-1/2 text-[#FF6B00]`}>
+              <i className="fas fa-search text-lg"></i>
             </div>
             <input
               type="text"
-              placeholder="digite sua dúvida"
-              className={`w-full h-14 pl-12 pr-4 rounded-2xl border outline-none font-bold text-sm transition-all ${cardBg} ${textPrimary} placeholder:font-normal placeholder:text-zinc-500 focus:border-[#FF6B00]`}
+              placeholder="Digite sua dúvida aqui..."
+              className={`w-full h-16 pl-14 pr-6 rounded-[24px] border border-white/10 outline-none font-bold text-sm transition-all bg-black/40 text-white placeholder:font-normal placeholder:text-zinc-600 focus:border-[#FF6B00]/50 focus:bg-black/60 shadow-xl`}
             />
           </div>
 
-          <div className="mb-8">
-            <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Perguntas Frequentes</h3>
+          <div className="mb-10">
+            <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
+              <i className="fas fa-star text-[#FFD700] text-[8px]"></i>
+              <span>Perguntas Frequentes</span>
+            </h3>
             <div className="space-y-3">
               {["Estou disponível e não recebo pedidos", "Quero alterar meu modal de entrega", "Não recebi o repasse"].map((item, index) => (
-                <button key={index} className={`w-full p-4 rounded-2xl border flex justify-between items-center active:scale-[0.98] transition-all ${cardBg}`}>
-                  <span className={`text-xs font-bold ${textPrimary}`}>{item}</span>
-                  <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                <button key={index} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
+                  <span className={`text-xs font-black text-white`}>{item}</span>
+                  <i className={`fas fa-chevron-right text-xs text-[#FF6B00]/40 group-active:text-[#FF6B00]`}></i>
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Outros Assuntos</h3>
-            <div className="space-y-3">
+          <div className="mb-4">
+            <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
+              <i className="fas fa-layer-group text-[#FF6B00] text-[8px]"></i>
+              <span>Outros Assuntos</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Fazendo entregas", icon: "fa-motorcycle" },
-                { label: "Cadastro", icon: "fa-id-card" },
-                { label: "Repasse", icon: "fa-hand-holding-dollar" },
-                { label: "Outros", icon: "fa-ellipsis" }
+                { label: "Entregas", icon: "fa-motorcycle", color: "#FF6B00" },
+                { label: "Cadastro", icon: "fa-id-card", color: "#33CCFF" },
+                { label: "Repasse", icon: "fa-hand-holding-dollar", color: "#00FF94" },
+                { label: "Guepardo", icon: "fa-paw", color: "#FFD700" }
               ].map((item, index) => (
-                <button key={index} className={`w-full p-4 rounded-2xl border flex items-center space-x-4 active:scale-[0.98] transition-all ${cardBg}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg} text-[#FF6B00]`}>
-                    <i className={`fas ${item.icon}`}></i>
+                <button key={index} className={`p-6 rounded-[28px] border chocolate-inner-card-v2 flex flex-col items-center space-y-3 transition-all bg-black/40`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-black/60 border border-white/5 text-[${item.color}] group-hover:scale-110 transition-transform`} style={{ color: item.color }}>
+                    <i className={`fas ${item.icon} text-xl`}></i>
                   </div>
-                  <span className={`text-xs font-bold flex-1 text-left ${textPrimary}`}>{item.label}</span>
-                  <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                  <span className={`text-[10px] font-black uppercase tracking-widest text-white`}>{item.label}</span>
                 </button>
               ))}
             </div>
@@ -3582,28 +3614,29 @@ const App: React.FC = () => {
         </div>
       );
       case 'NOTIFICATIONS': return (
-        <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
+        <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <button onClick={() => setCurrentScreen('HOME')} className={`w-10 h-10 rounded-xl flex items-center justify-center border ${cardBg}`}>
-                <i className={`fas fa-chevron-left ${textPrimary}`}></i>
+              <button onClick={() => setCurrentScreen('HOME')} className={`w-11 h-11 rounded-2xl flex items-center justify-center border chocolate-inner-card-v2`}>
+                <i className={`fas fa-chevron-left text-white`}></i>
               </button>
-              <h1 className={`text-2xl font-black italic ${textPrimary}`}>Avisos</h1>
+              <h1 className={`text-2xl font-black italic text-white tracking-tight`}>Avisos</h1>
             </div>
             <button
               onClick={markAllNotificationsRead}
-              className={`text-[10px] font-black uppercase tracking-widest text-[#FF6B00] active:scale-95 transition-transform`}
+              className={`text-[10px] font-black uppercase tracking-widest text-[#FF6B00] active:scale-95 transition-transform px-3 py-1 bg-[#FF6B00]/10 rounded-full`}
             >
-              Marcar todas como lidas
+              Limpar
             </button>
           </div>
 
           {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center opacity-50">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${innerBg}`}>
-                <i className="fas fa-bell-slash text-2xl text-zinc-500"></i>
+            <div className="flex flex-col items-center justify-center h-96 text-center opacity-40">
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-black/40 border border-white/5`}>
+                <i className="fas fa-bell-slash text-3xl text-[#FF6B00]"></i>
               </div>
-              <p className={`text-sm font-bold ${textMuted}`}>Você não tem notificações no momento.</p>
+              <p className={`text-sm font-black text-chocolate-muted uppercase tracking-[0.2em]`}>Silêncio na Savana</p>
+              <p className="text-[10px] font-bold text-chocolate-muted mt-2">Sem novas notificações.</p>
             </div>
           ) : (
             <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
@@ -3612,27 +3645,27 @@ const App: React.FC = () => {
                 return (
                   <div
                     key={notification.id}
-                    className={`p-5 rounded-[28px] border relative transition-all duration-300 group ${cardBg} ${!notification.read ? 'border-[#FF6B00]/30 bg-[#FF6B00]/5' : ''}`}
+                    className={`p-6 rounded-[32px] border relative transition-all duration-300 chocolate-list-item ${!notification.read ? 'border-[#FF6B00]/40 bg-[#FF6B00]/5' : ''}`}
                   >
-                    <div className="flex items-start space-x-4 relative z-10">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${style.bg} ${style.color}`}>
-                        <i className={`fas ${style.icon} text-lg`}></i>
+                    <div className="flex items-start space-x-5 relative z-10">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${style.bg} ${style.color}`}>
+                        <i className={`fas ${style.icon} text-xl`}></i>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <h3 className={`text-sm font-black ${textPrimary} mb-1 truncate pr-2`}>{notification.title}</h3>
-                          {!notification.read && <div className="w-2 h-2 rounded-full bg-[#FF6B00] shrink-0 mt-1.5"></div>}
+                        <div className="flex justify-between items-start pt-1">
+                          <h3 className={`text-[15px] font-black text-white mb-1 truncate pr-6 tracking-tight`}>{notification.title}</h3>
+                          {!notification.read && <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] shrink-0 mt-2 shadow-[0_0_10px_#FF6B00]"></div>}
                         </div>
-                        <p className={`text-xs leading-relaxed mb-2 line-clamp-2 ${textMuted}`}>{notification.body}</p>
-                        <p className={`text-[9px] font-bold uppercase tracking-widest opacity-60 ${textPrimary}`}>{notification.date}</p>
+                        <p className={`text-xs leading-relaxed mb-3 line-clamp-2 text-chocolate-muted`}>{notification.body}</p>
+                        <p className={`text-[9px] font-black uppercase tracking-[0.2em] opacity-60 text-white`}>{notification.date}</p>
                       </div>
                     </div>
                     <div className="absolute top-4 right-4">
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-red-500/10 active:scale-90 ${textMuted} hover:text-red-500`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-red-500/20 active:scale-90 text-chocolate-muted hover:text-red-500`}
                       >
-                        <i className="fas fa-trash text-xs"></i>
+                        <i className="fas fa-trash-can text-xs"></i>
                       </button>
                     </div>
                   </div>
@@ -3645,108 +3678,122 @@ const App: React.FC = () => {
       case 'SETTINGS':
         if (settingsView === 'MAIN') {
           return (
-            <div className={`h-full w-full p-6 overflow-y-auto pb-24 transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-50'}`}>
-              <h1 className={`text-3xl font-black italic mb-8 ${textPrimary}`}>Ajustes</h1>
-              <div className={`flex items-center space-x-4 mb-10 p-6 rounded-[32px] border ${cardBg}`}>
-                <div className="w-16 h-16 rounded-full p-1 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
-                  <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-full" alt="Perfil" />
+            <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
+              <h1 className={`text-4xl font-black italic mb-8 text-white tracking-tighter`}>Perfil</h1>
+              
+              <div className={`flex items-center space-x-5 mb-10 p-6 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full p-1.5 border-2 border-[#FF6B00] shadow-[0_0_25px_rgba(255,107,0,0.3)] bg-black">
+                    <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-full" alt="Perfil" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 rounded-full border-4 border-[#1a0c06] flex items-center justify-center text-white text-[10px]">
+                    <i className="fas fa-check"></i>
+                  </div>
                 </div>
-                <div>
-                  <h2 className={`text-xl font-black ${textPrimary}`}>{currentUser.name || 'Entregador'}</h2>
-                  <p className={`${textMuted} text-xs font-bold uppercase tracking-widest`}>Nível: {currentUser.level}</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className={`text-2xl font-black text-white truncate tracking-tight`}>{currentUser.name || 'Entregador'}</h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className={`text-[#FFD700] text-[10px] font-black uppercase tracking-[0.2em]`}>Nível {currentUser.level}</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                    <span className="text-chocolate-muted text-[10px] font-bold uppercase tracking-widest leading-none pt-0.5">Top Parceiro</span>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-8">
                 <section>
-                  <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Sua Conta</h3>
+                  <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
+                    <i className="fas fa-user-circle text-[#FF6B00] text-[8px]"></i>
+                    <span>Sua Conta</span>
+                  </h3>
                   <div className="space-y-3">
-                    <button onClick={() => setSettingsView('PERSONAL')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+                    {[
+                      { id: 'PERSONAL', icon: 'fa-user', label: 'Dados Pessoais' },
+                      { id: 'DOCUMENTS', icon: 'fa-id-card', label: 'Documentos' },
+                      { id: 'BANK', icon: 'fa-building-columns', label: 'Dados Bancários' },
+                      { id: 'EMERGENCY', icon: 'fa-heart-pulse', label: 'Contato de Emergência', color: '#ff4444' },
+                    ].map((item) => (
+                      <button key={item.id} onClick={() => setSettingsView(item.id as any)} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 ${item.color ? '' : 'text-[#FF6B00]'}`} style={{ color: item.color }}>
+                            <i className={`fas ${item.icon} text-lg`}></i>
+                          </div>
+                          <span className={`text-[13px] font-bold text-white`}>{item.label}</span>
+                        </div>
+                        <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
+                    <i className="fas fa-sliders text-[#FF6B00] text-[8px]"></i>
+                    <span>Configurações do App</span>
+                  </h3>
+                  <div className="space-y-3">
+                    <button onClick={() => setSettingsView('DELIVERY')} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
                       <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-user"></i></div>
-                        <span className={`text-sm font-bold ${textPrimary}`}>Dados Pessoais</span>
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 text-[#FF6B00]`}><i className="fas fa-motorcycle text-lg"></i></div>
+                        <div>
+                          <p className={`text-[13px] font-bold text-white`}>Veículo e Região</p>
+                          <p className={`text-[9px] font-black uppercase text-chocolate-muted mt-0.5 tracking-tighter`}>{selectedVehicle} • {currentUser.region}</p>
+                        </div>
                       </div>
-                      <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                      <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
                     </button>
-                    <button onClick={() => setSettingsView('DOCUMENTS')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+
+                    <button onClick={() => setSettingsView('SOUNDS')} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
                       <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-id-card"></i></div>
-                        <span className={`text-sm font-bold ${textPrimary}`}>Documentos</span>
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 text-[#FF6B00]`}><i className="fas fa-volume-high text-lg"></i></div>
+                        <div>
+                          <p className={`text-[13px] font-bold text-white`}>Alertas Sonoros</p>
+                          <p className={`text-[9px] font-black uppercase text-chocolate-muted mt-0.5 tracking-tighter`}>
+                            {SOUND_OPTIONS.find(s => s.id === selectedSoundId)?.label || 'Padrão'}
+                          </p>
+                        </div>
                       </div>
-                      <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                      <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
                     </button>
-                    <button onClick={() => setSettingsView('BANK')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
+
+                    <button onClick={() => setSettingsView('MAPS')} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
                       <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-building-columns"></i></div>
-                        <span className={`text-sm font-bold ${textPrimary}`}>Dados Bancários</span>
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 text-[#FF6B00]`}><i className="fas fa-map-location-dot text-lg"></i></div>
+                        <div>
+                          <p className={`text-[13px] font-bold text-white`}>Navegador Padrão</p>
+                          <p className={`text-[9px] font-black uppercase text-chocolate-muted mt-0.5 tracking-tighter`}>
+                            {currentUser.preferredMap === 'internal' ? 'Guepardo Maps' : 
+                             currentUser.preferredMap === 'google' ? 'Google Maps' : 
+                             currentUser.preferredMap === 'waze' ? 'Waze' : 'Sempre perguntar'}
+                          </p>
+                        </div>
                       </div>
-                      <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
-                    </button>
-                    <button onClick={() => setSettingsView('EMERGENCY')} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-red-500`}><i className="fas fa-heart-pulse"></i></div>
-                        <span className={`text-sm font-bold ${textPrimary}`}>Contato de Emergência</span>
-                      </div>
-                      <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
+                      <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
                     </button>
                   </div>
                 </section>
 
                 <section>
-                  <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Configurações do App</h3>
-                  <button onClick={() => { playClick(); setSettingsView('DELIVERY'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all mb-3 ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-motorcycle"></i></div>
-                      <div>
-                        <p className={`text-sm font-bold ${textPrimary}`}>Veículo e Região</p>
-                        <p className={`text-[9px] font-bold uppercase ${textMuted} mt-0.5`}>{selectedVehicle} • {currentUser.region}</p>
+                  <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
+                    <i className="fas fa-palette text-[#FF6B00] text-[8px]"></i>
+                    <span>Aparência</span>
+                  </h3>
+                  <div className={`rounded-[28px] p-2 border border-white/5 bg-black/40 shadow-inner`}>
+                    <div onClick={toggleTheme} className="p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform">
+                      <div className={`flex items-center space-x-3 font-bold text-sm text-white`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme === 'dark' ? 'bg-[#33CCFF]/10 text-[#33CCFF]' : 'bg-[#FFD700]/10 text-[#FFD700]'}`}>
+                          <i className={`fas ${theme === 'dark' ? 'fa-moon' : 'fa-sun'}`}></i>
+                        </div>
+                        <span className="text-[13px]">Modo {theme === 'dark' ? 'Escuro' : 'Claro'} (Premium Fixed)</span>
                       </div>
-                    </div>
-                    <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
-                  </button>
-
-                  <button onClick={() => { playClick(); setSettingsView('SOUNDS'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all mb-3 ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-volume-high"></i></div>
-                      <div>
-                        <p className={`text-sm font-bold ${textPrimary}`}>Alertas Sonoros</p>
-                        <p className={`text-[9px] font-bold uppercase ${textMuted} mt-0.5`}>
-                          {SOUND_OPTIONS.find(s => s.id === selectedSoundId)?.label || 'Padrão'}
-                        </p>
-                      </div>
-                    </div>
-                    <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
-                  </button>
-
-                  <button onClick={() => { playClick(); setSettingsView('MAPS'); }} className={`w-full p-4 rounded-[24px] border flex justify-between items-center active:scale-[0.98] transition-all ${theme === 'dark' ? cardBg : 'bg-zinc-200 border-zinc-300'}`}>
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${innerBg} text-[#FF6B00]`}><i className="fas fa-map-location-dot"></i></div>
-                      <div>
-                        <p className={`text-sm font-bold ${textPrimary}`}>Navegador Padrão</p>
-                        <p className={`text-[9px] font-bold uppercase ${textMuted} mt-0.5`}>
-                          {currentUser.preferredMap === 'internal' ? 'Guepardo Maps' : 
-                           currentUser.preferredMap === 'google' ? 'Google Maps' : 
-                           currentUser.preferredMap === 'waze' ? 'Waze' : 'Sempre perguntar'}
-                        </p>
-                      </div>
-                    </div>
-                    <i className={`fas fa-chevron-right text-xs ${textMuted}`}></i>
-                  </button>
-                </section>
-
-                <section>
-                  <h3 className={`${textMuted} font-black uppercase text-[10px] tracking-[0.2em] mb-4`}>Aparência</h3>
-                  <div className={`rounded-[32px] p-2 border ${theme === 'dark' ? cardBg : 'bg-orange-50 border-orange-200'}`}>
-                    <div onClick={toggleTheme} className="p-4 flex items-center justify-between cursor-pointer">
-                      <div className={`flex items-center space-x-3 font-bold text-sm ${textPrimary}`}>
-                        <i className={`fas ${theme === 'dark' ? 'fa-moon text-[#33CCFF]' : 'fa-sun text-[#FFD700]'}`}></i>
-                        <span>Modo {theme === 'dark' ? 'Escuro' : 'Claro'}</span>
+                      <div className={`w-12 h-6 rounded-full relative transition-colors bg-[#FF6B00]`}>
+                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform translate-x-6`}></div>
                       </div>
                     </div>
                   </div>
                 </section>
 
-                <button onClick={handleLogout} className="w-full h-14 rounded-2xl border border-red-500/30 text-red-500 font-black uppercase tracking-widest flex items-center justify-center hover:bg-red-500/10 transition-colors mt-4">
+                <button onClick={handleLogout} className="w-full h-16 rounded-[24px] border border-red-500/30 text-red-500 font-black uppercase tracking-[0.2em] flex items-center justify-center hover:bg-red-500/10 active:scale-95 transition-all mt-4 text-[11px] mb-8">
                   Sair da Conta
                 </button>
               </div>
@@ -3771,9 +3818,12 @@ const App: React.FC = () => {
               </div>
 
               {settingsView === 'PERSONAL' && (
-                <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <h3 className={`font-black text-lg mb-4 ${textPrimary}`}>Informações de Contato</h3>
+                <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-id-card-clip text-[#FF6B00]"></i>
+                      <span>Identidade</span>
+                    </h3>
                     <div className="space-y-4">
                       {[
                         { label: 'Nome Completo', value: currentUser.name },
@@ -3782,9 +3832,9 @@ const App: React.FC = () => {
                         { label: 'E-mail', value: currentUser.email },
                         { label: 'Região Original', value: currentUser.region },
                       ].map((item, i) => (
-                        <div key={i} className={`p-4 rounded-[24px] border ${cardBg}`}>
-                          <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>{item.label}</p>
-                          <p className={`text-sm font-bold ${textPrimary}`}>{item.value || '-'}</p>
+                        <div key={i} className={`p-5 rounded-[24px] border border-white/5 bg-black/40`}>
+                          <p className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest mb-1.5`}>{item.label}</p>
+                          <p className={`text-sm font-black text-white`}>{item.value || '-'}</p>
                         </div>
                       ))}
                     </div>
@@ -3888,76 +3938,52 @@ const App: React.FC = () => {
                         <p className={`text-xl font-black ${textPrimary}`}>CNH</p>
                       </div>
                       <div>
-                        <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>Categoria</p>
-                        <p className={`text-xl font-black ${textPrimary}`}>{currentUser.cnh.category}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>Status</p>
-                        <p className={`text-xl font-black ${textPrimary}`}>Validado</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {settingsView === 'BANK' && (
-                <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                  <div className={`rounded-[32px] p-6 border ${cardBg}`}>
-                    <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-4 border-b border-white/5 pb-2`}>Seus dados Bancários</p>
+                        <p className={`${textMuted} text-[9px]                   <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06] mt-6`}>
+                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-bank text-[#FF6B00]"></i>
+                      <span>Recebimento</span>
+                    </h3>
                     
                     <div className="space-y-4">
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Banco</label>
+                      <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                        <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Banco</label>
                         <input
                           type="text"
                           value={currentUser.bank.name}
                           onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, name: e.target.value } })}
-                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          className={`w-full bg-transparent text-white outline-none text-sm font-black`}
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Agência</label>
+                        <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                          <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Agência</label>
                           <input
                             type="text"
                             value={currentUser.bank.agency}
                             onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, agency: e.target.value } })}
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                            className={`w-full bg-transparent text-white outline-none text-sm font-black`}
                           />
                         </div>
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Conta</label>
+                        <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                          <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Conta</label>
                           <input
                             type="text"
                             value={currentUser.bank.account}
                             onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, account: e.target.value } })}
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                            className={`w-full bg-transparent text-white outline-none text-sm font-black`}
                           />
                         </div>
                       </div>
 
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Tipo de Conta</label>
-                        <select
-                          value={currentUser.bank.type}
-                          onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, type: e.target.value } })}
-                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                        >
-                          <option value="Conta Corrente">Conta Corrente</option>
-                          <option value="Conta Poupança">Conta Poupança</option>
-                          <option value="Conta de Pagamento">Conta de Pagamento</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-1`}>Chave PIX</label>
+                      <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                        <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Chave PIX</label>
                         <input
                           type="text"
                           value={currentUser.bank.pixKey}
                           onChange={e => setCurrentUser({ ...currentUser, bank: { ...currentUser.bank, pixKey: e.target.value } })}
-                          placeholder="CPF, E-mail, Celular ou Aleatória"
-                          className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          placeholder="CPF, E-mail ou Celular"
+                          className={`w-full bg-transparent text-white outline-none text-sm font-black placeholder:font-normal placeholder:text-zinc-600`}
                         />
                       </div>
                     </div>
@@ -3970,8 +3996,6 @@ const App: React.FC = () => {
                           alert('Erro: Usuário não identificado.');
                           return;
                         }
-                        
-                        // Garante que usa o ID do usuário que está em foco na interface
                         await supabaseClient.upsertBankAccount(userId, {
                           bank_name: currentUser.bank.name,
                           agency: currentUser.bank.agency,
@@ -3979,16 +4003,13 @@ const App: React.FC = () => {
                           account_type: currentUser.bank.type,
                           pix_key: currentUser.bank.pixKey
                         });
-
                         alert('Dados bancários salvos com sucesso!');
                         setSettingsView('MAIN');
                       } catch (err) {
-                        console.error('Erro DETALHADO ao salvar dados bancários:', JSON.stringify(err, null, 2));
-                        console.error('Erro objeto:', err);
-                        alert('Erro ao salvar dados bancários. Tente novamente.');
+                        alert('Erro ao salvar dados bancários.');
                       }
                     }}
-                    className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                    className="w-full h-16 mt-8 rounded-[24px] font-black text-white uppercase italic tracking-[0.2em] shadow-xl btn-lava-accept"
                   >
                     Salvar Dados Bancários
                   </button>
@@ -3997,170 +4018,95 @@ const App: React.FC = () => {
 
               {settingsView === 'EMERGENCY' && (
                 <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <p className={`${textMuted} text-[10px] font-bold leading-relaxed mb-6`}>Avisaremos essa pessoa caso você precise de ajuda com algum imprevisto durante suas rotas.</p>
-
+                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                    <h3 className={`font-black text-xl mb-6 text-[#ff4444] italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-heart-pulse"></i>
+                      <span>Segurança</span>
+                    </h3>
                     <div className="space-y-4">
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Nome</label>
+                      <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                        <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Nome do Contato</label>
                         <input
                           type="text"
                           value={emergencyContact.name}
                           onChange={e => setEmergencyContact({ ...emergencyContact, name: e.target.value })}
-                          placeholder="Nome do contato"
-                          className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          className={`w-full bg-transparent text-white outline-none text-sm font-black`}
                         />
                       </div>
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Telefone</label>
+                      <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                        <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Telefone</label>
                         <input
                           type="tel"
                           value={emergencyContact.phone}
                           onChange={e => setEmergencyContact({ ...emergencyContact, phone: e.target.value })}
-                          placeholder="(00) 00000-0000"
-                          className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
+                          className={`w-full bg-transparent text-white outline-none text-sm font-black`}
                         />
                       </div>
-                      <div>
-                        <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Grau de Parentesco</label>
-                        <input
-                          type="text"
-                          value={emergencyContact.relation}
-                          onChange={e => setEmergencyContact({ ...emergencyContact, relation: e.target.value })}
-                          placeholder="Ex: Mãe, Irmão, Cônjuge"
-                          className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-6 border-t border-white/5 flex items-center space-x-3 cursor-pointer" onClick={() => setEmergencyContact({ ...emergencyContact, isBeneficiary: !emergencyContact.isBeneficiary })}>
-                      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${emergencyContact.isBeneficiary ? 'bg-[#FF6B00] border-[#FF6B00]' : 'border-zinc-500'}`}>
-                        {emergencyContact.isBeneficiary && <i className="fas fa-check text-white text-xs"></i>}
-                      </div>
-                      <span className={`text-xs font-bold ${textPrimary}`}>Definir como Beneficiário do Seguro</span>
                     </div>
                   </div>
-                  <button onClick={() => setSettingsView('MAIN')} className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform">
-                    Confirmar Informações
+                  <button onClick={() => setSettingsView('MAIN')} className="w-full h-16 rounded-[24px] font-black text-white uppercase italic tracking-[0.2em] shadow-xl btn-lava-accept">
+                    Confirmar Segurança
                   </button>
                 </div>
               )}
 
               {settingsView === 'DELIVERY' && (
                 <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-6`}>Veículo Utilizado</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { id: 'car', icon: 'fa-car', label: 'Carro' },
-                        { id: 'moto', icon: 'fa-motorcycle', label: 'Moto' },
-                        { id: 'bike', icon: 'fa-bicycle', label: 'Bike' }
-                      ].map((v) => (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVehicle(v.id as any)}
-                          className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all active:scale-95 ${selectedVehicle === v.id ? 'border-[#FF6B00] bg-[#FF6B00]/10' : `border-transparent ${innerBg}`}`}
-                        >
-                          <i className={`fas ${v.icon} text-2xl mb-2 ${selectedVehicle === v.id ? 'text-[#FF6B00]' : textMuted}`}></i>
-                          <span className={`text-[10px] font-black uppercase ${selectedVehicle === v.id ? 'text-[#FF6B00]' : textMuted}`}>{v.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-6`}>Detalhes do Veículo</p>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Modelo</label>
-                          <input
-                            type="text"
-                            value={vehicleDetails.model}
-                            onChange={e => setVehicleDetails({ ...vehicleDetails, model: e.target.value })}
-                            placeholder="Ex: Honda CG 160"
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Cor</label>
-                          <input
-                            type="text"
-                            value={vehicleDetails.color}
-                            onChange={e => setVehicleDetails({ ...vehicleDetails, color: e.target.value })}
-                            placeholder="Ex: Vermelha"
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                          />
+                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-motorcycle text-[#FF6B00]"></i>
+                      <span>Operação</span>
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <p className={`text-chocolate-muted text-[10px] font-black uppercase tracking-[0.2em] mb-4`}>Veículo Ativo</p>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { id: 'moto', icon: 'fa-motorcycle', label: 'Moto' },
+                            { id: 'bike', icon: 'fa-bicycle', label: 'Bike' },
+                            { id: 'car', icon: 'fa-car', label: 'Carro' }
+                          ].map((v) => (
+                            <button
+                              key={v.id}
+                              onClick={() => setSelectedVehicle(v.id as any)}
+                              className={`flex flex-col items-center justify-center p-4 rounded-[24px] border-2 transition-all active:scale-95 ${selectedVehicle === v.id ? 'border-[#FF6B00] bg-[#FF6B00]/10' : 'border-white/5 bg-black/40'}`}
+                            >
+                              <i className={`fas ${v.icon} text-2xl mb-2 ${selectedVehicle === v.id ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}></i>
+                              <span className={`text-[9px] font-black uppercase ${selectedVehicle === v.id ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>{v.label}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>Placa</label>
-                          <input
-                            type="text"
-                            value={vehicleDetails.plate}
-                            onChange={e => setVehicleDetails({ ...vehicleDetails, plate: e.target.value })}
-                            placeholder="ABC-1234"
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`${textMuted} text-[9px] font-black uppercase tracking-widest block mb-2`}>CNH</label>
-                          <input
-                            type="text"
-                            value={vehicleDetails.cnh_number}
-                            onChange={e => setVehicleDetails({ ...vehicleDetails, cnh_number: e.target.value })}
-                            placeholder="12345678900"
-                            className={`w-full h-11 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border border-white/5 focus:border-[#FF6B00] text-sm font-bold`}
-                          />
+
+                      <div className="space-y-4 pt-6 border-t border-white/5">
+                        <p className={`text-chocolate-muted text-[10px] font-black uppercase tracking-[0.2em] mb-2`}>Detalhes do Veículo</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                            <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Modelo</label>
+                            <input type="text" value={vehicleDetails.model} onChange={e => setVehicleDetails({ ...vehicleDetails, model: e.target.value })} className="w-full bg-transparent text-white outline-none text-sm font-black" />
+                          </div>
+                          <div className="p-4 rounded-[20px] bg-black/40 border border-white/5">
+                            <label className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest block mb-1.5`}>Placa</label>
+                            <input type="text" value={vehicleDetails.plate} onChange={e => setVehicleDetails({ ...vehicleDetails, plate: e.target.value })} className="w-full bg-transparent text-white outline-none text-sm font-black" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <p className={`${textMuted} font-black uppercase text-[10px] tracking-widest mb-4`}>Região de Atuação</p>
-                    <div className={`flex items-center justify-between p-4 rounded-xl border border-white/5 ${innerBg}`}>
-                      <span className={`text-sm font-bold ${textPrimary}`}>{currentUser.region}</span>
-                      <span className="text-[10px] font-black text-[#FF6B00] uppercase">Alterar</span>
                     </div>
                   </div>
 
                   <button 
                     onClick={async () => {
                       try {
-                        if (!userId) {
-                          alert('Erro: Usuário não identificado.');
-                          return;
-                        }
-                        
-                        await supabaseClient.upsertVehicle(userId, {
-                          model: vehicleDetails.model,
-                          color: vehicleDetails.color,
-                          plate: vehicleDetails.plate,
-                          cnh_number: vehicleDetails.cnh_number,
-                          cnh_validity: vehicleDetails.cnh_validity,
-                          plate_state: 'SP',
-                          plate_city: 'N/A',
-                          year: new Date().getFullYear(),
-                          renavam: '00000000000'
-                        });
-
-                        if (currentUser.verified) {
-                          // Se estava aprovado e mudou dados sensíveis, volta para pending
-                          await supabaseClient.updateProfileStatus(userId, 'pending');
-                          alert('Dados salvos. Devido à alteração do veículo, seu cadastro entrou em re-análise.');
-                          window.location.reload(); // Força atualização do estado de bloqueio
-                        } else {
-                          alert('Dados do veículo salvos com sucesso!');
-                          setSettingsView('MAIN');
-                        }
+                        if (!userId) return;
+                        await supabaseClient.upsertVehicle(userId, vehicleDetails);
+                        alert('Veículo atualizado!');
+                        setSettingsView('MAIN');
                       } catch (err) {
-                        console.error('Erro DETALHADO ao salvar veículo:', JSON.stringify(err, null, 2));
-                        alert('Erro ao salvar veículo. Tente novamente.');
+                        alert('Erro ao salvar veículo.');
                       }
                     }}
-                    className="w-full h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase italic tracking-widest shadow-xl active:scale-95 transition-transform"
+                    className="w-full h-16 rounded-[24px] font-black text-white uppercase italic tracking-[0.2em] shadow-xl btn-lava-accept"
                   >
                     Salvar Alterações
                   </button>
@@ -4169,97 +4115,63 @@ const App: React.FC = () => {
 
               {settingsView === 'SOUNDS' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                  {SOUND_OPTIONS.map((sound) => (
-                    <div
-                      key={sound.id}
-                      onClick={() => {
-                        setSelectedSoundId(sound.id);
-                        const previewSound = new Howl({
-                          src: [sound.url],
-                          volume: 0.6,
-                          html5: true
-                        });
-                        previewSound.play();
-                      }}
-                      className={`p-5 rounded-[32px] border-2 cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${selectedSoundId === sound.id
-                        ? 'border-[#FF6B00] bg-[#FF6B00]/10 shadow-lg shadow-orange-900/20'
-                        : `border-transparent ${cardBg}`
-                        }`}
-                    >
-                      <div className="flex items-center justify-between relative z-10">
-                        <div className="flex items-center space-x-5">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-colors ${selectedSoundId === sound.id ? 'bg-[#FF6B00] text-white shadow-md' : `${innerBg} ${textMuted}`}`}>
-                            <i className={`fas ${sound.icon}`}></i>
+                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-volume-high text-[#FF6B00]"></i>
+                      <span>Alertas</span>
+                    </h3>
+                    <div className="space-y-3">
+                      {SOUND_OPTIONS.map((sound) => (
+                        <button 
+                          key={sound.id}
+                          onClick={() => {
+                            setSelectedSoundId(sound.id);
+                            const previewSound = new Howl({ src: [sound.url], volume: 0.6, html5: true });
+                            previewSound.play();
+                          }}
+                          className={`w-full p-5 rounded-[24px] border transition-all flex items-center justify-between ${selectedSoundId === sound.id ? 'bg-[#FF6B00]/10 border-[#FF6B00] text-[#FF6B00]' : 'bg-black/40 border-white/5 text-chocolate-muted'}`}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <i className={`fas ${selectedSoundId === sound.id ? 'fa-circle-play' : 'fa-circle-stop'} text-xl`}></i>
+                            <div>
+                              <p className={`text-sm font-black ${selectedSoundId === sound.id ? 'text-white' : ''}`}>{sound.label}</p>
+                              <p className="text-[9px] font-bold opacity-60">{sound.description}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className={`text-base font-black ${selectedSoundId === sound.id ? 'text-[#FF6B00]' : textPrimary}`}>{sound.label}</h3>
-                            <p className={`text-[10px] font-bold mt-1 ${textMuted}`}>{sound.description}</p>
-                          </div>
-                        </div>
-
-                        {selectedSoundId === sound.id && (
-                          <div className="w-8 h-8 rounded-full bg-[#FF6B00] flex items-center justify-center animate-in zoom-in duration-300">
-                            <i className="fas fa-check text-white text-sm"></i>
-                          </div>
-                        )}
-                      </div>
+                          {selectedSoundId === sound.id && <i className="fas fa-check-circle"></i>}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-
-                  <div className={`mt-8 p-6 rounded-[24px] border border-dashed flex items-start space-x-3 ${theme === 'dark' ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-100 border-zinc-300'}`}>
-                    <i className="fas fa-circle-info text-[#FF6B00] mt-1"></i>
-                    <p className={`text-xs font-bold leading-relaxed ${textMuted}`}>
-                      <span className="text-[#FF6B00]">Dica Pro:</span> O "Rugido do Guepardo" foi desenhado para ser audível mesmo com o capacete fechado e ruído de trânsito intenso.
-                    </p>
                   </div>
                 </div>
               )}
 
               {settingsView === 'MAPS' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                  <p className={`${textMuted} text-[10px] font-black uppercase tracking-[0.2em] mb-6 px-2`}>
-                    Selecione como deseja navegar até o destino
-                  </p>
-                  
-                  {[
-                    { id: 'internal', label: 'Guepardo Maps', desc: 'Navegação nativa com voz e velocímetro', icon: 'fa-location-crosshairs' },
-                    { id: 'google', label: 'Google Maps', desc: 'Abrir app externo do Google', icon: 'fa-map' },
-                    { id: 'waze', label: 'Waze', desc: 'Abrir app externo do Waze', icon: 'fa-waze' },
-                    { id: 'choose', label: 'Sempre perguntar', desc: 'Escolher o mapa a cada nova entrega', icon: 'fa-layer-group' }
-                  ].map((map) => (
-                    <div
-                      key={map.id}
-                      onClick={() => setCurrentUser(prev => ({ ...prev, preferredMap: map.id as any }))}
-                      className={`p-5 rounded-[32px] border-2 cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${currentUser.preferredMap === map.id
-                        ? 'border-[#FF6B00] bg-[#FF6B00]/10 shadow-lg shadow-orange-900/20'
-                        : `border-transparent ${cardBg}`
-                        }`}
-                    >
-                      <div className="flex items-center justify-between relative z-10">
-                        <div className="flex items-center space-x-5">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-colors ${currentUser.preferredMap === map.id ? 'bg-[#FF6B00] text-white shadow-md' : `${innerBg} ${textMuted}`}`}>
-                            <i className={`fas ${map.icon}`}></i>
+                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
+                      <i className="fas fa-map-location-dot text-[#FF6B00]"></i>
+                      <span>Navegação</span>
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { id: 'internal', label: 'Guepardo Maps', icon: 'fa-location-crosshairs' },
+                        { id: 'google', label: 'Google Maps', icon: 'fa-map' },
+                        { id: 'waze', label: 'Waze', icon: 'fa-waze' },
+                      ].map((map) => (
+                        <button 
+                          key={map.id}
+                          onClick={() => setCurrentUser(prev => ({ ...prev, preferredMap: map.id as any }))}
+                          className={`w-full p-5 rounded-[24px] border transition-all flex items-center justify-between ${currentUser.preferredMap === map.id ? 'border-[#FF6B00] bg-[#FF6B00]/5 text-[#FF6B00]' : 'bg-black/40 border-white/5 text-chocolate-muted'}`}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <i className={`fas ${map.id === 'waze' ? 'fab fa-waze' : map.icon} text-xl`}></i>
+                            <span className={`text-sm font-black ${currentUser.preferredMap === map.id ? 'text-white' : ''}`}>{map.label}</span>
                           </div>
-                          <div>
-                            <h3 className={`text-base font-black ${currentUser.preferredMap === map.id ? 'text-[#FF6B00]' : textPrimary}`}>{map.label}</h3>
-                            <p className={`text-[10px] font-bold mt-1 ${textMuted}`}>{map.desc}</p>
-                          </div>
-                        </div>
-
-                        {currentUser.preferredMap === map.id && (
-                          <div className="w-8 h-8 rounded-full bg-[#FF6B00] flex items-center justify-center animate-in zoom-in duration-300">
-                            <i className="fas fa-check text-white text-sm"></i>
-                          </div>
-                        )}
-                      </div>
+                          {currentUser.preferredMap === map.id && <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] shadow-[0_0_10px_#FF6B00]"></div>}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-
-                  <div className={`mt-8 p-6 rounded-[24px] border border-dashed flex items-start space-x-3 ${theme === 'dark' ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-100 border-zinc-300'}`}>
-                    <i className="fas fa-magic text-[#FF6B00] mt-1"></i>
-                    <p className={`text-xs font-bold leading-relaxed ${textMuted}`}>
-                      <span className="text-[#FF6B00]">Dica:</span> O Guepardo Maps oferece alertas de chegada e controle de voz integrados ao painel.
-                    </p>
                   </div>
                 </div>
               )}
@@ -4372,9 +4284,9 @@ const App: React.FC = () => {
           </div>
 
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'bg-green-500 ring-4 ring-green-500/20' : innerBg}`}>
-              <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'bg-white animate-pulse' : theme === 'dark' ? 'bg-zinc-500' : 'bg-zinc-400'}`}></div>
-              <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : textMuted}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
+            <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
+              <div className={`w-2.5 h-2.5 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+              <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
             </button>
           </div>
 
@@ -4438,14 +4350,33 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
-      {!isNavigating && (
-        <nav className={`h-20 sm:h-24 border-t flex items-center justify-around z-[1002] safe-area-bottom transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950 border-white/5' : 'bg-white border-zinc-200'}`}>
-          <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-compass text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Mapa</span></button>
-          <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-wallet text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ganhos</span></button>
-          <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-circle-question text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ajuda</span></button>
-          <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : textMuted}`}><div className={`w-10 h-1 bg-[#FF6B00] absolute -top-8 sm:-top-10 rounded-b-full transition-all ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div><i className="fas fa-user-gear text-lg sm:text-xl"></i><span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Perfil</span></button>
-        </nav>
-      )}
+      <footer className={`fixed bottom-0 left-0 right-0 z-[1001] ${isNavigating ? 'hidden' : 'block'}`}>
+        <div className="max-w-[480px] mx-auto chocolate-nav-bar flex items-center justify-around h-20 sm:h-24 px-4 pb-2 sm:pb-4 rounded-t-[32px]">
+          <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
+            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <i className={`fas fa-compass text-lg sm:text-xl ${currentScreen === 'HOME' ? 'neon-orange-glow-text' : ''}`}></i>
+            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Mapa</span>
+          </button>
+          
+          <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
+            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <i className={`fas fa-wallet text-lg sm:text-xl ${currentScreen === 'WALLET' ? 'neon-orange-glow-text' : ''}`}></i>
+            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ganhos</span>
+          </button>
+          
+          <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
+            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <i className={`fas fa-question-circle text-lg sm:text-xl ${currentScreen === 'ORDERS' ? 'neon-orange-glow-text' : ''}`}></i>
+            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ajuda</span>
+          </button>
+          
+          <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
+            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <i className={`fas fa-user-gear text-lg sm:text-xl ${currentScreen === 'SETTINGS' ? 'neon-orange-glow-text' : ''}`}></i>
+            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Perfil</span>
+          </button>
+        </div>
+      </footer>
 
 
       {showSOSModal && (

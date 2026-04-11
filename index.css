@@ -15,6 +15,12 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --chocolate-primary: #f8f6f5;
+  --chocolate-muted: #8b7d77;
+  --neon-orange: #FF6B00;
+  --neon-emerald: #00FF94;
+  --neon-emerald-glow: rgba(0, 255, 148, 0.4);
 }
 
 body {
@@ -206,6 +212,45 @@ body {
 
 .btn-lava-accept:active {
   transform: scale(0.96);
+}
+
+/* Premium Emerald Status */
+.emerald-status-btn {
+  background: linear-gradient(135deg, #00C873 0%, #00FF94 100%);
+  box-shadow: 0 0 20px var(--neon-emerald-glow), inset 0 0 10px rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.emerald-glow-dot {
+  background: #fff;
+  box-shadow: 0 0 10px #fff, 0 0 20px #00FF94;
+}
+
+/* Floating Chocolate Nav */
+.chocolate-nav-bar {
+  background: rgba(15, 5, 2, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-top: 1px solid rgba(255, 107, 0, 0.15);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Premium List Item */
+.chocolate-list-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 107, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chocolate-list-item:active {
+  background: rgba(255, 107, 0, 0.08);
+  border-color: rgba(255, 107, 0, 0.2);
+  transform: scale(0.98);
+}
+
+.neon-orange-text {
+  color: var(--neon-orange);
+  text-shadow: 0 0 10px rgba(255, 107, 0, 0.3);
 }
 
 .heartbeat-pulse {
