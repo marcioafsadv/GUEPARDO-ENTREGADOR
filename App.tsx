@@ -2733,6 +2733,7 @@ const App: React.FC = () => {
                   status={status}
                   theme={mapTheme}
                   onUpdateMetrics={(m) => setNavMetrics(m)}
+                  isMissionOverlayExpanded={isMissionOverlayExpanded}
                   destinationAddress={
                     (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? mission?.storeAddress || null
