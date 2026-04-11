@@ -133,3 +133,96 @@ body {
 .btn-guepardo-orange:active {
   transform: scale(0.95);
 }
+
+/* --- New Order Call UI Styles --- */
+
+.order-call-card {
+  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.timeline-line {
+  position: absolute;
+  left: 15px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #FF6B00,
+    #FF6B00 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.3;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #FF6B00;
+  background: #121212;
+  z-index: 10;
+}
+
+.timeline-dot.active {
+  background: #FF6B00;
+  box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+}
+
+.circular-timer-container {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.circular-timer-svg {
+  transform: rotate(-90deg);
+}
+
+.circular-timer-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 4;
+}
+
+.circular-timer-progress {
+  fill: none;
+  stroke: #4CAF50; /* Verde aceitar */
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.pulse-orange-glow {
+  animation: pulse-orange-glow 2s infinite;
+}
+
+@keyframes pulse-orange-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 107, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+}
+
+.btn-accept-premium {
+  background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-accept-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 107, 0, 0.4);
+}
+
+.btn-accept-premium:active {
+  transform: scale(0.95);
+}
+

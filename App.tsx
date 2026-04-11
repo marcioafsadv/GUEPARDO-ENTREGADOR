@@ -4696,91 +4696,156 @@ const App: React.FC = () => {
       )}
 
       {status === DriverStatus.ALERTING && mission && (
-        <div className="absolute inset-0 z-[8000] flex items-end p-6 pointer-events-none animate-in slide-in-from-bottom duration-500">
-          <div className={`w-full rounded-[40px] p-8 border-t-8 border-[#FF6B00] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] pulse-orange relative overflow-hidden transition-all duration-300 max-h-[90%] flex flex-col pointer-events-auto ${cardBg}`}>
-            <div className="absolute top-8 right-12 flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full border-4 border-[#FF6B00] flex items-center justify-center shrink-0">
-                <span className={`text-xl font-black ${textPrimary}`}>{alertCountdown}</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-start mb-6 shrink-0">
-              <div className="flex-1">
-                {(() => {
-                  const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
-                  const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
-                  
-                  // Calculamos a distância total somando o trajeto até a loja + todas as entregas do lote
-                  const distToStore = mToShow[0]?.distanceToStore || 0;
-                  const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
-                  const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
-                  const isB = mToShow.length > 1;
+        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-8 p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 pointer-events-none">
+          <div className={`w-full max-w-md rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] order-call-card relative overflow-hidden flex flex-col pointer-events-auto bg-[#FFFFFF]`}>
+            
+            {/* Header: Valor e Resumo */}
+            <div className="p-8 pb-4 text-center">
+              {(() => {
+                const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
+                const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
+                const distToStore = mToShow[0]?.distanceToStore || 0;
+                const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
+                const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
+                const totalStops = mToShow.length;
 
-                  return (
-                    <>
-                      <div className="flex items-center space-x-3">
-                        <h2 className={`text-4xl font-black italic ${textPrimary}`}>{formatCurrency(totalE)}</h2>
-                        <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-lg text-[10px] font-black italic">
-                          {totalD > 0 ? `${totalD.toFixed(1)} KM TOTAL` : 'DISTÂNCIA N/A'}
-                        </div>
+                return (
+                  <>
+                    <h2 className="text-[54px] font-black text-zinc-900 leading-tight tracking-tight mb-2">
+                       {formatCurrency(totalE)}
+                    </h2>
+                    
+                    <div className="flex items-center justify-center space-x-6 mt-4">
+                      <div className="flex items-center space-x-2">
+                        <i className="fas fa-route text-[#00A3FF] text-lg"></i>
+                        <span className="text-lg font-bold text-zinc-800">{totalD.toFixed(2).replace('.', ',')} km</span>
                       </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <span className={`${textMuted} font-black uppercase text-[10px] tracking-widest`}>Logística:</span>
-                        <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                          {isB 
-                            ? `${mToShow.length} entregas (${distToStore.toFixed(1)}km coleta + ${totalDeliveryDist.toFixed(1)}km entregas)` 
-                            : `${mission?.distanceToStore?.toFixed(1)}km até loja + ${mission?.deliveryDistance?.toFixed(1)}km entrega`}
-                        </span>
+                      <div className="flex items-center space-x-2">
+                        <i className="fas fa-location-dot text-[#00A3FF] text-lg"></i>
+                        <span className="text-lg font-bold text-zinc-800">{totalStops} {totalStops === 1 ? 'parada' : 'paradas'}</span>
                       </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-            <div className="flex-1 space-y-4 mb-8">
-              <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
-                  <i className="fas fa-store text-[#FF6B00]"></i>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Coleta</span>
-                  <span className="text-sm font-bold truncate">{mission.storeName}</span>
-                </div>
-              </div>
-              <div className={`flex items-center space-x-3 ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${innerBg}`}>
-                  <i className="fas fa-location-dot text-[#FFD700]"></i>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black uppercase text-zinc-500 leading-none mb-1">Entrega</span>
-                  {activeMissions.length > 1 ? (
-                    <div className="flex flex-col gap-1.5 mt-1 max-h-32 overflow-y-auto pr-2">
-                      {activeMissions.map((m, idx) => (
-                        <div key={m.id} className="flex gap-2 items-start bg-white/5 p-2 rounded-xl border border-white/5">
-                          <div className="flex flex-col min-w-[50px]">
-                            <span className="text-[8px] font-black text-orange-500 uppercase">Parada</span>
-                            <span className="text-xs font-black text-white">{idx + 1}</span>
-                          </div>
-                          <div className="flex flex-col overflow-hidden">
-                             <span className="text-[10px] font-bold text-white truncate">{m.customerName}</span>
-                             <span className="text-[9px] font-medium text-zinc-500 truncate">{m.customerAddress}</span>
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  ) : (
-                    <span className="text-sm font-bold truncate">{mission.customerAddress}</span>
-                  )}
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="w-full h-[1px] bg-zinc-100 mb-2"></div>
+
+            {/* Timeline: Rota Detalhada */}
+            <div className="px-8 py-4 relative flex-1">
+              <div className="timeline-line"></div>
+              
+              <div className="space-y-6">
+                {/* Loja / Coleta */}
+                <div className="flex items-start space-x-4 relative">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center z-10 shrink-0 mt-1">
+                    <i className="fas fa-store text-zinc-900 text-xs"></i>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-black text-zinc-900 uppercase tracking-tight">{mission.storeName}</span>
+                      <span className="text-[10px] font-bold text-zinc-400">({mission.distanceToStore?.toFixed(2)} km)</span>
+                    </div>
+                    <span className="text-xs text-zinc-500 font-medium leading-snug line-clamp-2">{mission.storeAddress}</span>
+                  </div>
                 </div>
+
+                {/* Paradas */}
+                {(activeMissions.length > 0 ? activeMissions : [mission]).map((m, idx) => (
+                  <div key={m.id} className="flex items-start space-x-4 relative">
+                    <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center z-10 shrink-0 mt-1">
+                      <i className="fas fa-location-crosshairs text-zinc-900 text-xs"></i>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-black text-zinc-900 uppercase tracking-tight">{idx + 1}ª parada</span>
+                      <span className="text-xs text-zinc-500 font-medium leading-snug line-clamp-2">{m.customerAddress}</span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Retorno (se aplicável) */}
+                {mission.isReturnRequired && (
+                  <div className="flex items-start space-x-4 relative">
+                    <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center z-10 shrink-0 mt-1">
+                      <i className="fas fa-flag-checkered text-zinc-900 text-xs"></i>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-black text-zinc-900 uppercase tracking-tight">Retorno</span>
+                        <div className="px-1.5 py-0.5 rounded bg-zinc-100 text-[8px] font-black uppercase text-zinc-500">Volta à Loja</div>
+                      </div>
+                      <span className="text-xs text-zinc-500 font-medium leading-snug line-clamp-2">{mission.storeAddress}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags/Labels Inferiores (ex: Motoboy, Retorno) */}
+              <div className="flex flex-wrap gap-2 mt-8">
+                <div className="px-4 py-2 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Motoboy</div>
+                {mission.isReturnRequired && (
+                  <div className="px-4 py-2 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Retorno</div>
+                )}
               </div>
             </div>
 
-            <div className="flex space-x-4 shrink-0">
-              <button onClick={handleRejectMission} className={`flex-1 h-16 rounded-2xl font-bold uppercase text-xs ${innerBg} ${textMuted}`}>Recusar</button>
-              <button onClick={handleAcceptMission} className="flex-[2] h-16 bg-[#FF6B00] rounded-2xl font-black text-white uppercase text-xs shadow-xl active:scale-95 transition-transform">ACEITAR</button>
+            {/* Footer: Timer e Botões Empilhados */}
+            <div className="p-8 pt-4 bg-[#F8F9FA] flex flex-col items-center">
+              
+              {/* Circular Timer with Arrows */}
+              <div className="flex items-center justify-center space-x-8 mb-6">
+                <div className="flex space-x-1 opacity-20 text-zinc-400">
+                  <i className="fas fa-chevron-left"></i>
+                  <i className="fas fa-chevron-left"></i>
+                </div>
+
+                <div className="circular-timer-container">
+                  <svg className="circular-timer-svg" width="80" height="80">
+                    <circle className="circular-timer-bg" cx="40" cy="40" r="36" />
+                    <circle 
+                      className="circular-timer-progress" 
+                      cx="40" cy="40" r="36" 
+                      style={{ 
+                        strokeDasharray: 226, 
+                        strokeDashoffset: 226 - (alertCountdown / 30) * 226 
+                      }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <i className="fas fa-motorcycle text-zinc-900 mb-0.5"></i>
+                    <span className="text-xs font-black text-zinc-900">{alertCountdown}</span>
+                  </div>
+                </div>
+
+                <div className="flex space-x-1 opacity-20 text-zinc-400">
+                  <i className="fas fa-chevron-right"></i>
+                  <i className="fas fa-chevron-right"></i>
+                </div>
+              </div>
+
+              {/* Stacked Action Buttons */}
+              <button 
+                onClick={handleAcceptMission}
+                className="w-full h-18 py-5 bg-[#28A745] hover:bg-[#218838] text-white rounded-[24px] font-black text-lg uppercase tracking-widest shadow-lg shadow-green-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-3 mb-4"
+              >
+                <i className="fas fa-check text-xl"></i>
+                <span>Aceitar</span>
+              </button>
+              
+              <button 
+                onClick={handleRejectMission}
+                className="w-full py-4 text-[#DC3545] font-bold uppercase text-sm tracking-widest hover:bg-red-50 rounded-2xl transition-colors"
+                style={{ border: 'none', background: 'transparent' }}
+              >
+                Recusar Chamada
+              </button>
             </div>
+
           </div>
         </div>
       )}
+
 
       {/* Splash Screen — exibido por 3s ao iniciar */}
       {showSplash && <SplashScreen />}
