@@ -2795,6 +2795,52 @@ const App: React.FC = () => {
                 />
             )}
 
+            {/* Floating Map Controls (Column on the right) */}
+            {(!isNavigating) && (
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1002] flex flex-col space-y-3 animate-in fade-in slide-in-from-right-8 duration-700">
+                {/* Filter Button */}
+                <button 
+                  onClick={() => setShowFilterDrawer(true)}
+                  className={`w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                >
+                  <i className="fas fa-sliders text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                  {isFilterActive && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
+                </button>
+
+                {/* Recenter Button */}
+                <button 
+                  onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
+                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                >
+                  <i className="fas fa-location-crosshairs text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                {/* SOS Button */}
+                <button 
+                  onClick={() => setShowSOSModal(true)}
+                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                >
+                  <i className="fas fa-tower-broadcast text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                {/* Quick Preferences Button */}
+                <button 
+                  onClick={() => setCurrentScreen('SETTINGS')}
+                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                >
+                  <i className="fas fa-gear text-xl text-[#FFD700] opacity-80 group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                {/* Radar/Heatmap Toggle */}
+                <button 
+                  onClick={() => setShowHeatMap(!showHeatMap)}
+                  className={`w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group ${showHeatMap ? 'border-[#FF6B00]/50' : ''}`}
+                >
+                  <i className={`fas fa-circle-dot text-xl ${showHeatMap ? 'text-[#FF6B00] animate-pulse' : 'text-[#FF6B00]/40'} group-hover:scale-110 transition-transform`}></i>
+                </button>
+              </div>
+            )}
+
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
                 <div className={`w-full rounded-t-[44px] shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-4 pb-8' : 'p-6 pb-10'} ${cardBg}`}>
@@ -4165,7 +4211,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
       <footer className={`fixed bottom-0 left-0 right-0 z-[1001] ${isNavigating ? 'hidden' : 'block'}`}>
-        <div className="max-w-[480px] mx-auto chocolate-nav-bar flex items-center justify-around h-20 sm:h-24 px-4 pb-2 sm:pb-4 rounded-t-[32px]">
+        <div className="w-full chocolate-nav-bar flex items-center justify-around h-20 sm:h-24 px-4 pb-2 sm:pb-4 rounded-t-[32px]">
           <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
             <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-compass text-lg sm:text-xl ${currentScreen === 'HOME' ? 'neon-orange-glow-text' : ''}`}></i>
