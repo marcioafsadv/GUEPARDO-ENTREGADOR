@@ -2771,11 +2771,10 @@ const App: React.FC = () => {
             )}
 
             {mission && status !== DriverStatus.ALERTING && (
-              <div className="absolute bottom-0 left-0 right-0 z-[1001] flex p-4 pb-6">
-                <div className={`w-full max-w-md mx-auto rounded-[40px] p-6 shadow-2xl border-t border-white/10 transition-colors flex flex-col overflow-hidden ${cardBg}`}>
+              <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
+                <div className={`w-full rounded-t-[44px] p-6 pb-10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-colors flex flex-col overflow-hidden ${cardBg}`}>
                   
-                  {/* Handle Bar (Print 3 style) */}
-                  <div className="w-10 h-1 rounded-full bg-white/10 mx-auto mb-6 shrink-0" />
+
 
                   {/* Print 3 Header: Two Columns Layout */}
                   <div className="flex items-start justify-between mb-6 shrink-0 gap-4">
@@ -2984,20 +2983,24 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 w-full mb-2">
-                    <HoldToFillButton
-                      onConfirm={handleMainAction}
-                      label={
-                        status === DriverStatus.GOING_TO_STORE ? 'Segure p/ Chegar na Loja' :
-                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Segure p/ Iniciar Coleta' : 'Aguardando Preparo...') :
-                            (status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) ? 'Segure p/ Confirmar Coleta' :
-                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Segure p/ Chegar no Cliente' :
-                                'Segure p/ Finalizar Entrega'
-                      }
+                    <button
+                      onClick={handleMainAction}
                       disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
-                      color={status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00'}
-                      icon={(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right'}
-                      fillDuration={1500}
-                    />
+                      className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all active:scale-95 shadow-2xl relative overflow-hidden group`}
+                      style={{ 
+                        backgroundColor: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00',
+                        color: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#000' : '#fff'
+                      }}
+                    >
+                      <span className="uppercase tracking-widest text-sm italic">
+                        {status === DriverStatus.GOING_TO_STORE ? 'Chegar na Loja' :
+                          status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Iniciar Coleta' : 'Aguardando Preparo...') :
+                            (status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) ? 'Confirmar Coleta' :
+                              status === DriverStatus.GOING_TO_CUSTOMER ? 'Chegar no Cliente' :
+                                'Finalizar Entrega'}
+                      </span>
+                      <i className={`fas ${(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right'} text-xs opacity-50 group-hover:translate-x-1 transition-transform`}></i>
+                    </button>
                   </div>
                 </div>
               </div>
