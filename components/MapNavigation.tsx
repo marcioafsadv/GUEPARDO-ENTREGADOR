@@ -550,8 +550,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Left Side: Shield + Speedometer - COMPACTED */}
-            <div className="absolute left-4 bottom-[110px] z-[1000] flex flex-col gap-3 items-center transition-all duration-500">
+            {/* Left Side: Shield + Speedometer - COMPACTED & RAISED */}
+            <div className="absolute left-4 bottom-[220px] z-[1000] flex flex-col gap-3 items-center transition-all duration-500">
                 <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
                     <i className="fas fa-shield-halved text-xl"></i>
                 </div>

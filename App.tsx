@@ -2787,28 +2787,23 @@ const App: React.FC = () => {
 
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[44px] shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-3 pb-4' : 'p-6 pb-10'} ${cardBg}`}>
+                <div className={`w-full rounded-t-[44px] shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-4 pb-8' : 'p-6 pb-10'} ${cardBg}`}>
                   
 
 
-                  {/* Print 3 Header: Two Columns Layout (Conditional for Navigation Mode) */}
+                  {/* Original Print 3 style Compact Header */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
-                    /* Ultra-Compact Navigation Mode */
-                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex items-center justify-between py-1 px-2 cursor-pointer active:scale-95 transition-all">
-                      <div className="flex items-center space-x-3 text-[#FF6B00] text-[11px] font-black italic">
-                        <span className="flex items-center space-x-1">
-                           <i className="far fa-clock text-[10px]"></i>
-                           <span>{navMetrics?.time || '-- min'}</span>
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-white/10" />
-                        <span className="flex items-center space-x-1 text-white/50">
-                           <i className="fas fa-location-dot text-[9px]"></i>
-                           <span className="line-clamp-1 max-w-[120px]">{status === DriverStatus.GOING_TO_STORE ? mission.storeName : mission.customerName}</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[10px] font-black text-[#FF6B00] uppercase italic tracking-tighter animate-pulse">Em Rota</span>
-                        <i className="fas fa-chevron-up text-[10px] text-white/20"></i>
+                    /* Exact Screenshot Replica Mode */
+                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center">
+                      <div className="w-12 h-1 bg-zinc-700/60 rounded-full mb-5" />
+                      
+                      <h3 className="text-white text-base font-bold mb-1">
+                        {status === DriverStatus.GOING_TO_STORE ? 'Caminho da Loja' : 'Entrega em andamento'}
+                      </h3>
+                      
+                      <div className="flex items-center justify-center space-x-2 text-[#FF6B00] text-sm font-bold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
+                        <span>Chegada prevista: {navMetrics?.time || '-- min'}</span>
                       </div>
                     </div>
                   ) : (
