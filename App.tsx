@@ -460,6 +460,7 @@ const App: React.FC = () => {
   // Settings
   /* Delivery Help States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [isMissionOverlayExpanded, setIsMissionOverlayExpanded] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [historicalOrder, setHistoricalOrder] = useState<DeliveryMission | null>(null);
   const [chatTab, setChatTab] = useState<ChatRoomType>('STORE_COURIER');
@@ -632,6 +633,20 @@ const App: React.FC = () => {
     };
     checkSession();
   }, []);
+
+  // Auto-expand mission overlay when arriving (within 100m)
+  useEffect(() => {
+    if (navMetrics?.distanceValue && navMetrics.distanceValue < 100 && !isMissionOverlayExpanded) {
+      setIsMissionOverlayExpanded(true);
+    }
+  }, [navMetrics?.distanceValue, isMissionOverlayExpanded]);
+
+  useEffect(() => {
+    // Reset expansion state when status changes to navigation phases
+    if (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) {
+      setIsMissionOverlayExpanded(false);
+    }
+  }, [status]);
 
   // Carregar dados do usuário quando autenticado
   useEffect(() => {
@@ -2776,55 +2791,79 @@ const App: React.FC = () => {
                   
 
 
-                  {/* Print 3 Header: Two Columns Layout */}
-                  <div className="flex items-start justify-between mb-6 shrink-0 gap-4">
-                    {/* Left Column: Status & Value */}
-                    <div className="flex flex-col space-y-2">
-                       <span className={`w-fit px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_4px_15px_rgba(255,215,0,0.2)]' : 'bg-[#FF6B00] text-white shadow-[0_4px_15px_rgba(255,107,0,0.3)]'}`}>
-                        {getStatusLabel(status)}
-                      </span>
-                      <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
-                        VALOR TOTAL: {formatCurrency(mission.deliveryValue || mission.earnings || 0)}
-                      </span>
-                    </div>
-
-                    {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
-                    <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
-                      {/* Nav Metrics (Time | Dist) */}
-                      <div className="flex items-center px-4 space-x-4 border-r border-white/10 shrink-0">
-                        <div className="flex items-center space-x-2">
-                          <i className="far fa-clock text-zinc-400 text-xs"></i>
-                          <span className="text-xs font-black text-white">{navMetrics?.time || '0 min'}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <i className="fas fa-road text-zinc-400 text-xs"></i>
-                          <span className="text-xs font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
-                        </div>
-                      </div>
-                      
-                      {/* Action Buttons with Text Labels (Print 3) */}
-                      <div className="flex items-center p-1 space-x-1 shrink-0">
-                        <button className="px-3 h-9 rounded-xl bg-white/5 flex items-center space-x-2 text-white/30 active:scale-95 transition-all">
-                          <i className="fas fa-suitcase text-[10px]"></i>
-                          <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
-                        </button>
-                        
-                        <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40'}`}>
-                          <i className="fas fa-location-arrow text-[10px]"></i>
-                          <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
-                        </button>
-                        
-                        <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
-                          <i className="fas fa-circle-question text-[10px]"></i>
-                          <span className="text-[10px] font-black uppercase tracking-tighter">AJUDA</span>
-                        </button>
-
-                        <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
-                          <i className="fas fa-headset text-[10px]"></i>
-                        </button>
+                  {/* Print 3 Header: Two Columns Layout (Conditional for Navigation Mode) */}
+                  {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
+                    /* Compact Navigation Mode */
+                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center space-y-2 py-2 cursor-pointer active:scale-95 transition-all">
+                      <div className="w-12 h-1 rounded-full bg-white/20 mb-2" />
+                      <h3 className="text-white text-lg font-black uppercase tracking-tight italic">
+                        {status === DriverStatus.GOING_TO_STORE ? 'Caminho da Loja' : 'Entrega em andamento'}
+                      </h3>
+                      <div className="flex items-center space-x-3 text-[#FF6B00] text-sm font-black italic">
+                        <span className="flex items-center space-x-1">
+                           <i className="far fa-clock text-xs"></i>
+                           <span>{navMetrics?.time || '-- min'}</span>
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-white/20" />
+                        <span className="flex items-center space-x-1 text-white/60">
+                           <i className="fas fa-location-dot text-[10px]"></i>
+                           <span className="line-clamp-1 max-w-[150px]">{status === DriverStatus.GOING_TO_STORE ? mission.storeName : mission.customerName}</span>
+                        </span>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* Standard Expanded Mode */
+                    <>
+                      <div className="flex items-start justify-between mb-6 shrink-0 gap-4">
+                        {/* Left Column: Status & Value */}
+                        <div className="flex flex-col space-y-2">
+                          <span className={`w-fit px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_4px_15px_rgba(255,215,0,0.2)]' : 'bg-[#FF6B00] text-white shadow-[0_4px_15px_rgba(255,107,0,0.3)]'}`}>
+                            {getStatusLabel(status)}
+                          </span>
+                          <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
+                            VALOR TOTAL: {formatCurrency(mission.deliveryValue || mission.earnings || 0)}
+                          </span>
+                        </div>
+
+                        {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
+                        <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
+                          {/* Nav Metrics (Time | Dist) */}
+                          <div className="flex items-center px-4 space-x-4 border-r border-white/10 shrink-0">
+                            <div className="flex items-center space-x-2">
+                              <i className="far fa-clock text-zinc-400 text-xs"></i>
+                              <span className="text-xs font-black text-white">{navMetrics?.time || '0 min'}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <i className="fas fa-road text-zinc-400 text-xs"></i>
+                              <span className="text-xs font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Action Buttons with Text Labels (Print 3) */}
+                          <div className="flex items-center p-1 space-x-1 shrink-0">
+                            <button className="px-3 h-9 rounded-xl bg-white/5 flex items-center space-x-2 text-white/30 active:scale-95 transition-all">
+                              <i className="fas fa-suitcase text-[10px]"></i>
+                              <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
+                            </button>
+                            
+                            <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40'}`}>
+                              <i className="fas fa-location-arrow text-[10px]"></i>
+                              <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
+                            </button>
+                            
+                            <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
+                              <i className="fas fa-circle-question text-[10px]"></i>
+                              <span className="text-[10px] font-black uppercase tracking-tighter">AJUDA</span>
+                            </button>
+
+                            <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
+                              <i className="fas fa-headset text-[10px]"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="flex-1 space-y-4 mb-6 pr-1 overflow-y-auto">
                     

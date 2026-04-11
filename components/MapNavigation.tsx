@@ -25,7 +25,7 @@ interface MapNavigationProps {
     currentLocation: { lat: number; lng: number; speed?: number | null } | null;
     routeProgress?: number; // 0 to 100 percentage
     onArrived?: () => void;
-    onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number }) => void;
+    onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number, distanceValue?: number }) => void;
     preloadedDestination?: { lat: number; lng: number } | null;
     theme?: 'dark' | 'light';
 }
