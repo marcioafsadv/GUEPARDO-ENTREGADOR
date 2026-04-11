@@ -57,6 +57,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const lastAnnouncedText = useRef<string>('');
     const lastAnnouncedStep = useRef<string>('');
     const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
+    const [hideSpeedometer, setHideSpeedometer] = useState<boolean>(false);
 
     const speak = (text: string) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
@@ -364,6 +365,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     progress: progressPct
                 });
 
+                // Proximity-based UI refinement: Hide speedometer within 500m
+                setHideSpeedometer(route.distance < 500);
+
                 // Arrival Alert Detection (within 100m)
                 if (route.distance < 100 && !isArriving) {
                     setIsArriving(true);
@@ -553,16 +557,18 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING BASED ON OVERLAY */}
-            <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[460px]' : 'bottom-[130px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
-                <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
-                    <i className="fas fa-shield-halved text-xl"></i>
+            {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING & PROXIMITY HIDING */}
+            {(!hideSpeedometer) && (
+                <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[460px]' : 'bottom-[130px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
+                    <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
+                        <i className="fas fa-shield-halved text-xl"></i>
+                    </div>
+                    <div className="bg-[#120502]/90 border border-[#FF6B00]/20 rounded-2xl flex flex-col items-center justify-center w-16 h-20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                        <span className="text-2xl font-black text-white leading-none neon-orange-glow-text">{currentSpeed}</span>
+                        <span className="text-[9px] text-chocolate-muted font-black tracking-widest pt-1 uppercase">km/h</span>
+                    </div>
                 </div>
-                <div className="bg-[#120502]/90 border border-[#FF6B00]/20 rounded-2xl flex flex-col items-center justify-center w-16 h-20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-                    <span className="text-2xl font-black text-white leading-none neon-orange-glow-text">{currentSpeed}</span>
-                    <span className="text-[9px] text-chocolate-muted font-black tracking-widest pt-1 uppercase">km/h</span>
-                </div>
-            </div>
+            )}
 
             {/* Right Edge: Vertical Progress Bar - MINIMAL */}
             <div className="absolute right-1 top-[35%] bottom-[220px] w-[3px] bg-zinc-900 rounded-full overflow-hidden z-[100]">

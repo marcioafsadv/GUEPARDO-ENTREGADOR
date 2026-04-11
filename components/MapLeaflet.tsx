@@ -418,17 +418,6 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                     />
                 ))}
             </MapContainer>
-
-            {/* Universal Speedometer - DYNAMIC POSITIONING */}
-            <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[460px]' : 'bottom-[130px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
-                <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
-                    <i className="fas fa-shield-halved text-xl"></i>
-                </div>
-                <div className="bg-[#120502]/90 border border-[#FF6B00]/20 rounded-2xl flex flex-col items-center justify-center w-16 h-20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-                    <span className="text-2xl font-black text-white leading-none neon-orange-glow-text">{currentSpeed}</span>
-                    <span className="text-[9px] text-chocolate-muted font-black tracking-widest pt-1 uppercase">km/h</span>
-                </div>
-            </div>
         </div>
     );
 };
