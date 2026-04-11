@@ -2872,7 +2872,7 @@ const App: React.FC = () => {
                             {getStatusLabel(status)}
                           </span>
                           <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
-                            VALOR TOTAL: {formatCurrency(mission.deliveryValue || mission.earnings || 0)}
+                            VALOR TOTAL: {formatCurrency(mission.earnings || 0)}
                           </span>
                         </div>
 
@@ -2892,7 +2892,10 @@ const App: React.FC = () => {
                           
                           {/* Action Buttons with Text Labels (Print 3) */}
                           <div className="flex items-center p-1 space-x-1 shrink-0">
-                            <button className="px-3 h-9 rounded-xl bg-white/5 flex items-center space-x-2 text-white/30 active:scale-95 transition-all">
+                            <button 
+                              onClick={() => setShowOrderDetails(true)}
+                              className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/30'}`}
+                            >
                               <i className="fas fa-suitcase text-[10px]"></i>
                               <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
                             </button>
