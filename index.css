@@ -134,115 +134,98 @@ body {
   transform: scale(0.95);
 }
 
-/* --- Guepardo Premium v2: Order Call UI --- */
+/* --- Guepardo Ultra-Premium: Chocolate Edition --- */
 
-.premium-glass-backdrop {
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+.chocolate-lava-backdrop {
+  background: rgba(10, 4, 2, 0.9);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
 }
 
-.order-call-card-v2 {
-  background: #FFFFFF;
-  border-radius: 42px;
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 18px 36px -18px rgba(0, 0, 0, 0.3);
-  animation: modal-entrance 0.8s cubic-bezier(0.19, 1, 0.22, 1) both;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+.chocolate-glass-card {
+  background: linear-gradient(135deg, rgba(26, 10, 5, 0.95) 0%, rgba(15, 5, 2, 0.98) 100%);
+  border-radius: 48px;
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 
+              inset 0 0 40px rgba(255, 107, 0, 0.05);
+  border: 1.5px solid rgba(255, 107, 0, 0.1);
+  animation: ultra-modal-entrance 1s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-@keyframes modal-entrance {
-  0% { transform: translateY(100%) scale(0.9); opacity: 0; filter: blur(10px); }
-  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
+@keyframes ultra-modal-entrance {
+  0% { transform: translateY(100%) scale(0.8); opacity: 0; filter: blur(20px) brightness(0.5); }
+  60% { filter: blur(0px) brightness(1.2); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px) brightness(1); }
 }
 
-.floating-price-container {
-  animation: float-soft 4s ease-in-out infinite;
-  text-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+.guepardo-watermark {
+  background: url('/logo-watermark.png') no-repeat center;
+  background-size: contain;
+  opacity: 0.03;
+  filter: invert(1);
 }
 
-@keyframes float-soft {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+.neon-orange-glow-text {
+  color: #FFFFFF;
+  text-shadow: 0 0 10px rgba(255, 107, 0, 0.4), 
+               0 0 20px rgba(255, 107, 0, 0.2);
 }
 
-.timeline-line-refined {
+.liquid-lava-path {
   position: absolute;
   left: 17px;
   top: 15px;
   bottom: 15px;
-  width: 1.5px;
-  background: linear-gradient(to bottom, #FF6B00, #FFD700, #28A745);
-  opacity: 0.15;
+  width: 2px;
+  background: linear-gradient(to bottom, #FF6B00, #FF0000, #FF6B00);
+  box-shadow: 0 0 15px rgba(255, 107, 0, 0.3);
+  opacity: 0.4;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  animation: lava-flow 6s linear infinite;
 }
 
-.timeline-glow-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  transition: all 0.3s;
+@keyframes lava-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
 }
 
-.timeline-glow-dot.store { background: #FF6B00; box-shadow: 0 0 15px rgba(255, 107, 0, 0.4); }
-.timeline-glow-dot.delivery { background: #00A3FF; box-shadow: 0 0 15px rgba(0, 163, 255, 0.4); }
-.timeline-glow-dot.return { background: #28A745; box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); }
-
-.neon-timer-ring {
-  filter: drop-shadow(0 0 8px rgba(40, 167, 69, 0.6));
-  transition: stroke-dashoffset 0.1s linear;
+.circular-gauge-chocolate {
+  filter: drop-shadow(0 0 12px rgba(255, 107, 0, 0.3));
 }
 
-.btn-accept-premium-v2 {
-  background: linear-gradient(135deg, #28C76F 0%, #21AD5C 100%);
-  color: white;
-  box-shadow: 0 12px 24px -6px rgba(40, 199, 111, 0.4);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  overflow: hidden;
-  position: relative;
+.btn-lava-accept {
+  background: linear-gradient(135deg, #FF6B00 0%, #CC5200 100%);
+  box-shadow: 0 15px 35px -5px rgba(255, 107, 0, 0.5);
+  transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-accept-premium-v2::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 60%);
-  transform: scale(0);
-  transition: transform 0.6s ease-out;
+.btn-lava-accept:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 45px -5px rgba(255, 107, 0, 0.7);
 }
 
-.btn-accept-premium-v2:active::after {
-  transform: scale(1);
+.btn-lava-accept:active {
+  transform: scale(0.96);
 }
 
-.btn-accept-premium-v2:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 30px -8px rgba(40, 199, 111, 0.5);
+.heartbeat-pulse {
+  animation: heartbeat-orange 2s ease-in-out infinite;
 }
 
-.btn-reject-refined {
-  color: #DC3545;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  opacity: 0.6;
-  transition: all 0.3s;
+@keyframes heartbeat-orange {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(255, 107, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
 }
 
-.btn-reject-refined:hover {
-  opacity: 1;
-  transform: scale(1.05);
+.metric-badge-chocolate {
+  background: rgba(40, 20, 10, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 107, 0, 0.1);
+  border-radius: 20px;
+  padding: 10px 20px;
+  color: #FFC099;
 }
 
-.route-pill-glass {
-  background: rgba(240, 244, 248, 0.7);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 18px;
-  padding: 8px 16px;
-}
 
 

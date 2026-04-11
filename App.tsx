@@ -4696,14 +4696,18 @@ const App: React.FC = () => {
       )}
 
       {status === DriverStatus.ALERTING && mission && (
-        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-5 premium-glass-backdrop pointer-events-none">
-          <div className={`w-full max-w-md order-call-card-v2 relative overflow-hidden flex flex-col pointer-events-auto bg-[#FFFFFF]`}>
-            
-            {/* Glossy Header Effect */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-zinc-50/50 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-6 chocolate-lava-backdrop pointer-events-none overflow-hidden">
+          
+          {/* Background Ambient Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF6B00]/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-            {/* Header: Floating Price and Glass Metrics */}
-            <div className="p-10 pb-6 text-center relative z-10">
+          <div className={`w-full max-w-md chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto`}>
+            
+            {/* Guepardo Watermark */}
+            <div className="absolute inset-0 guepardo-watermark pointer-events-none opacity-[0.05]"></div>
+
+            {/* Header: Neomorphic Price Display */}
+            <div className="p-12 pb-6 text-center relative z-10">
               {(() => {
                 const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
                 const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
@@ -4714,21 +4718,22 @@ const App: React.FC = () => {
 
                 return (
                   <div className="flex flex-col items-center">
-                    <div className="floating-price-container mb-6">
-                      <h2 className="text-[64px] font-black text-zinc-900 leading-none tracking-tighter">
+                    <div className="mb-8 relative">
+                      {/* Sub-label */}
+                      <span className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.3em] mb-2 block opacity-70">Ganhos Estimados</span>
+                      <h2 className="text-[72px] font-black neon-orange-glow-text leading-none tracking-tighter">
                          {formatCurrency(totalE)}
                       </h2>
                     </div>
                     
-                    <div className="route-pill-glass flex items-center space-x-6">
-                      <div className="flex items-center space-x-2">
-                        <i className="fas fa-route text-[#00A3FF] text-sm"></i>
-                        <span className="text-sm font-black text-zinc-800 tracking-tight">{totalD.toFixed(2).replace('.', ',')} km</span>
+                    <div className="flex items-center space-x-4">
+                      <div className="metric-badge-chocolate flex items-center space-x-2">
+                        <i className="fas fa-motorcycle text-[#FF6B00] text-sm"></i>
+                        <span className="text-sm font-black tracking-tight">{totalD.toFixed(2).replace('.', ',')} km</span>
                       </div>
-                      <div className="w-[1px] h-4 bg-zinc-200"></div>
-                      <div className="flex items-center space-x-2">
-                        <i className="fas fa-location-dot text-[#00A3FF] text-sm"></i>
-                        <span className="text-sm font-black text-zinc-800 tracking-tight">{totalStops} {totalStops === 1 ? 'parada' : 'paradas'}</span>
+                      <div className="metric-badge-chocolate flex items-center space-x-2">
+                        <i className="fas fa-map-pin text-[#FF6B00] text-sm"></i>
+                        <span className="text-sm font-black tracking-tight">{totalStops} {totalStops === 1 ? 'Parada' : 'Paradas'}</span>
                       </div>
                     </div>
                   </div>
@@ -4736,125 +4741,112 @@ const App: React.FC = () => {
               })()}
             </div>
 
-            {/* Timeline Section */}
-            <div className="px-10 py-6 relative flex-1">
-              <div className="timeline-line-refined"></div>
+            {/* Route Lava Path Section */}
+            <div className="px-12 py-6 relative flex-1">
+              <div className="liquid-lava-path"></div>
               
-              <div className="space-y-8">
-                {/* Store origin */}
-                <div className="flex items-start space-x-5 relative group">
-                  <div className="timeline-glow-dot store mt-1.5 shrink-0"></div>
-                  <div className="flex flex-col min-w-0">
+              <div className="space-y-10">
+                {/* Loja Origin */}
+                <div className="flex items-start space-x-6 relative">
+                  <div className="w-10 h-10 rounded-full bg-[#1a0a05] border-2 border-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.3)] flex items-center justify-center z-20 shrink-0">
+                    <i className="fas fa-store text-[#FF6B00] text-xs"></i>
+                  </div>
+                  <div className="flex flex-col min-w-0 pt-1">
                     <div className="flex items-center space-x-2">
-                      <span className="text-[13px] font-black text-zinc-900 uppercase tracking-wide">{mission.storeName}</span>
-                      <span className="text-[10px] font-bold text-zinc-400 opacity-60">({mission.distanceToStore?.toFixed(2)} km)</span>
+                      <span className="text-[14px] font-black text-white uppercase tracking-wider">{mission.storeName}</span>
+                      <span className="text-[10px] font-bold text-[#FF6B00]/60 tracking-widest uppercase">Coleta</span>
                     </div>
-                    <span className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2 mt-1">{mission.storeAddress}</span>
+                    <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-2 mt-1 italic">{mission.storeAddress}</span>
                   </div>
                 </div>
 
                 {/* Delivery Stops */}
                 {(activeMissions.length > 0 ? activeMissions : [mission]).map((m, idx) => (
-                  <div key={m.id} className="flex items-start space-x-5 relative group">
-                    <div className="timeline-glow-dot delivery mt-1.5 shrink-0"></div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[13px] font-black text-zinc-900 uppercase tracking-wide">{idx + 1}ª Parada</span>
-                      <span className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2 mt-1">{m.customerAddress}</span>
+                  <div key={m.id} className="flex items-start space-x-6 relative">
+                    <div className="w-10 h-10 rounded-full bg-[#1a0a05] border-2 border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.05)] flex items-center justify-center z-20 shrink-0 group-hover:border-[#FF6B00] transition-colors">
+                      <i className="fas fa-map-marker-alt text-white/40 text-xs"></i>
+                    </div>
+                    <div className="flex flex-col min-w-0 pt-1">
+                      <span className="text-[14px] font-black text-white uppercase tracking-wider">{idx + 1}ª Entrega</span>
+                      <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-2 mt-1 italic">{m.customerAddress}</span>
                     </div>
                   </div>
                 ))}
 
-                {/* Return logic */}
+                {/* Return trip */}
                 {mission.isReturnRequired && (
-                  <div className="flex items-start space-x-5 relative group">
-                    <div className="timeline-glow-dot return mt-1.5 shrink-0"></div>
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[13px] font-black text-zinc-900 uppercase tracking-wide">Retorno Final</span>
-                        <div className="px-2 py-0.5 rounded-full bg-zinc-100 text-[8px] font-black uppercase text-zinc-500 tracking-widest border border-zinc-200/50">Obrigatório</div>
-                      </div>
-                      <span className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2 mt-1">{mission.storeAddress}</span>
+                  <div className="flex items-start space-x-6 relative">
+                    <div className="w-10 h-10 rounded-full bg-[#0a0402] border-2 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] flex items-center justify-center z-20 shrink-0">
+                      <i className="fas fa-undo-alt text-red-500 text-xs text-red-400"></i>
+                    </div>
+                    <div className="flex flex-col min-w-0 pt-1">
+                      <span className="text-[14px] font-black text-red-400 uppercase tracking-wider">Retorno Obrigatório</span>
+                      <span className="text-xs text-zinc-500 font-medium leading-relaxed line-clamp-2 mt-1 italic">Devolução na Loja</span>
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Segment Badges */}
-              <div className="flex flex-wrap gap-2.5 mt-10">
-                <div className="px-5 py-2.5 rounded-2xl bg-zinc-50 border border-zinc-100 text-[10px] font-black text-zinc-600 uppercase tracking-[0.15em] shadow-sm">Motoboy</div>
-                {mission.isReturnRequired && (
-                  <div className="px-5 py-2.5 rounded-2xl bg-[#FF6B00]/5 border border-[#FF6B00]/10 text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.15em] shadow-sm">Retorno</div>
-                )}
-              </div>
             </div>
 
-            {/* Footer Interaction Area */}
-            <div className="p-10 pt-6 bg-zinc-50/50 border-t border-zinc-100 flex flex-col items-center relative z-10">
+            {/* Premium Interaction Footer */}
+            <div className="p-12 pt-8 bg-black/40 border-t border-white/5 flex flex-col items-center relative z-20">
               
-              {/* Premium Circular Timer Gauge */}
-              <div className="flex items-center justify-center space-x-12 mb-8">
-                <div className="flex space-x-1.5 opacity-10 text-zinc-400">
+              {/* Luxury Circular Timer */}
+              <div className="flex items-center justify-center space-x-12 mb-10">
+                <div className="flex space-x-2 opacity-10 text-[#FF6B00]">
                   <i className="fas fa-chevron-left text-xs"></i>
                   <i className="fas fa-chevron-left text-xs"></i>
                 </div>
 
-                <div className="relative flex items-center justify-center">
-                  {/* Outer Glow Ring */}
-                  <div className="absolute inset-0 rounded-full blur-[10px] bg-green-500/10 opacity-50 pulse-orange-glow"></div>
-                  
-                  <svg width="90" height="90" viewBox="0 0 100 100" className="rotate-[-90deg]">
+                <div className="relative flex items-center justify-center circular-gauge-chocolate">
+                  <svg width="100" height="100" viewBox="0 0 100 100" className="rotate-[-90deg]">
+                    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,107,0,0.05)" strokeWidth="4" />
                     <circle 
-                      cx="50" cy="50" r="44" 
+                      cx="50" cy="50" r="46" 
                       fill="none" 
-                      stroke="rgba(0,0,0,0.04)" 
-                      strokeWidth="6" 
-                    />
-                    <circle 
-                      cx="50" cy="50" r="44" 
-                      fill="none" 
-                      stroke="#28A745" 
-                      strokeWidth="6" 
+                      stroke="#FF6B00" 
+                      strokeWidth="4" 
                       strokeLinecap="round"
-                      className="neon-timer-ring"
                       style={{ 
-                        strokeDasharray: 276, 
-                        strokeDashoffset: 276 - (alertCountdown / 30) * 276 
+                        strokeDasharray: 289, 
+                        strokeDashoffset: 289 - (alertCountdown / 30) * 289,
+                        transition: 'stroke-dashoffset 1s linear'
                       }}
                     />
                   </svg>
-                  
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-2xl font-black text-zinc-900 tracking-tighter tabular-nums">{alertCountdown}</span>
-                    <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mt-[-2px]">Segundos</span>
+                    <span className="text-3xl font-black text-white tracking-tighter tabular-nums">{alertCountdown}</span>
+                    <span className="text-[8px] font-black text-[#FF6B00] uppercase tracking-[0.25em] mt-[-3px]">Tempo</span>
                   </div>
                 </div>
 
-                <div className="flex space-x-1.5 opacity-10 text-zinc-400">
+                <div className="flex space-x-2 opacity-10 text-[#FF6B00]">
                   <i className="fas fa-chevron-right text-xs"></i>
                   <i className="fas fa-chevron-right text-xs"></i>
                 </div>
               </div>
 
-              {/* Massive Action Buttons */}
+              {/* Ultra Action Stack */}
               <button 
                 onClick={handleAcceptMission}
-                className="w-full h-20 bg-[#28A745] btn-accept-premium-v2 rounded-[28px] font-black text-xl uppercase tracking-[0.15em] active:scale-[0.97] flex items-center justify-center space-x-3 mb-6"
+                className="w-full h-22 btn-lava-accept heartbeat-pulse rounded-[32px] font-black text-2xl text-white uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center space-x-4 mb-8"
               >
-                <i className="fas fa-check-circle text-2xl"></i>
+                <i className="fas fa-check-double text-2xl"></i>
                 <span>Aceitar</span>
               </button>
               
               <button 
                 onClick={handleRejectMission}
-                className="btn-reject-refined py-2 active:scale-95"
+                className="text-zinc-600 font-black text-[11px] uppercase tracking-[0.3em] hover:text-red-500/80 transition-colors py-2 active:scale-90"
               >
-                RECUSAR CHAMADA
+                Ignorar Chamada
               </button>
             </div>
 
           </div>
         </div>
       )}
+
 
 
 
