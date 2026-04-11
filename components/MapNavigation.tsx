@@ -559,7 +559,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING & PROXIMITY HIDING */}
             {(!hideSpeedometer) && (
-                <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[460px]' : 'bottom-[130px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
+                <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
                     <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
                         <i className="fas fa-shield-halved text-xl"></i>
                     </div>
