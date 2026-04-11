@@ -2787,28 +2787,28 @@ const App: React.FC = () => {
 
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[44px] p-6 pb-10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-colors flex flex-col overflow-hidden ${cardBg}`}>
+                <div className={`w-full rounded-t-[44px] shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-3 pb-4' : 'p-6 pb-10'} ${cardBg}`}>
                   
 
 
                   {/* Print 3 Header: Two Columns Layout (Conditional for Navigation Mode) */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
-                    /* Compact Navigation Mode */
-                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center space-y-2 py-2 cursor-pointer active:scale-95 transition-all">
-                      <div className="w-12 h-1 rounded-full bg-white/20 mb-2" />
-                      <h3 className="text-white text-lg font-black uppercase tracking-tight italic">
-                        {status === DriverStatus.GOING_TO_STORE ? 'Caminho da Loja' : 'Entrega em andamento'}
-                      </h3>
-                      <div className="flex items-center space-x-3 text-[#FF6B00] text-sm font-black italic">
+                    /* Ultra-Compact Navigation Mode */
+                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex items-center justify-between py-1 px-2 cursor-pointer active:scale-95 transition-all">
+                      <div className="flex items-center space-x-3 text-[#FF6B00] text-[11px] font-black italic">
                         <span className="flex items-center space-x-1">
-                           <i className="far fa-clock text-xs"></i>
+                           <i className="far fa-clock text-[10px]"></i>
                            <span>{navMetrics?.time || '-- min'}</span>
                         </span>
-                        <span className="w-1 h-1 rounded-full bg-white/20" />
-                        <span className="flex items-center space-x-1 text-white/60">
-                           <i className="fas fa-location-dot text-[10px]"></i>
-                           <span className="line-clamp-1 max-w-[150px]">{status === DriverStatus.GOING_TO_STORE ? mission.storeName : mission.customerName}</span>
+                        <span className="w-1 h-1 rounded-full bg-white/10" />
+                        <span className="flex items-center space-x-1 text-white/50">
+                           <i className="fas fa-location-dot text-[9px]"></i>
+                           <span className="line-clamp-1 max-w-[120px]">{status === DriverStatus.GOING_TO_STORE ? mission.storeName : mission.customerName}</span>
                         </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-black text-[#FF6B00] uppercase italic tracking-tighter animate-pulse">Em Rota</span>
+                        <i className="fas fa-chevron-up text-[10px] text-white/20"></i>
                       </div>
                     </div>
                   ) : (
@@ -4059,54 +4059,56 @@ const App: React.FC = () => {
   return (
     <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 bg-transparent ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
       <header className={`z-[1002] ${isNavigating ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-between backdrop-blur-2xl border-b transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
-        <div className="w-full px-6 py-2 sm:py-4 flex items-center justify-between relative h-16 sm:h-20">
-          <div className="flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
-              <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
+        {(!(isNavigating && !isMissionOverlayExpanded)) && (
+          <div className="w-full px-6 py-2 sm:py-4 flex items-center justify-between relative h-16 sm:h-20 animate-in fade-in duration-500">
+            <div className="flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
+                <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
+              </div>
             </div>
-          </div>
 
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
-              <div className={`w-2.5 h-2.5 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-              <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
-            </button>
-          </div>
-
-          <button
-            onClick={handleOpenNotifications}
-            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
-          >
-            <div className="relative">
-              <i className={`fas fa-bell text-lg ${textPrimary}`}></i>
-              {unreadCount > 0 && !notificationsSeen && (
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
-                  <span className="text-[9px] font-black text-white">{unreadCount}</span>
-                </div>
-              )}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
+                <div className={`w-2.5 h-2.5 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
+              </button>
             </div>
-          </button>
-        </div>
 
-        <div className="w-full px-6 pb-4 flex justify-center">
-          {!gpsEnabled && (
             <button
-              onClick={handleActivateGPS}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border active:scale-95 transition-all w-full justify-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200 shadow-sm'}`}
+              onClick={handleOpenNotifications}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
             >
-              {isGpsLoading ? (
-                <i className="fas fa-circle-notch fa-spin text-red-500 text-[10px]"></i>
-              ) : (
-                <i className="fas fa-satellite-dish text-red-500 text-[10px] animate-pulse"></i>
-              )}
-              <span className={`text-[9px] font-bold uppercase tracking-wide ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
-                {isGpsLoading ? 'Ativando localização...' : 'Ative a localização por GPS p/ evitar restrições'}
-              </span>
+              <div className="relative">
+                <i className={`fas fa-bell text-lg ${textPrimary}`}></i>
+                {unreadCount > 0 && !notificationsSeen && (
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
+                    <span className="text-[9px] font-black text-white">{unreadCount}</span>
+                  </div>
+                )}
+              </div>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-
+        {(!(isNavigating && !isMissionOverlayExpanded)) && (
+          <div className="w-full px-6 pb-4 flex justify-center animate-in fade-in duration-500">
+            {!gpsEnabled && (
+              <button
+                onClick={handleActivateGPS}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl border active:scale-95 transition-all w-full justify-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200 shadow-sm'}`}
+              >
+                {isGpsLoading ? (
+                  <i className="fas fa-circle-notch fa-spin text-red-500 text-[10px]"></i>
+                ) : (
+                  <i className="fas fa-satellite-dish text-red-500 text-[10px] animate-pulse"></i>
+                )}
+                <span className={`text-[9px] font-bold uppercase tracking-wide ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                  {isGpsLoading ? 'Ativando localização...' : 'Ative a localização por GPS p/ evitar restrições'}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {showBatchAlert && (
