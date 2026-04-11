@@ -2781,6 +2781,7 @@ const App: React.FC = () => {
                   mapMode={mapMode}
                   showTraffic={showTraffic}
                   reCenterTrigger={reCenterTrigger}
+                  onUpdateMetrics={(metrics) => setNavMetrics(metrics)}
                   currentLocation={currentLocation}
                 />
             )}
@@ -3017,8 +3018,8 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 w-full mb-2">
-                    {/* Only show the action button if NOT navigating OR if within 200m proximity threshold */}
-                    {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 200)) && (
+                    {/* Only show the action button if NOT navigating OR if within 500m proximity threshold */}
+                    {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 500)) && (
                       <button
                         onClick={handleMainAction}
                         disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
