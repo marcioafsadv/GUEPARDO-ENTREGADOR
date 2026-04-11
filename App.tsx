@@ -2872,7 +2872,7 @@ const App: React.FC = () => {
                             {getStatusLabel(status)}
                           </span>
                           <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
-                            VALOR TOTAL: {formatCurrency(mission.earnings || 0)}
+                            VALOR TAXA: {formatCurrency(mission.earnings || 0)}
                           </span>
                         </div>
 
@@ -2990,6 +2990,73 @@ const App: React.FC = () => {
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* Order Details Modal (Requested by User) */}
+                    {showOrderDetails && (
+                      <div className="fixed inset-0 z-[9000] flex items-center justify-center p-6 animate-in fade-in duration-300 pointer-events-auto">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowOrderDetails(false)}></div>
+                        
+                        <div className="w-full max-w-sm chocolate-glass-card p-8 animate-in zoom-in-95 duration-300 relative z-10 border border-white/10">
+                          <div className="flex justify-between items-center mb-8">
+                            <h2 className={`text-2xl font-black italic tracking-tighter ${textPrimary}`}>Detalhes do Pedido</h2>
+                            <button onClick={() => setShowOrderDetails(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 active:scale-90 transition-all">
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+
+                          <div className="space-y-8">
+                            {/* Collection Section */}
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <i className="fas fa-box-open text-[#FF6B00]"></i>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Coletado</span>
+                              </div>
+                              
+                              <div className={`p-4 rounded-3xl border border-white/5 ${innerBg} space-y-3`}>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Onde:</span>
+                                  <span className={`text-xs font-black ${textPrimary}`}>{mission.storeName}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Pedido:</span>
+                                  <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-2 py-0.5 rounded-lg`}>#{mission.displayId || mission.id.slice(-4)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Cód. Coleta:</span>
+                                  <span className={`text-sm font-black text-[#FFD700]`}>{mission.collectionCode}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Delivery Section */}
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <i className="fas fa-truck-fast text-[#00FF94]"></i>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00FF94]">Entregando</span>
+                              </div>
+                              
+                              <div className={`p-4 rounded-3xl border border-white/5 ${innerBg} space-y-3`}>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Onde:</span>
+                                  <span className={`text-xs font-black ${textPrimary}`}>{mission.customerName}</span>
+                                </div>
+                                <div className="flex flex-col space-y-1">
+                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Endereço:</span>
+                                  <span className={`text-xs font-medium leading-relaxed ${textPrimary} italic`}>{mission.customerAddress}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => setShowOrderDetails(false)}
+                            className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest mt-10 shadow-xl active:scale-95 transition-all"
+                          >
+                            Entendido
+                          </button>
+                        </div>
                       </div>
                     )}
 
