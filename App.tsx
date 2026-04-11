@@ -2893,7 +2893,7 @@ const App: React.FC = () => {
 
             {mission && status !== DriverStatus.ALERTING && (
               <div 
-                className={`absolute bottom-0 left-0 right-0 z-[1001] transition-transform duration-300 ease-out`}
+                className={`absolute bottom-0 left-0 right-0 z-[1001] chocolate-bottom-panel`}
                 style={{ 
                   transform: `translateY(${!isMissionExpanded ? 'calc(100% - 85px + ' + dragY + 'px)' : dragY + 'px'})`,
                   touchAction: 'none',
@@ -2909,19 +2909,19 @@ const App: React.FC = () => {
                     onTouchStart={handleTouchStart}
                     className="w-full py-2 cursor-grab active:cursor-grabbing mb-0 group"
                   >
-                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-800 rounded-full mx-auto opacity-30 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="w-12 h-1 bg-[#FF6B00]/20 rounded-full mx-auto group-hover:bg-[#FF6B00]/40 transition-colors shadow-[0_0_8px_rgba(255,107,0,0.1)]"></div>
                   </div>
 
                   <div className="flex justify-between items-center mb-3 shrink-0">
-                    {/* Minimal 99-style Header when collapsed */}
+                    {/* Handle de Arraste */}
                     {!isMissionExpanded ? (
                       <div className="flex flex-col w-full px-1 cursor-pointer" onClick={() => setIsMissionExpanded(true)}>
                         {isNavigating ? (
                            // In-Transit Minimal View
                            <div className="flex flex-col items-center justify-center w-full py-2">
-                              <h3 className={`font-black text-[10px] uppercase tracking-[0.2em] mb-1.5 ${textMuted}`}>Entrega em andamento</h3>
-                              <div className="flex items-center gap-2 bg-[#FF6B00]/10 px-4 py-1.5 rounded-full border border-[#FF6B00]/20">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
+                              <h3 className={`font-black text-[10px] uppercase tracking-[0.2em] mb-1.5 text-chocolate-muted`}>Entrega em andamento</h3>
+                              <div className="flex items-center gap-2 bg-[#FF6B00]/10 px-4 py-1.5 rounded-full border border-[#FF6B00]/20 shadow-[inset_0_0_10px_rgba(255,107,0,0.05)]">
+                                <div className="neon-orange-pulsing-dot"></div>
                                 <span className="text-[#FF6B00] text-[13px] font-black italic">Chegada: {navMetrics?.time || '--'}</span>
                               </div>
                            </div>
@@ -2929,15 +2929,15 @@ const App: React.FC = () => {
                           // Standard Collapsed View (Arrived or Picking Up)
                           <>
                             <div className="flex flex-col items-center justify-center w-full mb-3">
-                               <h3 className={`font-bold text-[14px] leading-tight mb-1 ${textPrimary}`}>
+                               <h3 className={`font-bold text-[14px] leading-tight mb-1 text-chocolate-primary`}>
                                  {status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP ? 'Retirada na Loja' : 'Entrega p/ Cliente'}
                                </h3>
                             </div>
                             
                             <div className="flex flex-col items-start w-full pb-1">
-                               <h2 className={`font-black text-base leading-tight mb-1 ${textPrimary}`}>{mission?.customerName}</h2>
-                               <p className={`text-[10px] font-medium line-clamp-1 ${textMuted}`}>{mission?.customerAddress}</p>
-                               <div className="w-8 h-[2px] bg-[#FF6B00] mt-2 rounded-full"></div>
+                               <h2 className={`font-black text-base text-white leading-tight mb-1`}>{mission?.customerName}</h2>
+                               <p className={`text-[10px] font-medium line-clamp-1 text-chocolate-muted`}>{mission?.customerAddress}</p>
+                               <div className="w-8 h-[2px] bg-[#FF6B00] mt-2 rounded-full shadow-[0_0_8px_rgba(255,107,0,0.5)]"></div>
                             </div>
                           </>
                         )}
@@ -2945,11 +2945,11 @@ const App: React.FC = () => {
                     ) : (
                       <>
                         <div className="flex flex-col items-start">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black' : 'bg-[#FF6B00] text-white'}`}>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]' : 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.3)]'}`}>
                             {getStatusLabel(status)}
                           </span>
                           {activeMissions.length > 1 && (
-                            <span className="text-[10px] font-black text-[#FF6B00] mt-1 ml-1 transform -skew-x-12">
+                            <span className="text-[10px] font-black text-[#FF6B00] mt-1 ml-1 transform -skew-x-12 neon-orange-glow-text">
                               VALOR TOTAL: R$ {activeMissions.reduce((acc, m) => acc + (m.earnings || 0), 0).toFixed(2)}
                             </span>
                           )}
@@ -2957,15 +2957,15 @@ const App: React.FC = () => {
                         
                         {/* Metrics Badge (Visible when navigating and expanded) */}
                         {isNavigating && navMetrics && (
-                          <div className={`flex items-center space-x-3 px-3 py-1.5 rounded-2xl ${innerBg} border border-white/5`}>
+                          <div className={`flex items-center space-x-3 px-3 py-1.5 rounded-2xl chocolate-inner-card-v2`}>
                             <div className="flex items-center space-x-1">
-                              <i className="fas fa-clock text-[10px] text-zinc-500"></i>
-                              <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.time}</span>
+                              <i className="fas fa-clock text-[10px] text-[#FFC099]/40"></i>
+                              <span className={`text-[11px] font-black text-chocolate-primary`}>{navMetrics.time}</span>
                             </div>
                             <div className="w-px h-3 bg-white/10"></div>
                             <div className="flex items-center space-x-1">
-                              <i className="fas fa-route text-[10px] text-zinc-500"></i>
-                              <span className={`text-[11px] font-black ${textPrimary}`}>{navMetrics.distance}</span>
+                              <i className="fas fa-route text-[10px] text-[#FFC099]/40"></i>
+                              <span className={`text-[11px] font-black text-chocolate-primary`}>{navMetrics.distance}</span>
                             </div>
                           </div>
                         )}
@@ -2973,7 +2973,7 @@ const App: React.FC = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => { playClick(); setShowOrderDetails(!showOrderDetails); }}
-                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 chocolate-glass-button ${showOrderDetails ? 'active' : ''}`}
                           >
                             <i className="fas fa-shopping-bag text-[10px]"></i>
                             <span>PEDIDO</span>
@@ -2983,19 +2983,18 @@ const App: React.FC = () => {
                               playClick();
                               setShowMissionMapPicker(!showMissionMapPicker);
                             }}
-                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 chocolate-glass-button ${showMissionMapPicker ? 'bg-[#33CCFF]/15 border-[#33CCFF]/30 text-[#33CCFF] shadow-[0_0_10px_rgba(51,204,255,0.1)]' : ''}`}
                           >
                             <i className="fas fa-location-arrow text-[10px]"></i>
                             <span>GPS</span>
                           </button>
                           <button
                             onClick={() => { playClick(); setShowDeliveryHelpModal(!showDeliveryHelpModal); }}
-                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white' : `${innerBg} ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'}`}`}
+                            className={`px-3 h-9 rounded-xl flex items-center space-x-2 font-black text-[9px] uppercase transition-all active:scale-95 chocolate-glass-button ${showDeliveryHelpModal ? 'active' : ''}`}
                           >
                             <i className="fas fa-circle-question text-[10px]"></i>
                             <span>Ajuda</span>
                           </button>
-                          <button onClick={() => { playClick(); setShowSOSModal(true); }} className={`w-9 h-9 rounded-xl flex items-center justify-center text-red-500 ${innerBg}`}><i className="fas fa-headset text-xs"></i></button>
                         </div>
                       </>
                     )}
@@ -3020,55 +3019,55 @@ const App: React.FC = () => {
                     )}
 
                     {showOrderDetails && (
-                      <div className={`p-4 rounded-[20px] border border-white/5 space-y-4 ${innerBg} animate-in fade-in slide-in-from-top-2 mb-3`}>
+                      <div className={`p-4 rounded-[20px] space-y-4 chocolate-inner-card-v2 border-orange-500/20 animate-in fade-in slide-in-from-top-2 mb-3`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className={`text-xs font-black uppercase tracking-widest ${textPrimary} flex items-center space-x-2`}>
+                          <h3 className={`text-xs font-black uppercase tracking-widest text-chocolate-primary flex items-center space-x-2`}>
                             <i className="fas fa-list-check text-[#FF6B00]"></i>
                             <span>Detalhes da Missão</span>
                           </h3>
-                          <button onClick={() => setShowOrderDetails(false)} className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                          <button onClick={() => setShowOrderDetails(false)} className="w-6 h-6 rounded-full bg-black/40 flex items-center justify-center text-zinc-400">
                             <i className="fas fa-times text-[10px]"></i>
                           </button>
                         </div>
 
                         <div className="space-y-3">
                           {/* Store Details */}
-                          <div className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
-                            <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted} mb-1`}>Retirar em</p>
-                            <p className={`text-sm font-black ${textPrimary} truncate`}>{mission?.storeName}</p>
-                            <p className={`text-xs font-bold ${textMuted} truncate`}>{mission?.storeAddress?.split(',')[0]}</p>
+                          <div className={`p-3 rounded-xl chocolate-inner-card-v2 bg-black/30 border-white/5`}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest text-chocolate-muted mb-1`}>Retirar em</p>
+                            <p className={`text-sm font-black text-white truncate`}>{mission?.storeName}</p>
+                            <p className={`text-xs font-bold text-chocolate-muted truncate`}>{mission?.storeAddress?.split(',')[0]}</p>
                             <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Itens</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>{mission?.items?.length && mission.items.length > 1 ? mission.items.length : '1'}</p>
+                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Itens</p>
+                                <p className={`text-sm font-black text-chocolate-primary`}>{mission?.items?.length && mission.items.length > 1 ? mission.items.length : '1'}</p>
                               </div>
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Total</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>{activeMissions.filter(m => m.storeName === mission?.storeName).length} Pedidos</p>
+                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Total</p>
+                                <p className={`text-sm font-black text-chocolate-primary`}>{activeMissions.filter(m => m.storeName === mission?.storeName).length} Pedidos</p>
                               </div>
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Pedido</p>
-                                <p className={`text-sm font-black ${textPrimary}`}>#{mission?.displayId || mission?.id?.slice(-4)}</p>
+                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Pedido</p>
+                                <p className={`text-sm font-black text-chocolate-primary`}>#{mission?.displayId || mission?.id?.slice(-4)}</p>
                               </div>
                               <div>
-                                <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Código</p>
-                                <p className={`text-sm font-black text-[#FF6B00]`}>{mission?.collectionCode}</p>
+                                <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Código</p>
+                                <p className={`text-sm font-black text-[#FF6B00] neon-orange-glow-text`}>{mission?.collectionCode}</p>
                               </div>
                             </div>
                           </div>
 
                           {/* Customer Details - LOOP for Batch */}
                           {activeMissions.filter(m => m.storeName === mission?.storeName).map((batchMission, idx) => (
-                            <div key={batchMission.id} className={`p-3 rounded-xl border border-white/5 ${innerBg}`}>
+                            <div key={batchMission.id} className={`p-3 rounded-xl chocolate-inner-card-v2 bg-black/30 border-white/5`}>
                               <div className="flex justify-between items-center mb-1">
-                                <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Entregar para ({idx + 1})</p>
-                                <span className="text-[10px] font-mono text-zinc-500">#{batchMission.displayId || batchMission.id.slice(-4)}</span>
+                                <p className={`text-[10px] font-black uppercase tracking-widest text-chocolate-muted`}>Entregar para ({idx + 1})</p>
+                                <span className="text-[10px] font-mono text-chocolate-muted">#{batchMission.displayId || batchMission.id.slice(-4)}</span>
                               </div>
-                              <p className={`text-sm font-black ${textPrimary} truncate`}>{batchMission.customerName}</p>
+                              <p className={`text-sm font-black text-white truncate`}>{batchMission.customerName}</p>
                               <div className="flex items-center space-x-4 mt-2 pt-2 border-t border-white/5">
                                 <div>
-                                  <p className={`text-[9px] font-black uppercase tracking-widest ${textMuted}`}>Itens</p>
-                                  <p className={`text-sm font-black ${textPrimary}`}>{batchMission.items?.length > 1 ? batchMission.items.length : '1'}</p>
+                                  <p className={`text-[9px] font-black uppercase tracking-widest text-chocolate-muted`}>Itens</p>
+                                  <p className={`text-sm font-black text-chocolate-primary`}>{batchMission.items?.length > 1 ? batchMission.items.length : '1'}</p>
                                 </div>
                               </div>
                             </div>
@@ -3077,10 +3076,10 @@ const App: React.FC = () => {
                       </div>
                     )}
                     {showDeliveryHelpModal && (
-                      <div className={`p-4 rounded-[20px] border border-white/5 space-y-3 ${innerBg} animate-in fade-in slide-in-from-top-2 mb-3`}>
+                      <div className={`p-4 rounded-[20px] space-y-3 chocolate-inner-card-v2 border-orange-500/20 animate-in fade-in slide-in-from-top-2 mb-3`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className={`text-xs font-black uppercase tracking-widest ${textPrimary}`}>Central de Ajuda</h3>
-                          <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400"><i className="fas fa-times text-[10px]"></i></button>
+                          <h3 className={`text-xs font-black uppercase tracking-widest text-chocolate-primary`}>Central de Ajuda</h3>
+                          <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-6 h-6 rounded-full bg-black/40 flex items-center justify-center text-zinc-400"><i className="fas fa-times text-[10px]"></i></button>
                         </div>
 
                           <div className="grid grid-cols-2 gap-3">
@@ -3091,10 +3090,10 @@ const App: React.FC = () => {
                                 setShowChatModal(true);
                                 setShowDeliveryHelpModal(false);
                               }}
-                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
+                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all bg-black/40 border-white/5 hover:border-[#FF6B00]/40`}
                             >
                               <div className="w-10 h-10 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.1)]"><i className="fas fa-user"></i></div>
-                              <span className={`text-[10px] font-black uppercase tracking-tighter ${textPrimary}`}>Falar com Cliente</span>
+                              <span className={`text-[10px] font-black uppercase tracking-tighter text-chocolate-primary`}>Falar com Cliente</span>
                             </button>
                             <button
                               onClick={() => { 
@@ -3103,10 +3102,10 @@ const App: React.FC = () => {
                                 setShowChatModal(true);
                                 setShowDeliveryHelpModal(false);
                               }}
-                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all ${theme === 'dark' ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'}`}
+                              className={`p-3 rounded-xl border flex flex-col items-center text-center space-y-2 active:scale-95 transition-all bg-black/40 border-white/5 hover:border-[#FFD700]/40`}
                             >
                               <div className="w-10 h-10 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.1)]"><i className="fas fa-store"></i></div>
-                              <span className={`text-[10px] font-black uppercase tracking-tighter ${textPrimary}`}>Falar com Loja</span>
+                              <span className={`text-[10px] font-black uppercase tracking-tighter text-chocolate-primary`}>Falar com Loja</span>
                             </button>
                           </div>
                       </div>
@@ -3114,36 +3113,36 @@ const App: React.FC = () => {
 
                     <div className="px-1 flex justify-between items-start">
                       <div>
-                         <h3 className={`text-lg font-black leading-tight ${textPrimary}`}>
+                         <h3 className={`text-lg font-black leading-tight text-white`}>
                           {status === DriverStatus.RETURNING ? mission?.storeName : (status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission?.storeName : mission?.customerName)}
                          </h3>
-                         <p className={`${textMuted} text-[11px] mt-0.5 leading-snug line-clamp-2`}>
+                         <p className={`text-chocolate-muted text-[11px] mt-0.5 leading-snug line-clamp-2`}>
                           {status === DriverStatus.RETURNING ? mission?.storeAddress : (status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission?.storeAddress : mission?.customerAddress)}
                          </p>
                       </div>
                       {activeMissions.length > 1 && (
-                        <div className="bg-[#FF6B00] text-white text-[10px] font-black px-2 py-1 rounded-lg animate-bounce">
+                        <div className="bg-[#FF6B00] text-white text-[10px] font-black px-2 py-1 rounded-lg animate-bounce shadow-[0_0_15px_rgba(255,107,0,0.5)]">
                           +{activeMissions.length - 1} Pedidos
                         </div>
                       )}
                     </div>
 
                     {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
-                      <div className={`p-4 rounded-[24px] border border-dashed flex items-center space-x-4 transition-all duration-500 ${isOrderReady ? 'bg-[#FFD700]/10 border-[#FFD700]/40' : `${theme === 'dark' ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-100 border-zinc-300'}`}`}>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isOrderReady ? 'bg-[#FFD700]/20' : 'bg-[#FF6B00]/10'}`}>
-                          <i className={`fas ${isOrderReady ? 'fa-check-double text-[#FFD700] blink-soft' : 'fa-utensils text-[#FF6B00] animate-pulse'} text-xl`}></i>
+                      <div className={`p-4 rounded-[24px] flex items-center space-x-4 transition-all duration-500 lava-border-dashed ${isOrderReady ? 'bg-[#FFD700]/10 border-[#FFD700]/40 shadow-[inset_0_0_20px_rgba(255,215,0,0.05)]' : 'bg-[#FF6B00]/5 border-[#FF6B00]/30 shadow-[inset_0_0_20px_rgba(255,107,0,0.05)]'}`}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isOrderReady ? 'bg-[#FFD700]/20 shadow-[0_0_15px_rgba(255,215,0,0.2)]' : 'bg-[#FF6B00]/10 shadow-[0_0_15px_rgba(255,107,0,0.2)]'}`}>
+                          <i className={`fas ${isOrderReady ? 'fa-check-double text-[#FFD700] blink-soft' : 'fa-box-open text-[#FF6B00] heartbeat-pulse'} text-xl`}></i>
                         </div>
                         <div className="flex-1">
-                          <h4 className={`text-xs font-black uppercase italic ${textPrimary}`}>
-                            {isOrderReady ? 'Retire no Balcão' : 'Aguarde o Lojista'}
+                          <h4 className={`text-xs font-black uppercase italic ${isOrderReady ? 'text-[#FFD700]' : 'text-chocolate-primary'}`}>
+                            {isOrderReady ? 'Pedido Pronto p/ Retirada' : 'Aguarde o Preparo...'}
                           </h4>
-                          <p className={`${textMuted} text-[9px] font-bold uppercase tracking-widest mt-0.5`}>ID: #{mission?.displayId || mission?.id?.slice(-4)}</p>
+                          <p className={`text-chocolate-muted text-[9px] font-bold uppercase tracking-widest mt-0.5`}>Código: <span className="text-[#FF6B00]">#{mission?.displayId || mission?.id?.slice(-4)}</span></p>
                           {(mission?.deliveryValue ?? 0) > 0 && (
                             <div className="flex items-center space-x-2 mt-1.5">
                               <span className={`text-[10px] font-black ${isOrderReady ? 'text-[#FFD700]' : 'text-green-400'}`}>
                                 R$ {(mission?.deliveryValue || 0).toFixed(2)}
                               </span>
-                              <span className={`text-[9px] font-bold uppercase ${textMuted}`}>
+                              <span className={`text-[9px] font-bold uppercase text-chocolate-muted`}>
                                 · {mission?.paymentMethod || 'PIX'}
                               </span>
                             </div>
@@ -3153,29 +3152,29 @@ const App: React.FC = () => {
                     )}
 
                     {(status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) && (
-                      <div className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-[#FF6B00]/40 bg-[#FF6B00]/5 p-6 flex flex-col items-center text-center animate-in zoom-in duration-300">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent opacity-50"></div>
+                      <div className="relative overflow-hidden rounded-[28px] border border-[#FF6B00]/30 bg-black/40 p-6 flex flex-col items-center text-center animate-in zoom-in duration-300 shadow-[0_0_40px_rgba(0,0,0,0.3)]">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent opacity-50 shadow-[0_0_10px_#FF6B00]"></div>
 
                         <div className="mb-4">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-2">Mostre ao Atendente</p>
-                          <div className="flex items-center justify-center space-x-3 mb-1">
-                            <i className="fas fa-ticket text-3xl text-[#FFD700]"></i>
-                            <span className={`text-6xl font-black italic tracking-tighter ${textPrimary}`}>{mission?.collectionCode}</span>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-2 opacity-70">Apresente à Loja</p>
+                          <div className="flex items-center justify-center space-x-4 mb-1">
+                            <i className="fas fa-barcode text-3xl text-white/20"></i>
+                            <span className={`text-6xl font-black italic tracking-tighter text-white neon-orange-glow-text`}>{mission?.collectionCode}</span>
                           </div>
                         </div>
 
-                        <div className="w-full h-px bg-[#FF6B00]/20 mb-4"></div>
+                        <div className="w-full h-px bg-white/5 mb-4 shadow-[0_1px_0_rgba(255,255,255,0.02)]"></div>
 
                         <div className="flex flex-col items-center">
-                          <p className={`${textMuted} text-[9px] font-black uppercase tracking-widest mb-1`}>Cliente</p>
-                          <h2 className={`text-2xl font-black ${textPrimary} line-clamp-1`}>{mission?.customerName}</h2>
+                          <p className={`text-chocolate-muted text-[9px] font-black uppercase tracking-widest mb-1`}>Identificação do Cliente</p>
+                          <h2 className={`text-2xl font-black text-chocolate-primary line-clamp-1`}>{mission?.customerName}</h2>
                           {(mission?.deliveryValue ?? 0) > 0 && (
                             <div className="flex items-center space-x-2 mt-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
                               <i className="fas fa-money-bill-wave text-green-400 text-xs"></i>
                               <span className="text-green-400 font-black text-sm">
                                 R$ {(mission?.deliveryValue || 0).toFixed(2)}
                               </span>
-                              <span className={`text-[9px] font-bold uppercase ${textMuted}`}>
+                              <span className={`text-[9px] font-bold uppercase text-chocolate-muted`}>
                                 {mission?.paymentMethod || 'PIX'}
                               </span>
                             </div>
@@ -3214,9 +3213,9 @@ const App: React.FC = () => {
                           </div>
                         )}
 
-                        <div className={`p-4 rounded-[24px] border mb-4 transition-all ${isCodeValid() ? 'bg-green-500/10 border-green-500/40' : 'bg-white/5 border-white/5'}`}>
-                          <p className={`text-[9px] font-black uppercase text-center mb-3 tracking-widest ${isCodeValid() ? 'text-green-500' : textMuted}`}>
-                            CÓDIGO DE ENTREGA (4 DÍGITOS DO CELULAR):
+                        <div className={`p-4 rounded-[24px] border mb-4 transition-all chocolate-inner-card-v2 ${isCodeValid() ? 'border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'border-white/5'}`}>
+                          <p className={`text-[9px] font-black uppercase text-center mb-3 tracking-widest ${isCodeValid() ? 'text-green-500' : 'text-chocolate-muted'}`}>
+                            CÓDIGO DE ENTREGA (CONFIRMAR C/ CLIENTE):
                           </p>
                         <div className="flex justify-center space-x-2">
                           {[0, 1, 2, 3].map(i => (
@@ -3229,7 +3228,7 @@ const App: React.FC = () => {
                               value={typedCode[i] || ''}
                               onChange={(e) => handleCodeChange(i, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(i, e)}
-                              className={`w-11 h-14 rounded-xl text-center text-2xl font-black transition-all outline-none border-2 ${isCodeValid() ? 'bg-green-500/20 border-green-500 text-green-500' : `${innerBg} border-white/10 text-white focus:border-[#FF6B00]`}`}
+                              className={`w-11 h-14 rounded-xl text-center text-2xl font-black transition-all outline-none border-2 ${isCodeValid() ? 'bg-green-500/20 border-green-500 text-green-500' : 'bg-black/40 border-white/10 text-white focus:border-[#FF6B00] focus:shadow-[0_0_15px_rgba(255,107,0,0.2)]'}`}
                             />
                           ))}
                         </div>
@@ -4451,13 +4450,19 @@ const App: React.FC = () => {
 
       {showSOSModal && (
         <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end justify-center backdrop-blur-xl animate-in fade-in duration-300">
-          <div className={`w-full bg-[#1E1E1E] rounded-t-[40px] p-6 pb-12 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-white/10`}>
-            <div className="flex justify-between items-center mb-6 px-2">
+          <div className={`w-full chocolate-bottom-panel rounded-t-[40px] p-6 pb-12 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-[#FF6B00]/20`}>
+            <div className="flex justify-between items-center mb-8 px-2">
               <div>
-                <h2 className="text-2xl font-black italic text-white tracking-tight">Central de Emergência</h2>
-                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Você precisa de ajuda imediata?</p>
+                <h2 className="text-2xl font-black italic text-white tracking-tight flex items-center gap-3">
+                  <i className="fas fa-tower-broadcast text-[#FF6B00] animate-pulse"></i>
+                  <span>Central SOS</span>
+                </h2>
+                <p className="text-chocolate-muted text-[10px] font-black uppercase tracking-[0.2em] mt-1">EMERGÊNCIA E SUPORTE</p>
               </div>
-              <button onClick={() => setShowSOSModal(false)} className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 active:scale-90 transition-transform">
+              <button 
+                onClick={() => setShowSOSModal(false)} 
+                className="w-11 h-11 rounded-full chocolate-inner-card-v2 flex items-center justify-center text-chocolate-primary active:scale-90 transition-transform"
+              >
                 <i className="fas fa-chevron-down"></i>
               </button>
             </div>
@@ -4465,50 +4470,50 @@ const App: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => handleSOSAction('police')}
-                className="bg-red-900/20 border border-red-500/30 p-6 rounded-[32px] flex flex-col items-center justify-center space-y-3 active:scale-95 transition-transform group"
+                className="chocolate-inner-card-v2 border-red-500/20 p-6 flex flex-col items-center justify-center space-y-3 active:scale-95 transition-all group"
               >
-                <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-900/50 group-hover:scale-110 transition-transform">
-                  <i className="fas fa-shield-halved text-2xl text-white"></i>
+                <div className="w-16 h-16 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center shadow-lg shadow-red-900/20 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-shield-halved text-2xl text-red-500"></i>
                 </div>
                 <div className="text-center">
                   <h3 className="text-white font-black text-lg">POLÍCIA</h3>
-                  <p className="text-red-400 font-bold text-sm">Ligar 190</p>
+                  <p className="text-red-500 font-bold text-xs">Ligar 190</p>
                 </div>
               </button>
               <button
                 onClick={() => handleSOSAction('samu')}
-                className="bg-red-900/20 border border-red-500/30 p-6 rounded-[32px] flex flex-col items-center justify-center space-y-3 active:scale-95 transition-transform group"
+                className="chocolate-inner-card-v2 border-red-500/20 p-6 flex flex-col items-center justify-center space-y-3 active:scale-95 transition-all group"
               >
-                <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-900/50 group-hover:scale-110 transition-transform">
-                  <i className="fas fa-truck-medical text-2xl text-white"></i>
+                <div className="w-16 h-16 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center shadow-lg shadow-red-900/20 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-truck-medical text-2xl text-red-500"></i>
                 </div>
                 <div className="text-center">
                   <h3 className="text-white font-black text-lg">SAMU</h3>
-                  <p className="text-red-400 font-bold text-sm">Ligar 192</p>
+                  <p className="text-red-500 font-bold text-xs">Ligar 192</p>
                 </div>
               </button>
               <button
                 onClick={() => handleSOSAction('share')}
-                className="bg-zinc-800/50 border border-white/5 p-6 rounded-[32px] flex flex-col items-center justify-center space-y-3 active:scale-95 transition-transform group"
+                className="chocolate-inner-card-v2 p-6 flex flex-col items-center justify-center space-y-3 active:scale-95 transition-all group"
               >
-                <div className="w-14 h-14 rounded-full bg-green-600 flex items-center justify-center shadow-lg shadow-green-900/30 group-hover:scale-110 transition-transform">
-                  <i className="fab fa-whatsapp text-2xl text-white"></i>
+                <div className="w-14 h-14 rounded-full bg-green-600/10 border border-green-500/20 flex items-center justify-center shadow-lg shadow-green-900/10 group-hover:scale-110 transition-transform">
+                  <i className="fab fa-whatsapp text-2xl text-green-500"></i>
                 </div>
                 <div className="text-center">
-                  <h3 className="text-white font-black text-sm uppercase">Compartilhar</h3>
-                  <p className="text-zinc-500 font-bold text-[10px]">Enviar Localização</p>
+                  <h3 className="text-white font-black text-xs uppercase italic tracking-tighter">Localização</h3>
+                  <p className="text-chocolate-muted font-bold text-[10px]">Compartilhar</p>
                 </div>
               </button>
               <button
                 onClick={() => handleSOSAction('mechanic')}
-                className="bg-zinc-800/50 border border-white/5 p-6 rounded-[32px] flex flex-col items-center justify-center space-y-3 active:scale-95 transition-transform group"
+                className="chocolate-inner-card-v2 p-6 flex flex-col items-center justify-center space-y-3 active:scale-95 transition-all group"
               >
-                <div className="w-14 h-14 rounded-full bg-[#FF6B00] flex items-center justify-center shadow-lg shadow-orange-900/30 group-hover:scale-110 transition-transform">
-                  <i className="fas fa-wrench text-2xl text-white"></i>
+                <div className="w-14 h-14 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 flex items-center justify-center shadow-lg shadow-orange-900/10 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-wrench text-2xl text-[#FF6B00]"></i>
                 </div>
                 <div className="text-center">
-                  <h3 className="text-white font-black text-sm uppercase">Mecânico</h3>
-                  <p className="text-zinc-500 font-bold text-[10px]">Buscar Próximo</p>
+                  <h3 className="text-white font-black text-sm uppercase italic tracking-tighter">Mecânico</h3>
+                  <p className="text-chocolate-muted font-bold text-[10px]">Buscar Próximo</p>
                 </div>
               </button>
             </div>
@@ -4517,39 +4522,45 @@ const App: React.FC = () => {
       )}
 
       {showPostDeliveryModal && (
-        <div className="bg-chocolate-orange-v5">
-          {/* A Pata cortando a tela (Print 4) */}
-          <div className="scratch-layer">
-            <img src="/images/cheetah-paw.png" className="paw-scratch-img" alt="Feroz Scratch" />
+        <div className="absolute inset-0 z-[7000] bg-[#0f0502] flex items-center justify-center overflow-hidden animate-in fade-in duration-700">
+          {/* A Pata cortando a tela (Animated Background) */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="liquid-lava-path !w-full !left-0 !top-0 !bottom-0 !opacity-5 blur-3xl"></div>
           </div>
 
           {/* Conteúdo da Vitória */}
-          <div className="victory-content">
-            {/* A Pata rasgando no lugar do logo (Print 4 com fundo removido via CSS) */}
-            <div className="mb-6 transform h-48 flex items-center justify-center">
-              <img src="/images/victory-claw.png" className="claw-logo" alt="Claw Logo" />
+          <div className="relative z-10 w-full max-w-sm px-8 text-center flex flex-col items-center">
+            {/* A Pata rasgando no lugar do logo */}
+            <div className="mb-10 relative">
+              <div className="absolute inset-0 rounded-full bg-[#FF6B00] blur-[100px] opacity-20 animate-pulse"></div>
+              <img 
+                src="https://img.icons8.com/ios-filled/150/FF6B00/claws.png" 
+                className="w-32 h-32 opacity-80 drop-shadow-[0_0_30px_rgba(255,107,0,0.4)]" 
+                alt="Victory Claw" 
+              />
             </div>
 
-            <div className="space-y-1 mb-8">
-              <h2 className="text-4xl font-black italic text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transform -skew-x-12 leading-tight">
-                VOCÊ É FEROZ<br/>GUEPARDO!
+            <div className="space-y-2 mb-10">
+              <h2 className="text-[40px] font-black italic text-white tracking-tighter leading-tight uppercase transform -skew-x-12">
+                MISSÃO<br/>CUMPRIDA!
               </h2>
-              <p className="text-[#FF6B00] font-black italic text-xl tracking-tight drop-shadow-md">A caça continua</p>
+              <p className="text-[#FF6B00] font-black italic text-xl tracking-widest uppercase opacity-80">Você é Feroz!</p>
             </div>
 
             {/* Valor da Corrida (Solid Card) */}
-            <div className="w-full bg-black/60 backdrop-blur-md p-8 rounded-[40px] border border-white/10 mb-10 shadow-2xl">
-              <p className="text-white/40 font-black text-[10px] uppercase tracking-widest mb-2">Valor da Corrida</p>
-              <p className="text-6xl font-black text-white italic drop-shadow-lg">
+            <div className="w-full chocolate-inner-card-v2 p-10 mb-12 border-[#FF6B00]/30 shadow-[0_0_60px_rgba(0,0,0,0.5)]">
+              <p className="text-chocolate-muted font-black text-[10px] uppercase tracking-[0.3em] mb-4">Total Arrecadado</p>
+              <p className="text-6xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
                 {formatCurrency(batchEarnings || 0)}
               </p>
             </div>
 
             <button 
               onClick={() => { playClick(); setShowPostDeliveryModal(false); }} 
-              className="btn-guepardo-orange"
+              className="w-full h-20 btn-lava-accept flex items-center justify-center gap-4 rounded-[32px] text-white font-black text-xl uppercase italic tracking-widest heartbeat-pulse"
             >
-              Continuar a Caça
+              <i className="fas fa-fire-flame-curved"></i>
+              Próxima Caça
             </button>
           </div>
         </div>

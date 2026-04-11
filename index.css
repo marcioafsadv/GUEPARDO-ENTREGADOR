@@ -227,5 +227,68 @@ body {
   color: #FFC099;
 }
 
+/* Chocolate Bottom Sheet UI */
+.chocolate-bottom-panel {
+  background: linear-gradient(to bottom, rgba(15, 5, 2, 0.98) 0%, rgba(10, 4, 2, 1) 100%);
+  backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(255, 107, 0, 0.15);
+  box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.6);
+}
+
+.chocolate-inner-card-v2 {
+  background: rgba(26, 12, 6, 0.6);
+  border: 1px solid rgba(255, 107, 0, 0.08);
+  border-radius: 28px;
+  transition: all 0.3s ease;
+}
+
+.chocolate-inner-card-v2:hover {
+  background: rgba(35, 16, 8, 0.8);
+  border-color: rgba(255, 107, 0, 0.2);
+}
+
+.chocolate-glass-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  color: #FFC099;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chocolate-glass-button.active {
+  background: rgba(255, 107, 0, 0.15);
+  border-color: rgba(255, 107, 0, 0.4);
+  color: #FF6B00;
+  box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
+}
+
+.neon-orange-pulsing-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #FF6B00;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #FF6B00;
+  animation: pulse-neon-dot 2s infinite;
+}
+
+@keyframes pulse-neon-dot {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.text-chocolate-muted {
+  color: rgba(255, 192, 153, 0.4);
+}
+
+.text-chocolate-primary {
+  color: #FFC099;
+}
+
+.lava-border-dashed {
+  border: 2px dashed rgba(255, 107, 0, 0.25);
+  background: rgba(255, 107, 0, 0.03);
+}
+
 
 

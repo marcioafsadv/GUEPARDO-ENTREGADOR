@@ -490,48 +490,56 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             <div ref={mapContainer} className="w-full h-full" />
 
             {/* 99-style Header Instructions - COMPACTED */}
-            <div className="absolute top-0 left-0 right-0 z-20">
-                <div className="bg-[#0b0b0b] rounded-b-[24px] shadow-[0_10px_20px_rgba(0,0,0,0.4)] pb-3 pt-6 px-5 flex flex-col uppercase transition-all">
+            <div className="absolute top-0 left-0 right-0 z-20 transition-all duration-500">
+                <div className="chocolate-bottom-panel rounded-b-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.6)] pb-4 pt-8 px-6 flex flex-col uppercase border-t-0 border-b border-orange-500/20">
                     {/* Main Instruction */}
                     <div className="flex items-center">
-                        <div className="mr-3 sm:mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-8 sm:w-10 h-10 sm:h-12">
+                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-10 bg-[#FF6B00]/10 rounded-xl border border-[#FF6B00]/20 shadow-[0_0_15px_rgba(255,107,0,0.1)]">
                             {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-2xl sm:text-3xl"></i>
+                                <i className="fas fa-arrow-turn-down fa-flip-horizontal fa-rotate-180 text-2xl text-[#FF6B00]"></i>
                             ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-turn-down text-2xl sm:text-3xl fa-rotate-180"></i>
+                                <i className="fas fa-arrow-turn-down text-2xl fa-rotate-180 text-[#FF6B00]"></i>
                             ) : instruction?.modifier.includes('uturn') ? (
-                                <i className="fas fa-arrow-rotate-left text-2xl sm:text-3xl"></i>
+                                <i className="fas fa-arrow-rotate-left text-2xl text-[#FF6B00]"></i>
                             ) : (
-                                <i className="fas fa-arrow-up text-2xl sm:text-3xl"></i>
+                                <i className="fas fa-arrow-up text-2xl text-[#FF6B00]"></i>
                             )}
                         </div>
                         <div className="flex flex-col flex-1">
-                            <h1 className="text-white text-[24px] sm:text-[32px] font-black leading-none tracking-tight">
+                            <h1 className="text-white text-[24px] sm:text-[32px] font-black leading-none tracking-tight neon-orange-glow-text">
                                 {instruction?.distanceText || '-- m'}
                             </h1>
-                            <p className="text-white/80 text-[12px] sm:text-[14px] font-bold leading-tight line-clamp-1 mt-0.5">
-                                {instruction?.roadName || 'Calculando...'}
+                            <p className="text-chocolate-primary text-[12px] sm:text-[14px] font-bold leading-tight line-clamp-1 mt-0.5 opacity-80">
+                                {instruction?.roadName || 'Calculando rota...'}
                             </p>
                         </div>
                     </div>
                     {/* Secondary Instruction (If available) */}
                     {instruction?.nextRoadName ? (
-                        <div className="border-t border-white/5 pt-2 mt-2 flex items-center gap-2">
-                            <i className="fas fa-arrow-turn-up text-zinc-500 rotate-90 text-[10px]"></i>
-                            <p className="text-zinc-500 text-xs font-bold truncate leading-none">
-                                {instruction.nextRoadName}
-                            </p>
+                        <div className="border-t border-white/5 pt-3 mt-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <i className="fas fa-arrow-turn-up text-[#FF6B00]/40 rotate-90 text-[10px]"></i>
+                                <p className="text-chocolate-muted text-xs font-bold truncate leading-none">
+                                    {instruction.nextRoadName}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30' : 'bg-transparent border border-white/10 text-white/20'}`}
+                            >
+                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
+                            </button>
                         </div>
                     ) : (
-                        <div className="border-t border-white/5 pt-2 mt-2 flex items-center justify-between">
-                            <p className="text-zinc-600 text-[8px] font-black leading-none tracking-widest">
-                                MANTENHA A ATENÇÃO
+                        <div className="border-t border-white/5 pt-3 mt-3 flex items-center justify-between">
+                            <p className="text-chocolate-muted text-[8px] font-black leading-none tracking-[0.3em]">
+                                GUEPARDO NAVIGATION SYSTEM
                             </p>
                             <button 
                                 onClick={() => setVoiceEnabled(!voiceEnabled)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${voiceEnabled ? 'bg-zinc-800 text-white' : 'bg-transparent border border-zinc-800 text-zinc-700'}`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30' : 'bg-transparent border border-white/10 text-white/20'}`}
                             >
-                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-[10px]`}></i>
+                                <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-xs`}></i>
                             </button>
                         </div>
                     )}
@@ -540,32 +548,33 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Arrival Alert Overlay */}
             {isArriving && !['ARRIVED_AT_STORE', 'READY_FOR_PICKUP', 'PICKING_UP', 'ARRIVED_AT_CUSTOMER', 'RETURNING'].includes(status) && (
-                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-                    <div className="bg-orange-600 text-white px-8 py-4 rounded-full text-2xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(234,88,12,0.6)] border-4 border-white/20 animate-bounce">
-                        🏠 CHEGANDO AO LOCAL
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
+                    <div className="bg-[#FF6B00] text-white px-10 py-5 rounded-[32px] text-2xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(255,107,0,0.6)] border-4 border-white/20 animate-bounce flex flex-col items-center gap-2">
+                        <i className="fas fa-location-dot text-4xl"></i>
+                        <span>CHEGANDO AO LOCAL</span>
                     </div>
                 </div>
             )}
 
             {/* Ready for Pickup Alert Overlay */}
             {status === 'READY_FOR_PICKUP' && (
-                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-                    <div className="bg-green-600 text-white px-8 py-4 rounded-xl text-3xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(22,163,74,0.6)] border-4 border-white/20 animate-pulse flex flex-col items-center gap-2">
-                        <i className="fas fa-box-open text-4xl"></i>
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
+                    <div className="bg-[#FFD700] text-black px-10 py-6 rounded-[32px] text-3xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(255,215,0,0.4)] border-4 border-black/10 animate-pulse flex flex-col items-center gap-3">
+                        <i className="fas fa-box-open text-5xl"></i>
                         RETIRAR NO BALCÃO
-                        <span className="text-xs font-medium normal-case tracking-normal opacity-80">O lojista marcou como pronto!</span>
+                        <span className="text-xs font-black uppercase tracking-widest opacity-60">O lojista marcou como pronto!</span>
                     </div>
                 </div>
             )}
 
             {/* Left Side: Shield + Speedometer - COMPACTED */}
-            <div className="absolute left-3 bottom-[110px] z-[1000] flex flex-col gap-2 items-center">
-                <div className="w-10 h-10 rounded-full bg-[#1A1208] border border-[#2B1B0F] shadow-xl flex items-center justify-center text-[#FF6B00]">
-                    <i className="fas fa-shield-halved text-lg"></i>
+            <div className="absolute left-4 bottom-[110px] z-[1000] flex flex-col gap-3 items-center transition-all duration-500">
+                <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
+                    <i className="fas fa-shield-halved text-xl"></i>
                 </div>
-                <div className="bg-[#121212] border border-zinc-800 rounded-full flex flex-col items-center justify-center w-14 h-14 shadow-[0_5px_15px_rgba(0,0,0,0.6)]">
-                    <span className="text-xl font-black text-white leading-none">{currentSpeed}</span>
-                    <span className="text-[8px] text-zinc-500 font-black tracking-tighter pt-0.5">KM/H</span>
+                <div className="bg-[#120502]/90 border border-[#FF6B00]/20 rounded-2xl flex flex-col items-center justify-center w-16 h-20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                    <span className="text-2xl font-black text-white leading-none neon-orange-glow-text">{currentSpeed}</span>
+                    <span className="text-[9px] text-chocolate-muted font-black tracking-widest pt-1 uppercase">km/h</span>
                 </div>
             </div>
 

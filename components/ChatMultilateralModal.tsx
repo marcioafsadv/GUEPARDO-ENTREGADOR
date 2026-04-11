@@ -119,98 +119,100 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
   const isHistorical = order.status === 'completed' || order.status === 'cancelled';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="w-full max-w-lg bg-[#1A0900] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] max-h-[700px] animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="w-full max-w-lg bg-[#0f0502] border border-[#FF6B00]/20 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col h-[85vh] max-h-[750px] animate-in zoom-in-95 duration-500 relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF6B00]/5 rounded-full blur-[100px] pointer-events-none"></div>
         
         {/* HEADER */}
-        <div className="p-6 bg-gradient-to-b from-[#2D0F00] to-[#1A0900] border-b border-white/5 flex items-center justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 bg-[#FF6B00] rounded-2xl shadow-[0_0_20px_rgba(255,107,0,0.3)] flex items-center justify-center">
-              <i className="fas fa-comments text-white text-xl"></i>
+        <div className="p-8 pb-6 bg-gradient-to-b from-[#1a0a05] to-[#0f0502] border-b border-white/5 flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-[#FF6B00]/10 border border-[#FF6B00]/20 rounded-2xl shadow-[0_0_20px_rgba(255,107,0,0.1)] flex items-center justify-center">
+              <i className="fas fa-comment-dots text-[#FF6B00] text-2xl animate-pulse"></i>
             </div>
             <div>
-              <h3 className="text-lg font-black italic tracking-tighter uppercase text-white leading-none">Chat Multilateral</h3>
-              <div className="flex items-center gap-2 mt-1.5">
-                <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.2em]">Pedido #{order.displayId || order.id.slice(-4)}</p>
+              <h3 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none neon-orange-glow-text">Messenger</h3>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-[10px] font-black text-[#FFC099]/40 uppercase tracking-[0.2em]">Pedido #{order.displayId || order.id.slice(-4)}</p>
                 {isHistorical && (
-                  <span className="bg-white/10 text-white/40 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-white/5">Histórico</span>
+                  <span className="bg-[#FF6B00]/10 text-[#FF6B00] px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border border-[#FF6B00]/20">Histórico</span>
                 )}
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-white flex items-center justify-center">
-            <i className="fas fa-times text-lg"></i>
+          <button 
+            onClick={onClose} 
+            className="w-12 h-12 bg-white/5 hover:bg-[#FF6B00]/20 rounded-2xl transition-all text-white/40 hover:text-[#FF6B00] flex items-center justify-center border border-white/5 hover:border-[#FF6B00]/30"
+          >
+            <i className="fas fa-times text-xl"></i>
           </button>
         </div>
 
         {/* TABS */}
-        <div className="px-5 py-3 bg-[#1A0900] flex gap-2">
+        <div className="px-6 py-4 bg-[#0f0502] flex gap-3 relative z-10">
           <button
             onClick={() => setActiveTab('STORE_COURIER')}
-            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 border ${
+            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border ${
               activeTab === 'STORE_COURIER' 
-              ? 'bg-[#FF6B00] border-[#FF6B00] text-white shadow-[0_10px_20px_rgba(255,107,0,0.2)]' 
-              : 'bg-transparent border-white/5 text-white/20 hover:text-white/40 hover:bg-white/5'
+              ? 'bg-[#FF6B00] border-[#FF6B00] text-white shadow-[0_15px_30px_rgba(255,107,0,0.3)]' 
+              : 'bg-white/5 border-white/5 text-[#FFC099]/40 hover:text-[#FFC099] hover:bg-white/10'
             }`}
           >
-            <i className="fas fa-store text-xs" /> Loja x Entregador
+            <i className="fas fa-store text-xs" /> Loja
           </button>
           <button
             onClick={() => setActiveTab('COURIER_CLIENT')}
-            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 border ${
+            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border ${
               activeTab === 'COURIER_CLIENT' 
               ? 'bg-white/10 border-white/20 text-white shadow-xl' 
-              : 'bg-transparent border-white/5 text-white/20 hover:text-white/40 hover:bg-white/5'
+              : 'bg-white/5 border-white/5 text-[#FFC099]/40 hover:text-[#FFC099] hover:bg-white/10'
             }`}
           >
-            <i className="fas fa-user text-xs" /> Entregador x Cliente
+            <i className="fas fa-user text-xs" /> Cliente
           </button>
         </div>
 
         {/* MESSAGES AREA */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-5 space-y-5 bg-black/40 scrollbar-hide shadow-inner relative"
+          className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20 scrollbar-hide relative z-10"
         >
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center">
-              <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 italic">Sincronizando...</p>
+              <div className="w-12 h-12 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(255,107,0,0.2)]"></div>
+              <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-[#FFC099]/30 italic">Sincronizando Caça...</p>
             </div>
           ) : currentMessages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-10">
-              <i className="fas fa-comment-slash text-5xl mb-4 text-white"></i>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-white">Silêncio no Canal</p>
+              <i className="fas fa-comment-slash text-6xl mb-6 text-[#FF6B00]"></i>
+              <p className="text-sm font-black uppercase tracking-[0.4em] text-white">Silêncio no Canal</p>
             </div>
           ) : (
             currentMessages.map((msg) => {
               const isMine = msg.senderType === 'COURIER';
               return (
-                <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 fade-in duration-500`}>
-                  <div className={`max-w-[85%] p-4 rounded-[1.2rem] relative group ${
+                <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-4 fade-in duration-700`}>
+                  <div className={`max-w-[85%] p-5 rounded-[1.8rem] relative group transition-all ${
                     isMine 
-                    ? 'bg-[#FF6B00] text-white rounded-tr-none shadow-[0_8px_25px_rgba(255,107,0,0.2)]' 
-                    : 'bg-[#121212] border border-white/10 text-white rounded-tl-none shadow-lg'
+                    ? 'bg-gradient-to-br from-[#FF6B00] to-[#CC5200] text-white rounded-tr-none shadow-[0_15px_35px_rgba(255,107,0,0.25)]' 
+                    : 'bg-[#1a0a05] border border-[#FF6B00]/20 text-[#FFC099] rounded-tl-none shadow-2xl'
                   }`}>
                     {!isMine && (
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#FF6B00]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] opacity-80">
                           {msg.senderName}
                         </span>
                       </div>
                     )}
                     {isMine && (
-                      <div className="flex items-center gap-2 mb-1.5 justify-end">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">
-                          Você
+                      <div className="flex items-center gap-2 mb-2 justify-end">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                          Guepardo
                         </span>
                       </div>
                     )}
-                    <p className="text-[14px] font-bold leading-relaxed tracking-tight">{msg.text}</p>
+                    <p className="text-[15px] font-bold leading-relaxed tracking-tight">{msg.text}</p>
                   </div>
-                  <span className="text-[8px] font-black text-white/20 mt-1.5 uppercase tracking-widest px-1">
+                  <span className="text-[9px] font-black text-[#FFC099]/20 mt-2.5 uppercase tracking-[0.2em] px-2 italic">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -221,32 +223,32 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
 
         {/* INPUT AREA */}
         {!isHistorical ? (
-          <div className="p-6 bg-[#2D0F00]/40 border-t border-white/5 backdrop-blur-3xl pb-10">
-            <div className="flex gap-3 bg-black/60 p-2 rounded-[1.8rem] border border-white/10 focus-within:border-[#FF6B00]/50 transition-all duration-300">
+          <div className="p-8 bg-gradient-to-t from-[#0f0502] to-transparent border-t border-white/5 backdrop-blur-3xl pb-10 relative z-10">
+            <div className="flex gap-4 p-3 pr-3 bg-white/5 rounded-[2.5rem] border border-white/10 focus-within:border-[#FF6B00]/40 focus-within:bg-white/[0.08] transition-all duration-500 shadow-2xl">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Digite sua mensagem..."
-                className="flex-1 bg-transparent border-none focus:outline-none text-[14px] font-bold text-white px-4 placeholder:text-white/20"
+                placeholder="Digitar..."
+                className="flex-1 bg-transparent border-none focus:outline-none text-[15px] font-bold text-white px-5 placeholder:text-[#FFC099]/20"
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim()}
-                className="w-12 h-12 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-[0_8px_15px_rgba(255,107,0,0.3)]"
+                className="w-14 h-14 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-110 active:scale-90 transition-all disabled:opacity-20 disabled:scale-100 shadow-[0_10px_25px_rgba(255,107,0,0.4)] heartbeat-pulse"
               >
-                <i className="fas fa-paper-plane text-lg"></i>
+                <i className="fas fa-paper-plane text-xl transform rotate-[15deg]"></i>
               </button>
             </div>
           </div>
         ) : (
-          <div className="p-8 bg-[#1A0900] border-t border-white/5 backdrop-blur-3xl pb-12 flex flex-col items-center justify-center gap-2">
-            <div className="flex items-center gap-2 text-white/20">
-              <i className="fas fa-lock text-xs"></i>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Chat Encerrado</p>
+          <div className="p-10 bg-[#0f0502] border-t border-white/5 backdrop-blur-3xl pb-12 flex flex-col items-center justify-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/20 mb-1">
+              <i className="fas fa-lock text-sm"></i>
             </div>
-            <p className="text-[9px] font-bold text-white/10 text-center uppercase tracking-widest leading-relaxed">Este pedido já foi finalizado.<br/>O chat está disponível apenas para consulta.</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20">Transmissão Encerrada</p>
+            <p className="text-[10px] font-bold text-[#FFC099]/10 text-center uppercase tracking-widest leading-relaxed">Este canal está arquivado.</p>
           </div>
         )}
       </div>
