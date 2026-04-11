@@ -3017,8 +3017,8 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 w-full mb-2">
-                    {/* Only show the action button if NOT navigating OR if within 100m proximity threshold */}
-                    {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 100)) && (
+                    {/* Only show the action button if NOT navigating OR if within 200m proximity threshold */}
+                    {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 200)) && (
                       <button
                         onClick={handleMainAction}
                         disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}

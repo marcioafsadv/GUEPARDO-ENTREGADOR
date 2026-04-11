@@ -358,6 +358,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 onUpdateMetrics?.({
                     time: `${Math.round(route.duration / 60)} min`,
                     distance: `${(route.distance / 1000).toFixed(1)} km`,
+                    distanceValue: route.distance,
                     progress: progressPct
                 });
 
