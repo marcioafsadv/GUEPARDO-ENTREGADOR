@@ -4530,13 +4530,13 @@ const App: React.FC = () => {
 
           {/* Conteúdo da Vitória */}
           <div className="relative z-10 w-full max-w-sm px-8 text-center flex flex-col items-center">
-            {/* A Pata rasgando no lugar do logo */}
-            <div className="mb-10 relative">
-              <div className="absolute inset-0 rounded-full bg-[#FF6B00] blur-[100px] opacity-20 animate-pulse"></div>
+            {/* Guepardo Victory Logo (Moto) */}
+            <div className="mb-8 relative transition-all animate-in zoom-in-125 duration-700 delay-300">
+              <div className="absolute inset-0 rounded-full bg-[#FF6B00] blur-[100px] opacity-30 animate-pulse"></div>
               <img 
-                src="https://img.icons8.com/ios-filled/150/FF6B00/claws.png" 
-                className="w-32 h-32 opacity-80 drop-shadow-[0_0_30px_rgba(255,107,0,0.4)]" 
-                alt="Victory Claw" 
+                src="/images/guepardo-victory.png" 
+                className="w-56 h-auto relative z-10 drop-shadow-[0_0_30px_rgba(255,107,0,0.5)]" 
+                alt="Guepardo Victory" 
               />
             </div>
 
