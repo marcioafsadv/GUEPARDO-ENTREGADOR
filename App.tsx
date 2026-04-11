@@ -1931,6 +1931,14 @@ const App: React.FC = () => {
 
   const handleFinishDelivery = () => {
     if (!mission) return;
+    
+    // SECURITY: If we are in the RETURNING phase, only the MERCHANT can finalize the mission.
+    // This prevents couriers from self-closing missions before returning money/items.
+    if (status === DriverStatus.RETURNING) {
+      console.log('🛡️ Manual finalization blocked: Awaiting merchant confirmation in DB.');
+      return;
+    }
+    
     processDeliverySuccess();
   };
 
@@ -3043,8 +3051,8 @@ const App: React.FC = () => {
                     {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 500)) && (
                       <button
                         onClick={handleMainAction}
-                        disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER) && !isCodeValid()}
-                        className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all active:scale-95 shadow-2xl relative overflow-hidden group animate-in fade-in zoom-in duration-300`}
+                        disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING}
+                        className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all ${status === DriverStatus.RETURNING ? 'opacity-50 cursor-not-allowed shadow-none' : 'active:scale-95 shadow-2xl'} relative overflow-hidden group animate-in fade-in zoom-in duration-300`}
                         style={{ 
                           backgroundColor: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00',
                           color: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#000' : '#fff'
@@ -3055,9 +3063,10 @@ const App: React.FC = () => {
                             status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Iniciar Coleta' : 'Aguardando Preparo...') :
                               (status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) ? 'Confirmar Coleta' :
                                 status === DriverStatus.GOING_TO_CUSTOMER ? 'Chegar no Cliente' :
-                                  'Finalizar Entrega'}
+                                  status === DriverStatus.RETURNING ? 'Aguardando Lojista...' :
+                                    'Finalizar Entrega'}
                         </span>
-                        <i className={`fas ${(status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right'} text-xs opacity-50 group-hover:translate-x-1 transition-transform`}></i>
+                        <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
                     )}
                   </div>
