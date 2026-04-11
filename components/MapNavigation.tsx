@@ -27,6 +27,7 @@ interface MapNavigationProps {
     onArrived?: () => void;
     onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number, distanceValue?: number }) => void;
     preloadedDestination?: { lat: number; lng: number } | null;
+    isMissionOverlayExpanded?: boolean;
     theme?: 'dark' | 'light';
 }
 
@@ -37,6 +38,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     onArrived,
     onUpdateMetrics,
     preloadedDestination,
+    isMissionOverlayExpanded = false,
     theme = 'dark'
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -551,8 +553,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Left Side: Shield + Speedometer - COMPACTED & RAISED HIGHER */}
-            <div className="absolute left-4 bottom-[280px] z-[1000] flex flex-col gap-3 items-center transition-all duration-500">
+            {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING BASED ON OVERLAY */}
+            <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[460px]' : 'bottom-[130px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
                 <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
                     <i className="fas fa-shield-halved text-xl"></i>
                 </div>

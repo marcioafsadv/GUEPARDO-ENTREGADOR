@@ -2780,8 +2780,8 @@ const App: React.FC = () => {
                   showHeatMap={showHeatMap}
                   mapMode={mapMode}
                   showTraffic={showTraffic}
-                  reCenterTrigger={reCenterTrigger}
                   onUpdateMetrics={(metrics) => setNavMetrics(metrics)}
+                  isMissionOverlayExpanded={isMissionOverlayExpanded}
                   currentLocation={currentLocation}
                 />
             )}
