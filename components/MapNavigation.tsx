@@ -498,9 +498,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Print 3 style Header Instructions */}
             <div className="absolute top-0 left-0 right-0 z-20">
-                <div className="bg-[#0a0502]/95 backdrop-blur-md rounded-b-[40px] shadow-[0_15px_45px_rgba(0,0,0,0.8)] pb-6 pt-10 px-8 flex flex-col uppercase border-b border-orange-500/10">
+                <div className="bg-[#0a0502]/95 backdrop-blur-md rounded-b-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pb-3 pt-6 px-6 flex flex-col uppercase border-b border-orange-500/10">
                     <div className="flex items-center">
-                        <div className="mr-6 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-10 bg-orange-500/10 rounded-xl border border-orange-500/20">
                              {instruction?.modifier.includes('left') ? (
                                 <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-orange-500"></i>
                             ) : instruction?.modifier.includes('right') ? (
@@ -510,10 +510,10 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                             )}
                         </div>
                         <div className="flex flex-col flex-1">
-                            <h1 className="text-white text-4xl font-[900] leading-none tracking-tighter italic">
+                            <h1 className="text-white text-2xl font-[900] leading-none tracking-tighter italic">
                                 {instruction?.distanceText || '0 M'}
                             </h1>
-                            <p className="text-orange-500/80 text-xs font-black leading-tight tracking-[0.2em] mt-1.5 line-clamp-1">
+                            <p className="text-orange-500/80 text-[10px] font-black leading-tight tracking-[0.2em] mt-1 line-clamp-1">
                                 {instruction?.roadName || 'SIGA EM FRENTE'}
                             </p>
                         </div>
@@ -526,11 +526,11 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         </button>
                     </div>
 
-                    {/* Lower bar for secondary instructions if they exist, or just decoration */}
-                    <div className="flex items-center mt-6 pt-4 border-t border-white/5 space-x-3 opacity-40">
-                         <i className="fas fa-location-arrow text-[10px] text-orange-500 rotate-45"></i>
-                         <p className="text-[10px] font-black tracking-[0.3em] overflow-hidden truncate">
-                             {instruction?.nextRoadName || 'GUEPARDO MAPS ADVANCED NAVIGATION'}
+                    {/* Lower bar for secondary instructions - Compacted */}
+                    <div className="flex items-center mt-3 pt-2 border-t border-white/5 space-x-3 opacity-40">
+                         <i className="fas fa-location-arrow text-[8px] text-orange-500 rotate-45"></i>
+                         <p className="text-[8px] font-black tracking-[0.3em] overflow-hidden truncate">
+                             {instruction?.nextRoadName || 'GUEPARDO MAPS NAVIGATION'}
                          </p>
                     </div>
                 </div>

@@ -2840,53 +2840,49 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
-
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[44px] shadow-[0_-15px_50px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-4 pb-8' : 'p-6 pb-10'} ${cardBg}`}>
+                <div className={`w-full rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-2 pb-5' : 'p-4 pb-6'} ${cardBg}`}>
                   
-
-
-                  {/* Original Print 3 style Compact Header */}
+                  {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
                     /* Exact Screenshot Replica Mode */
-                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center">
-                      <div className="w-12 h-1 bg-zinc-700/60 rounded-full mb-5" />
+                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-1.5 cursor-pointer active:scale-95 transition-all text-center">
+                      <div className="w-10 h-0.5 bg-zinc-700/60 rounded-full mb-3" />
                       
-                      <h3 className="text-white text-base font-bold mb-1">
-                        {status === DriverStatus.GOING_TO_STORE ? 'Caminho da Loja' : 'Entrega em andamento'}
+                      <h3 className="text-white text-sm font-bold mb-0.5">
+                        {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em curso'}
                       </h3>
                       
-                      <div className="flex items-center justify-center space-x-2 text-[#FF6B00] text-sm font-bold">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
-                        <span>Chegada prevista: {navMetrics?.time || '-- min'}</span>
+                      <div className="flex items-center justify-center space-x-1.5 text-[#FF6B00] text-[11px] font-bold">
+                        <div className="w-1 h-1 rounded-full bg-[#FF6B00]" />
+                        <span>Chegada: {navMetrics?.time || '-- min'}</span>
                       </div>
                     </div>
                   ) : (
-                    /* Standard Expanded Mode */
                     <>
-                      <div className="flex items-start justify-between mb-6 shrink-0 gap-4">
+                      <div className="flex items-start justify-between mb-3 shrink-0 gap-4">
                         {/* Left Column: Status & Value */}
-                        <div className="flex flex-col space-y-2">
-                          <span className={`w-fit px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-[0_4px_15px_rgba(255,215,0,0.2)]' : 'bg-[#FF6B00] text-white shadow-[0_4px_15px_rgba(255,107,0,0.3)]'}`}>
+                        <div className="flex flex-col space-y-1">
+                          <span className={`w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-lg' : 'bg-[#FF6B00] text-white shadow-lg'}`}>
                             {getStatusLabel(status)}
                           </span>
-                          <span className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest italic pl-1 drop-shadow-sm">
-                            VALOR TAXA: {formatCurrency(mission.earnings || 0)}
+                          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest italic pl-1">
+                            TAXA: {formatCurrency(mission.earnings || 0)}
                           </span>
                         </div>
 
                         {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
                         <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
                           {/* Nav Metrics (Time | Dist) */}
-                          <div className="flex items-center px-4 space-x-4 border-r border-white/10 shrink-0">
-                            <div className="flex items-center space-x-2">
-                              <i className="far fa-clock text-zinc-400 text-xs"></i>
-                              <span className="text-xs font-black text-white">{navMetrics?.time || '0 min'}</span>
+                          <div className="flex items-center px-2 space-x-3 border-r border-white/10 shrink-0">
+                            <div className="flex items-center space-x-1.5">
+                              <i className="far fa-clock text-zinc-400 text-[10px]"></i>
+                              <span className="text-[10px] font-black text-white">{navMetrics?.time || '0 min'}</span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <i className="fas fa-road text-zinc-400 text-xs"></i>
-                              <span className="text-xs font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
+                            <div className="flex items-center space-x-1.5">
+                              <i className="fas fa-road text-zinc-400 text-[10px]"></i>
+                              <span className="text-[10px] font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
                             </div>
                           </div>
                           
@@ -2905,9 +2901,9 @@ const App: React.FC = () => {
                               <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
                             </button>
                             
-                            <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
+                            <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-8 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
                               <i className="fas fa-circle-question text-[10px]"></i>
-                              <span className="text-[10px] font-black uppercase tracking-tighter">AJUDA</span>
+                              <span className="text-[9px] font-black uppercase tracking-tighter">AJUDA</span>
                             </button>
 
                             <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
@@ -2919,7 +2915,7 @@ const App: React.FC = () => {
                     </>
                   )}
 
-                  <div className="flex-1 space-y-4 mb-6 pr-1 overflow-y-auto">
+                  <div className="flex-1 space-y-3 mb-4 pr-1 overflow-y-auto">
                     
                     {/* Map Picker Panel */}
                     {showMissionMapPicker && (
@@ -3060,20 +3056,19 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Mission Details Header (Print 3 Style) */}
-                    <div className="px-1 flex justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`text-3xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0.5`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
-                        </h3>
-                        <p className={`${textMuted} text-xs font-bold leading-snug line-clamp-2 opacity-60`}>
-                          {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeAddress : mission.customerAddress}
-                        </p>
-                      </div>
-                      <div className="bg-[#FF6B00] text-white px-3 py-1.5 rounded-2xl text-[10px] font-black italic shadow-lg shrink-0 ml-4 animate-pulse">
-                        +2 Pedidos
-                      </div>
-                    </div>
+                        <div className="px-1 flex justify-between items-start mb-1">
+                          <div className="flex-1 min-w-0">
+                            <h3 className={`text-2xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0`}>
+                              {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
+                            </h3>
+                            <p className={`${textMuted} text-[10px] font-bold leading-snug line-clamp-1 opacity-60`}>
+                              {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeAddress : mission.customerAddress}
+                            </p>
+                          </div>
+                          <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-xl text-[9px] font-black italic shadow-lg shrink-0 ml-4 animate-pulse">
+                            +2 Pedidos
+                          </div>
+                        </div>
 
                     {/* Pickup Phase Card (Print 3 Style Overhaul) */}
                     {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
@@ -4205,29 +4200,29 @@ const App: React.FC = () => {
     <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 bg-transparent ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
       <header className={`z-[1002] ${isNavigating ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-between backdrop-blur-2xl border-b transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
         {(!(isNavigating && !isMissionOverlayExpanded)) && (
-          <div className="w-full px-6 py-2 sm:py-4 flex items-center justify-between relative h-16 sm:h-20 animate-in fade-in duration-500">
+          <div className="w-full px-4 py-1.5 sm:py-3 flex items-center justify-between relative h-14 sm:h-16 animate-in fade-in duration-500">
             <div className="flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/20">
+              <div className="w-9 h-9 rounded-full p-0.5 border-2 border-[#FF6B00] shadow-lg shadow-orange-900/10">
                 <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} alt="Perfil" className="w-full h-full rounded-full object-cover" />
               </div>
             </div>
 
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button onClick={toggleOnlineStatus} className={`h-10 px-6 rounded-full flex items-center space-x-3 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
-                <div className={`w-2.5 h-2.5 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                <span className={`font-black text-[10px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Disponível' : 'Indisponível'}</span>
+              <button onClick={toggleOnlineStatus} className={`h-8 px-5 rounded-full flex items-center space-x-2.5 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
+                <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                <span className={`font-black text-[9px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Online' : 'Offline'}</span>
               </button>
             </div>
 
             <button
               onClick={handleOpenNotifications}
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
             >
               <div className="relative">
-                <i className={`fas fa-bell text-lg ${textPrimary}`}></i>
+                <i className={`fas fa-bell text-base ${textPrimary}`}></i>
                 {unreadCount > 0 && !notificationsSeen && (
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
-                    <span className="text-[9px] font-black text-white">{unreadCount}</span>
+                  <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
+                    <span className="text-[8px] font-black text-white">{unreadCount}</span>
                   </div>
                 )}
               </div>
