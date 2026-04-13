@@ -1151,9 +1151,9 @@ const App: React.FC = () => {
 
     setIsOrderReady(false);
 
-    // Ouvir mudanças de status para esta entrega específica
-    const readyChannel = supabaseClient.supabase
-      .channel(`ready-check-${mission.id}`)
+    // Ouvir mudanças de status para esta entrega específica (Pronto, Cancelado, etc)
+    const missionUpdateChannel = supabaseClient.supabase
+      .channel(`mission-updates-${mission.id}`)
       .on(
         'postgres_changes',
         {
@@ -1163,35 +1163,53 @@ const App: React.FC = () => {
           filter: `id=eq.${mission.id}`
         },
         (payload) => {
-          console.log('📦 [READY_CHECK] Delivery updated:', payload.new.status);
-          if (payload.new.status === 'ready_for_pickup') {
-            console.log('✅ [READY_CHECK] Lojista marcou pedido como pronto!');
+          console.log('📦 [MISSION_UPDATE] Delivery updated:', payload.new.status);
+          
+          const newStatus = payload.new.status;
+
+          // Handle "Pedido Pronto"
+          if (newStatus === 'ready_for_pickup') {
+            console.log('✅ [MISSION_UPDATE] Lojista marcou pedido como pronto!');
             setIsOrderReady(true);
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          }
+
+          // Handle Cancellation/Rejection/Closing
+          if (['canceled', 'rejected', 'closed'].includes(newStatus)) {
+            console.log(`🚀 [MISSION_UPDATE] Entrega foi ${newStatus}. Limpando sessão...`);
+            setActiveMissions([]);
+            setStatus(DriverStatus.ONLINE);
+            setIsNavigating(false);
+            if (newStatus === 'canceled' && navigator.vibrate) {
+              navigator.vibrate([300, 100, 300, 100, 300]);
+            }
           }
         }
       )
       .subscribe();
 
-    // Também verificar imediatamente o status atual no banco (caso já esteja pronto)
+    // Também verificar imediatamente o status atual no banco
     supabaseClient.supabase
       .from('deliveries')
       .select('status')
       .eq('id', mission.id)
       .single()
       .then(({ data }) => {
-          if (data?.status === 'ready_for_pickup') {
-          console.log('✅ [READY_CHECK] Pedido já estava pronto no banco');
-          setIsOrderReady(true);
-          // Opcionalmente, pode-se atualizar o status global aqui se necessário
-        } else if (data?.status === 'in_transit') {
-          // Se já saiu, não precisa mais esperar "Pronto"
-          setIsOrderReady(true);
-        }
+          if (['canceled', 'rejected', 'closed'].includes(data?.status as string)) {
+             console.log(`🚀 [READY_CHECK] Entrega já estava em estado terminal: ${data?.status}`);
+             setActiveMissions([]);
+             setStatus(DriverStatus.ONLINE);
+             setIsNavigating(false);
+          } else if (data?.status === 'ready_for_pickup') {
+            console.log('✅ [READY_CHECK] Pedido já estava pronto no banco');
+            setIsOrderReady(true);
+          } else if (data?.status === 'in_transit') {
+            setIsOrderReady(true);
+          }
       });
 
     return () => {
-      supabaseClient.supabase.removeChannel(readyChannel);
+      supabaseClient.supabase.removeChannel(missionUpdateChannel);
     };
   }, [status, mission?.id]);
 
@@ -2189,6 +2207,12 @@ const App: React.FC = () => {
 
   const handleMainAction = async () => {
     if (status === DriverStatus.GOING_TO_STORE) {
+      // PROXIMITY CHECK: Warning if too far from store
+      if (navMetrics && navMetrics.distanceValue && navMetrics.distanceValue > 500) {
+        const confirmArrived = window.confirm(`Você parece estar a ${navMetrics.distance} da Loja. Tem certeza que deseja marcar como chegado?`);
+        if (!confirmArrived) return;
+      }
+
       // PROMISE: Check status before updating
       if (mission && userId) {
         try {
@@ -2295,6 +2319,12 @@ const App: React.FC = () => {
       }
     }
     else if (status === DriverStatus.GOING_TO_CUSTOMER) {
+      // PROXIMITY CHECK: Warning if too far from destination
+      if (navMetrics && navMetrics.distanceValue && navMetrics.distanceValue > 500) {
+        const confirmArrived = window.confirm(`Você parece estar a ${navMetrics.distance} do local. Tem certeza que deseja marcar como chegado?`);
+        if (!confirmArrived) return;
+      }
+
       // Update database when courier arrives at customer
       if (mission && userId) {
         try {
@@ -3158,10 +3188,9 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 w-full mb-2">
-                    {/* Only show the action button if NOT navigating OR if within 500m proximity threshold */}
-                    {(!((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && (navMetrics?.distanceValue ?? 999) > 500)) && (
-                      <button
-                        onClick={handleMainAction}
+                    {/* Action button: Always visible, but handleMainAction will perform proximity check */}
+                    <button
+                      onClick={handleMainAction}
                         disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING}
                         className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all ${status === DriverStatus.RETURNING ? 'opacity-50 cursor-not-allowed shadow-none' : 'active:scale-95 shadow-2xl'} relative overflow-hidden group animate-in fade-in zoom-in duration-300`}
                         style={{ 
