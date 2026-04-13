@@ -209,11 +209,16 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                 if (loc) setPickupLocation(loc);
             });
         } else if (missions && missions.length > 0) {
-            // If we have missions but no specific pickupAddress/preloaded, 
-            // use storeAddress from the first mission
-            geocode(missions[0].storeAddress).then(loc => {
-                if (loc) setPickupLocation(loc);
-            });
+            // Priority 1: Use precise store coordinates if available
+            const m = missions[0];
+            if (m.storeLat != null && m.storeLng != null && !isNaN(m.storeLat) && !isNaN(m.storeLng)) {
+                setPickupLocation({ lat: m.storeLat, lng: m.storeLng });
+            } else {
+                // Fallback: Geocode store address
+                geocode(m.storeAddress).then(loc => {
+                    if (loc) setPickupLocation(loc);
+                });
+            }
         } else {
             setPickupLocation(null);
         }

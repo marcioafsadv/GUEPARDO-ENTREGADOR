@@ -34,6 +34,8 @@ export interface DeliveryMission {
   batch_id?: string;
   destinationLat?: number;
   destinationLng?: number;
+  storeLat?: number;
+  storeLng?: number;
   stopNumber?: number;
   deliveryValue?: number;
   paymentMethod?: string;

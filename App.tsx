@@ -232,8 +232,10 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || ['DINHEIRO', 'CASH'].includes(d.payment_method?.toUpperCase()) || false,
     displayId: getDisplayId(d.items),
     batch_id: d.batch_id,
-    destinationLat: d.destination_lat,
-    destinationLng: d.destination_lng,
+    destinationLat: d.destination_lat || d.items?.destinationLat,
+    destinationLng: d.destination_lng || d.items?.destinationLng,
+    storeLat: d.stores?.lat,
+    storeLng: d.stores?.lng,
     stopNumber: d.stop_number || d.items?.stopNumber || 1,
     storePhone: d.store_phone || '',
     customerPhone: d.customer_phone || '',
@@ -837,20 +839,33 @@ const App: React.FC = () => {
             
             setIsNavigating(true);
 
-            // Geocode para garantir que o mapa carregue o destino imediatamente
+            // Prioritize existing coordinates to ensure consistency with Lojista
             const destAddr = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING)
-              ? missionsToSet[0].storeAddress
-              : missionsToSet[0].customerAddress;
-            
-            geocodeAddress(destAddr).then(coords => {
-              if (coords) {
-                if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING) {
-                  setPreloadedCoords(prev => ({ ...prev, store: coords }));
-                } else {
-                  setPreloadedCoords(prev => ({ ...prev, customer: coords }));
-                }
+              ? bestMission.storeAddress
+              : bestMission.customerAddress;
+
+            const existingCoords = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING)
+              ? { lat: bestMission.storeLat, lng: bestMission.storeLng }
+              : { lat: bestMission.destinationLat, lng: bestMission.destinationLng };
+
+            if (existingCoords.lat && existingCoords.lng) {
+              const coords = { lat: existingCoords.lat, lng: existingCoords.lng };
+              if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING) {
+                setPreloadedCoords(prev => ({ ...prev, store: coords }));
+              } else {
+                setPreloadedCoords(prev => ({ ...prev, customer: coords }));
               }
-            });
+            } else {
+              geocodeAddress(destAddr).then(coords => {
+                if (coords) {
+                  if (recoveredStatus.includes('STORE') || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING) {
+                    setPreloadedCoords(prev => ({ ...prev, store: coords }));
+                  } else {
+                    setPreloadedCoords(prev => ({ ...prev, customer: coords }));
+                  }
+                }
+              });
+            }
           }
         }
       } catch (error) {
@@ -2169,7 +2184,9 @@ const App: React.FC = () => {
       if (mappedActive.length > 0) {
         const targetMission = mappedActive[0];
         const [storeCoords, customerCoords] = await Promise.all([
-          targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null),
+          (targetMission.storeLat && targetMission.storeLng)
+            ? Promise.resolve({ lat: targetMission.storeLat, lng: targetMission.storeLng })
+            : (targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null)),
           (targetMission.destinationLat && targetMission.destinationLng)
             ? Promise.resolve({ lat: targetMission.destinationLat, lng: targetMission.destinationLng })
             : (targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null))
