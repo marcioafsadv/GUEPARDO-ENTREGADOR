@@ -244,6 +244,15 @@ export const subscribeToActiveMission = (
         onUpdate(payload);
       }
     )
+    .on(
+      'broadcast',
+      { event: 'mission_updated' },
+      (payload) => {
+        console.log(`🚀 [BROADCAST] Message from store received for mission ${missionId}`);
+        // Map broadcast payload to look like a postgres_changes payload
+        onUpdate({ new: payload.payload });
+      }
+    )
     .subscribe();
 };
 
