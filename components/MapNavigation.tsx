@@ -58,6 +58,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const lastAnnouncedStep = useRef<string>('');
     const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
     const [hideSpeedometer, setHideSpeedometer] = useState<boolean>(false);
+    const lastSmoothedBearing = useRef<number | null>(null);
+    const lastBearingPos = useRef<{ lat: number; lng: number } | null>(null);
 
     const speak = (text: string) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
@@ -259,26 +261,56 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             destinationMarker.current.addTo(map.current);
         }
 
-        // Calculate Bearing (Direction)
+        // Calculate Bearing (Direction) with Smoothing and Thresholds
         if (lastLocation.current) {
-            const bearing = getBearing(
+            const distMoved = getDistance(
                 lastLocation.current.lat, lastLocation.current.lng,
                 currentLocation.lat, currentLocation.lng
-            );
-            
-            // Rotate map and icon to follow direction
-            map.current.easeTo({
-                center: [currentLocation.lng, currentLocation.lat],
-                bearing: bearing,
-                duration: 1000,
-                easing: (t) => t
-            });
+            ) * 1000; // in meters
 
-            const img = marker.current?.getElement().querySelector('img');
-            if (img) {
-                // Keep icon always pointing "up" relative to the map rotation if needed, 
-                // but Mapbox bearing rotates the whole camera, so icon stays "fixed" to map.
-                // If we want the icon to rotate WITH the movement, it's automatic with bearing camera.
+            // Speed in km/h
+            const speedKmh = currentLocation.speed != null ? currentLocation.speed * 3.6 : (distMoved / 1) * 3.6;
+
+            // Only update bearing if we moved significantly (e.g. > 3m) or are moving at decent speed
+            // This prevents "dancing" while stopped or moving very slowly with GPS jitter
+            if (distMoved > 3 && speedKmh > 2) {
+                const rawBearing = getBearing(
+                    lastLocation.current.lat, lastLocation.current.lng,
+                    currentLocation.lat, currentLocation.lng
+                );
+                
+                let targetBearing = rawBearing;
+
+                // Smooth the bearing using EMA (Exponential Moving Average)
+                if (lastSmoothedBearing.current !== null) {
+                    let diff = rawBearing - lastSmoothedBearing.current;
+                    
+                    // Handle 0/360 wrap-around
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    
+                    // alpha = 0.3 (lower is smoother/slower, higher is more responsive)
+                    targetBearing = (lastSmoothedBearing.current + diff * 0.3 + 360) % 360;
+                }
+
+                lastSmoothedBearing.current = targetBearing;
+
+                // Rotate map and icon to follow direction
+                map.current.easeTo({
+                    center: [currentLocation.lng, currentLocation.lat],
+                    bearing: targetBearing,
+                    duration: 1200, // Slightly longer for extra smoothness
+                    padding: { bottom: isMissionOverlayExpanded ? 460 : 200 }, // Keep center above overlay
+                    easing: (t) => t
+                });
+            } else {
+                // If not moving fast enough to change bearing, just update center smoothly
+                map.current.easeTo({
+                    center: [currentLocation.lng, currentLocation.lat],
+                    padding: { bottom: isMissionOverlayExpanded ? 460 : 200 },
+                    duration: 1000,
+                    easing: (t) => t
+                });
             }
         } else {
              map.current.setCenter([currentLocation.lng, currentLocation.lat]);
