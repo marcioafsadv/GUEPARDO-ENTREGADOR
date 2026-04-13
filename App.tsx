@@ -4644,16 +4644,15 @@ const App: React.FC = () => {
       {status === DriverStatus.ALERTING && mission && (
         <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-6 chocolate-lava-backdrop pointer-events-none overflow-hidden">
           
-          {/* Background Ambient Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF6B00]/10 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="absolute top-0 left-0 w-full h-[30%] bg-gradient-to-b from-[#FF6B00]/20 to-transparent pointer-events-none"></div>
 
-          <div className={`w-full max-w-[400px] chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto`}>
+          <div className={`w-full max-w-md chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto shadow-[0_30px_100px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-20 duration-700`}>
             
             {/* Guepardo Watermark */}
-            <div className="absolute inset-0 guepardo-watermark pointer-events-none opacity-[0.05]"></div>
+            <div className="absolute inset-0 guepardo-watermark pointer-events-none opacity-[0.03]"></div>
 
             {/* Header: Neomorphic Price Display */}
-            <div className="p-8 pb-4 sm:p-12 sm:pb-6 text-center relative z-10">
+            <div className="p-10 pb-4 sm:p-14 sm:pb-8 text-center relative z-10">
               {(() => {
                 const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
                 const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
@@ -4664,10 +4663,10 @@ const App: React.FC = () => {
 
                 return (
                   <div className="flex flex-col items-center">
-                    <div className="mb-4 sm:mb-8 relative">
+                    <div className="mb-6 sm:mb-10 relative">
                       {/* Sub-label */}
-                      <span className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.3em] mb-2 block opacity-70">Ganhos Estimados</span>
-                      <h2 className="text-[56px] sm:text-[72px] font-black neon-orange-glow-text leading-none tracking-tighter">
+                      <span className="text-[11px] font-black uppercase text-[#FF6B00] tracking-[0.4em] mb-3 block opacity-60">Ganhos Estimados</span>
+                      <h2 className="text-[64px] sm:text-[80px] font-black text-white drop-shadow-[0_0_25px_rgba(255,107,0,0.5)] leading-none tracking-tighter italic">
                          {formatCurrency(totalE)}
                       </h2>
                     </div>
@@ -4688,33 +4687,34 @@ const App: React.FC = () => {
             </div>
 
             {/* Route Lava Path Section */}
-            <div className="px-8 py-4 sm:px-12 sm:py-6 relative flex-1">
-              <div className="liquid-lava-path"></div>
+            <div className="px-10 py-6 sm:px-14 sm:py-8 relative flex-1">
+              <div className="liquid-lava-path overflow-hidden rounded-3xl opacity-30"></div>
               
-              <div className="space-y-6 sm:space-y-10">
+              <div className="space-y-8 sm:space-y-12">
                 {/* Loja Origin */}
-                <div className="flex items-start space-x-6 relative">
-                  <div className="w-10 h-10 rounded-full bg-[#1a0a05] border-2 border-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.3)] flex items-center justify-center z-20 shrink-0">
-                    <i className="fas fa-store text-[#FF6B00] text-xs"></i>
+                <div className="flex items-start space-x-6 relative group">
+                  <div className="w-12 h-12 rounded-2xl bg-[#1a0a05] border-2 border-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.4)] flex items-center justify-center z-20 shrink-0 transform group-hover:scale-110 transition-transform">
+                    <i className="fas fa-store text-[#FF6B00] text-sm"></i>
                   </div>
                   <div className="flex flex-col min-w-0 pt-1">
                     <div className="flex items-center space-x-2">
-                      <span className="text-[14px] font-black text-white uppercase tracking-wider">{mission.storeName}</span>
-                      <span className="text-[10px] font-bold text-[#FF6B00]/60 tracking-widest uppercase">Coleta</span>
+                       <span className="text-[15px] font-black text-white uppercase tracking-tight">{mission.storeName}</span>
+                       <span className="w-2 h-2 rounded-full bg-[#FF6B00] animate-pulse"></span>
                     </div>
-                    <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-2 mt-1 italic">{mission.storeAddress}</span>
+                    <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Coleta Expressa</span>
+                    <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-1 mt-1 opacity-70 italic">{mission.storeAddress}</span>
                   </div>
                 </div>
 
                 {/* Delivery Stops */}
                 {(activeMissions.length > 0 ? activeMissions : [mission]).map((m, idx) => (
-                  <div key={m.id} className="flex items-start space-x-6 relative">
-                    <div className="w-10 h-10 rounded-full bg-[#1a0a05] border-2 border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.05)] flex items-center justify-center z-20 shrink-0 group-hover:border-[#FF6B00] transition-colors">
-                      <i className="fas fa-map-marker-alt text-white/40 text-xs"></i>
+                  <div key={m.id} className="flex items-start space-x-6 relative group">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1a0a05] border-2 border-white/10 shadow-[0_10px_20px_rgba(0,0,0,0.3)] flex items-center justify-center z-20 shrink-0 group-hover:border-[#FF6B00]/50 transition-all">
+                      <i className="fas fa-location-dot text-white/30 group-hover:text-[#FF6B00] transition-colors text-sm"></i>
                     </div>
                     <div className="flex flex-col min-w-0 pt-1">
-                      <span className="text-[14px] font-black text-white uppercase tracking-wider">{idx + 1}ª Entrega</span>
-                      <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-2 mt-1 italic">{m.customerAddress}</span>
+                      <span className="text-[15px] font-black text-white uppercase tracking-tight italic">{idx + 1}ª Entrega</span>
+                      <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-1 mt-1 opacity-70 italic">{m.customerAddress}</span>
                     </div>
                   </div>
                 ))}

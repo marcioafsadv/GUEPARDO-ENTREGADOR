@@ -546,15 +546,22 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Ready for Pickup Alert Overlay */}
+            {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
-                <div className="absolute inset-0 z-[10005] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
-                    <div className="bg-[#FFD700] text-black px-10 py-6 rounded-[32px] text-3xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(255,215,0,0.4)] border-4 border-black/10 animate-pulse flex flex-col items-center gap-3">
-                        <i className="fas fa-box-open text-5xl"></i>
-                        RETIRAR NO BALCÃO
-                        <span className="text-xs font-black uppercase tracking-widest opacity-60">O lojista marcou como pronto!</span>
+                <>
+                    <div className="absolute inset-0 z-[10004] bg-black/30 backdrop-blur-[3px] animate-in fade-in duration-500 pointer-events-none" />
+                    <div className="absolute top-[135px] left-4 right-4 z-[10005] flex items-start justify-center animate-in slide-in-from-top duration-700 pointer-events-none">
+                        <div className="w-full max-w-[360px] bg-[#FFD700] text-black p-5 rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(255,215,0,0.2)] border-2 border-black/5 flex items-center space-x-4 pointer-events-auto active:scale-95 transition-transform">
+                            <div className="bg-black/10 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
+                                <i className="fas fa-box-open text-2xl"></i>
+                            </div>
+                            <div className="flex flex-col">
+                                <h2 className="text-lg font-black uppercase tracking-tighter leading-tight">Retirar no Balcão</h2>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 leading-tight mt-0.5">O lojista marcou como pronto!</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </>
             )}
 
             {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING & PROXIMITY HIDING */}
