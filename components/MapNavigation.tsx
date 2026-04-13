@@ -548,7 +548,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Ready for Pickup Alert Overlay */}
             {status === 'READY_FOR_PICKUP' && (
-                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
+                <div className="absolute inset-0 z-[10005] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
                     <div className="bg-[#FFD700] text-black px-10 py-6 rounded-[32px] text-3xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(255,215,0,0.4)] border-4 border-black/10 animate-pulse flex flex-col items-center gap-3">
                         <i className="fas fa-box-open text-5xl"></i>
                         RETIRAR NO BALCÃO

@@ -2909,7 +2909,7 @@ const App: React.FC = () => {
             )}
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-2 pb-5' : 'p-4 pb-6'} ${cardBg}`}>
+                <div className={`w-full rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-2 pb-5' : 'p-3 pb-5 sm:p-4 sm:pb-6'} ${cardBg}`}>
                   
                   {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
@@ -3125,7 +3125,7 @@ const App: React.FC = () => {
 
                         <div className="px-1 flex justify-between items-start mb-1">
                           <div className="flex-1 min-w-0">
-                            <h3 className={`text-2xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0`}>
+                            <h3 className={`text-xl sm:text-2xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0`}>
                               {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
                             </h3>
                             <p className={`${textMuted} text-[10px] font-bold leading-snug line-clamp-1 opacity-60`}>
@@ -3139,7 +3139,7 @@ const App: React.FC = () => {
 
                     {/* Pickup Phase Card (Print 3 Style Overhaul) */}
                     {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
-                      <div className={`p-6 rounded-[40px] border border-white/5 flex items-center space-x-6 transition-all duration-500 bg-[#1a0c06] shadow-[0_15px_35px_rgba(0,0,0,0.4)]`}>
+                      <div className={`p-4 sm:p-6 rounded-[40px] border border-white/5 flex items-center space-x-6 transition-all duration-500 bg-[#1a0c06] shadow-[0_15px_35px_rgba(0,0,0,0.4)]`}>
                         <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center transition-colors bg-black/40 border border-white/5 shadow-inner`}>
                           <i className={`fas fa-utensils text-[#FF6B00] text-2xl`}></i>
                         </div>
@@ -3149,7 +3149,7 @@ const App: React.FC = () => {
                           </h4>
                           <span className={`text-[10px] font-black uppercase ${textMuted} tracking-[0.2em] mb-2 opacity-50`}>ID: #{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
                           <div className="flex items-center space-x-2">
-                             <span className="text-[#33CC33] font-black text-xl italic tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">{formatCurrency(mission.deliveryValue || mission.earnings || 0)}</span>
+                             <span className="text-[#33CC33] font-black text-lg sm:text-xl italic tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">{formatCurrency(mission.deliveryValue || mission.earnings || 0)}</span>
                              <span className="text-white/20 text-[8px]">•</span>
                              <span className={`text-[9px] font-black uppercase ${textMuted} tracking-widest opacity-80`}>{mission.paymentMethod || 'CARD'}</span>
                           </div>
@@ -3159,14 +3159,14 @@ const App: React.FC = () => {
 
                     {/* Collection Code Phase (PICKING_UP) */}
                     {status === DriverStatus.PICKING_UP && (
-                      <div className="relative overflow-hidden rounded-[32px] border-2 border-dashed border-[#FF6B00]/40 bg-[#FF6B00]/5 p-8 flex flex-col items-center text-center animate-in zoom-in duration-300">
+                      <div className="relative overflow-hidden rounded-[32px] border-2 border-dashed border-[#FF6B00]/40 bg-[#FF6B00]/5 p-5 sm:p-8 flex flex-col items-center text-center animate-in zoom-in duration-300">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent opacity-50"></div>
 
                         <div className="mb-6">
                           <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#FF6B00] mb-3">Código de Coleta</p>
                           <div className="flex items-center justify-center space-x-4">
                             <i className="fas fa-ticket text-4xl text-[#FFD700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"></i>
-                            <span className={`text-7xl font-black italic tracking-tighter ${textPrimary} drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]`}>{mission.collectionCode}</span>
+                            <span className={`text-6xl sm:text-7xl font-black italic tracking-tighter ${textPrimary} drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]`}>{mission.collectionCode}</span>
                           </div>
                         </div>
 
@@ -4647,13 +4647,13 @@ const App: React.FC = () => {
           {/* Background Ambient Glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF6B00]/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-          <div className={`w-full max-w-md chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto`}>
+          <div className={`w-full max-w-[400px] chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto`}>
             
             {/* Guepardo Watermark */}
             <div className="absolute inset-0 guepardo-watermark pointer-events-none opacity-[0.05]"></div>
 
             {/* Header: Neomorphic Price Display */}
-            <div className="p-12 pb-6 text-center relative z-10">
+            <div className="p-8 pb-4 sm:p-12 sm:pb-6 text-center relative z-10">
               {(() => {
                 const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
                 const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
@@ -4664,10 +4664,10 @@ const App: React.FC = () => {
 
                 return (
                   <div className="flex flex-col items-center">
-                    <div className="mb-8 relative">
+                    <div className="mb-4 sm:mb-8 relative">
                       {/* Sub-label */}
                       <span className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.3em] mb-2 block opacity-70">Ganhos Estimados</span>
-                      <h2 className="text-[72px] font-black neon-orange-glow-text leading-none tracking-tighter">
+                      <h2 className="text-[56px] sm:text-[72px] font-black neon-orange-glow-text leading-none tracking-tighter">
                          {formatCurrency(totalE)}
                       </h2>
                     </div>
@@ -4688,10 +4688,10 @@ const App: React.FC = () => {
             </div>
 
             {/* Route Lava Path Section */}
-            <div className="px-12 py-6 relative flex-1">
+            <div className="px-8 py-4 sm:px-12 sm:py-6 relative flex-1">
               <div className="liquid-lava-path"></div>
               
-              <div className="space-y-10">
+              <div className="space-y-6 sm:space-y-10">
                 {/* Loja Origin */}
                 <div className="flex items-start space-x-6 relative">
                   <div className="w-10 h-10 rounded-full bg-[#1a0a05] border-2 border-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.3)] flex items-center justify-center z-20 shrink-0">
@@ -4735,17 +4735,17 @@ const App: React.FC = () => {
             </div>
 
             {/* Premium Interaction Footer */}
-            <div className="p-12 pt-8 bg-black/40 border-t border-white/5 flex flex-col items-center relative z-20">
+            <div className="p-8 pt-6 sm:p-12 sm:pt-8 bg-black/40 border-t border-white/5 flex flex-col items-center relative z-20">
               
               {/* Luxury Circular Timer */}
-              <div className="flex items-center justify-center space-x-12 mb-10">
+              <div className="flex items-center justify-center space-x-12 mb-6 sm:mb-10">
                 <div className="flex space-x-2 opacity-10 text-[#FF6B00]">
                   <i className="fas fa-chevron-left text-xs"></i>
                   <i className="fas fa-chevron-left text-xs"></i>
                 </div>
 
                 <div className="relative flex items-center justify-center circular-gauge-chocolate">
-                  <svg width="100" height="100" viewBox="0 0 100 100" className="rotate-[-90deg]">
+                  <svg width="80" height="80" viewBox="0 0 100 100" className="rotate-[-90deg]">
                     <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,107,0,0.05)" strokeWidth="4" />
                     <circle 
                       cx="50" cy="50" r="46" 
@@ -4775,9 +4775,9 @@ const App: React.FC = () => {
               {/* Ultra Action Stack */}
               <button 
                 onClick={handleAcceptMission}
-                className="w-full h-22 btn-lava-accept heartbeat-pulse rounded-[32px] font-black text-2xl text-white uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center space-x-4 mb-8"
+                className="w-full h-18 sm:h-22 btn-lava-accept heartbeat-pulse rounded-[32px] font-black text-xl sm:text-2xl text-white uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center space-x-4 mb-4 sm:mb-8"
               >
-                <i className="fas fa-check-double text-2xl"></i>
+                <i className="fas fa-check-double text-xl sm:text-2xl"></i>
                 <span>Aceitar</span>
               </button>
               
