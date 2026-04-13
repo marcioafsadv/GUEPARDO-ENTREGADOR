@@ -549,7 +549,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
                 <>
-                    <div className="absolute inset-0 z-[10004] bg-black/30 backdrop-blur-[3px] animate-in fade-in duration-500 pointer-events-none" />
                     <div className="absolute top-[135px] left-4 right-4 z-[10005] flex items-start justify-center animate-in slide-in-from-top duration-700 pointer-events-none">
                         <div className="w-full max-w-[360px] bg-[#FFD700] text-black p-5 rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(255,215,0,0.2)] border-2 border-black/5 flex items-center space-x-4 pointer-events-auto active:scale-95 transition-transform">
                             <div className="bg-black/10 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
