@@ -247,6 +247,26 @@ export const subscribeToActiveMission = (
     .subscribe();
 };
 
+export const emitMissionUpdate = async (storeId: string, deliveryData: any) => {
+  try {
+    const channel = supabase.channel(`deliveries-store-${storeId}`);
+    await channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.send({
+          type: 'broadcast',
+          event: 'mission_updated',
+          payload: deliveryData
+        });
+        console.log(`🚀 [BROADCAST] Notification sent to store ${storeId}`);
+        // Optionally unsubscribe after sending
+        setTimeout(() => supabase.removeChannel(channel), 2000);
+      }
+    });
+  } catch (err) {
+    console.error('❌ [BROADCAST] Failed to emit update:', err);
+  }
+};
+
 export const acceptMission = async (missionId: string, driverId: string) => {
   const { data, error } = await supabase
     .from('deliveries')
@@ -262,6 +282,12 @@ export const acceptMission = async (missionId: string, driverId: string) => {
 
 
   if (error) throw error;
+  
+  // High-Speed Broadcast Fallback
+  if (data && data.store_id) {
+    emitMissionUpdate(data.store_id, data);
+  }
+  
   return data;
 };
 
@@ -278,6 +304,12 @@ export const completeMission = async (missionId: string, driverId: string) => {
     .single();
 
   if (error) throw error;
+  
+  // High-Speed Broadcast Fallback
+  if (data && data.store_id) {
+    emitMissionUpdate(data.store_id, data);
+  }
+  
   return data;
 };
 
