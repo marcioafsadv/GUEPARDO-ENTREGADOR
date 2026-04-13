@@ -3208,8 +3208,7 @@ const App: React.FC = () => {
                         </span>
                         <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
-                    )}
-                  </div>
+                    </div>
                 </div>
               </div>
             )}
