@@ -398,6 +398,8 @@ const App: React.FC = () => {
   const [batchEarnings, setBatchEarnings] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
   const [reCenterTrigger, setReCenterTrigger] = useState(0);
+  const [realtimeStatus, setRealtimeStatus] = useState<'SUBSCRIBED' | 'CLOSED' | 'ERROR' | 'CONNECTING'>('CONNECTING');
+  const [syncId, setSyncId] = useState(0); // Trigger for manual re-sync
   const [batchHasReturn, setBatchHasReturn] = useState(false);
   const [isMissionExpanded, setIsMissionExpanded] = useState(true);
   const [dragY, setDragY] = useState(0);
@@ -1599,11 +1601,29 @@ const App: React.FC = () => {
       };
 
       checkForDeliveries();
-      pollingInterval = setInterval(checkForDeliveries, 5000); // Poll every 5s for batching agility
+      
+      // ADAPTIVE POLLING: 4s if disconnected, 30s if connected
+      const intervalMs = (realtimeStatus === 'CLOSED' || realtimeStatus === 'ERROR') ? 4000 : 30000;
+      console.log(`⏱️ [POLLING] Setting interval to ${intervalMs}ms (${realtimeStatus})`);
+      
+      pollingInterval = setInterval(checkForDeliveries, intervalMs);
     }
 
     return () => clearInterval(pollingInterval);
-  }, [status, mission?.id, activeMissions.length, currentUser, rejectedMissions, userId]);
+  }, [status, mission?.id, activeMissions.length, currentUser, rejectedMissions, userId, realtimeStatus, syncId]);
+
+  // Realtime Status Watcher
+  useEffect(() => {
+    const channel = supabaseClient.supabase.channel('system-health');
+    channel.subscribe((status) => {
+        setRealtimeStatus(status as any);
+        if (status === 'CLOSED' || status === 'ERROR') {
+            // Attempt to force a session refresh after a delay
+            setTimeout(() => setSyncId(prev => prev + 1), 5000);
+        }
+    });
+    return () => { supabaseClient.supabase.removeChannel(channel); };
+  }, []);
 
 
   useEffect(() => {
@@ -3208,6 +3228,20 @@ const App: React.FC = () => {
                         </span>
                         <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
+
+                      {/* FORCED SYNC BUTTON (EMERGENCY) */}
+                      {status === DriverStatus.RETURNING && (
+                        <button 
+                          onClick={() => {
+                            if (navigator.vibrate) navigator.vibrate(100);
+                            setSyncId(prev => prev + 1);
+                          }}
+                          className="w-full mt-3 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 active:scale-95 transition-all"
+                        >
+                          <i className={`fas fa-rotate ${realtimeStatus === 'CONNECTING' ? 'animate-spin' : ''}`}></i>
+                          <span>O Lojista já finalizou? Forçar Sincronização</span>
+                        </button>
+                      )}
                     </div>
                 </div>
               </div>
