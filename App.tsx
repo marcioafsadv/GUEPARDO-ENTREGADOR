@@ -1916,6 +1916,15 @@ const App: React.FC = () => {
 
       const syncMissions: DeliveryMission[] = (remainingMissions || [])
         .map(mapDbDeliveryToMission)
+        .filter(m => {
+          // DEFENSIVE: If we just finished a return phase, don't allow "returning" missions from the same batch
+          // to pull us back in. This handles the case where one part of the batch update hasn't propagated to our poll yet.
+          if (mission.batch_id && m.batch_id === mission.batch_id && m.status === 'returning' && (statusRef.current === DriverStatus.RETURNING || statusRef.current === DriverStatus.ARRIVED_AT_STORE)) {
+            console.log(`🛡️ [DEFENSE] Ignoring stale 'returning' status for batch member ${m.id.slice(-4)}.`);
+            return false;
+          }
+          return true;
+        })
         .sort((a,b) => (a.stopNumber || 0) - (b.stopNumber || 0));
 
       console.log('📝 Reliable DB Missions Remaining:', syncMissions.length, syncMissions.map(m => `${m.id.slice(-4)}:${m.status}`));
