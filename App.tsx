@@ -2905,7 +2905,7 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-0 left-0 right-0 z-[1001] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4.5rem)]'}`}>
+              <div className={`absolute bottom-0 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
                 <div className={`p-8 pb-32 rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
