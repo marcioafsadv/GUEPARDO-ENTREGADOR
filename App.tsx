@@ -2905,7 +2905,7 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-0 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
+              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
                 <div className={`p-8 pb-32 rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
@@ -4386,7 +4386,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 relative overflow-hidden">{renderScreen()}</main>
-      <footer className={`fixed bottom-0 left-0 right-0 z-[1001] ${isNavigating ? 'hidden' : 'block'}`}>
+      <footer className={`fixed bottom-0 left-0 right-0 z-[1050] ${isNavigating ? 'hidden' : 'block'}`}>
         <div className="w-full chocolate-nav-bar flex items-center justify-around h-20 sm:h-24 px-4 pb-2 sm:pb-4 rounded-t-[32px]">
           <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
             <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
