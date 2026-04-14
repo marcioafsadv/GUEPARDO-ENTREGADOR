@@ -29,6 +29,8 @@ interface MapNavigationProps {
     preloadedDestination?: { lat: number; lng: number } | null;
     isMissionOverlayExpanded?: boolean;
     theme?: 'dark' | 'light';
+    onShowSOS?: () => void;
+    onShowFilters?: () => void;
 }
 
 export const MapNavigation: React.FC<MapNavigationProps> = ({
@@ -39,7 +41,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     onUpdateMetrics,
     preloadedDestination,
     isMissionOverlayExpanded = false,
-    theme = 'dark'
+    theme = 'dark',
+    onShowSOS,
+    onShowFilters
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -60,6 +64,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [hideSpeedometer, setHideSpeedometer] = useState<boolean>(false);
     const lastSmoothedBearing = useRef<number | null>(null);
     const lastBearingPos = useRef<{ lat: number; lng: number } | null>(null);
+    const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
 
     const speak = (text: string) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
@@ -199,15 +204,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const el = document.createElement('div');
         el.className = 'navigation-marker';
         el.innerHTML = `
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M32 4L58 56L32 46L6 56L32 4Z" fill="url(#arrowGrad)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-                <defs>
-                    <linearGradient id="arrowGrad" x1="32" y1="4" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#FF8A00"/>
-                        <stop offset="1" stop-color="#FF4D00"/>
-                    </linearGradient>
-                </defs>
-            </svg>
+            <div class="marker-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <!-- Main Circle -->
+                <div style="width: 48px; height: 48px; background: rgba(255, 107, 0, 0.15); border: 2.5px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 25px rgba(255, 107, 0, 0.5), inset 0 0 10px rgba(255, 107, 0, 0.3); display: flex; align-items: center; justify-content: center; backdrop-blur: 8px;">
+                    <!-- Inner Arrow -->
+                    <svg viewBox="0 0 64 64" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                        <path d="M32 8L52 52L32 42L12 52L32 8Z" fill="#FFFFFF" stroke="#FF6B00" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <!-- Pulse Effect -->
+                <div class="marker-pulse" style="position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #FF6B00; opacity: 0;"></div>
+            </div>
         `;
         
         marker.current = new mapboxgl.Marker({
@@ -303,14 +310,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
                     duration: 1200, // Slightly longer for extra smoothness
-                    padding: { bottom: isMissionOverlayExpanded ? 460 : 300 }, // Increased padding from 200 to 300
+                    padding: { bottom: isMissionOverlayExpanded ? 550 : 380 }, // Increased padding for middle-lower position
                     easing: (t) => t
                 });
             } else {
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: isMissionOverlayExpanded ? 460 : 300 },
+                    padding: { bottom: isMissionOverlayExpanded ? 550 : 380 },
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -435,6 +442,11 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     const modifier = nextStep.maneuver.modifier || 'straight'; // e.g. "left", "right", "straight", "sharp right"
                     const roadName = nextStep.name || simplified;
+
+                    // Update current street based on the first step of the leg
+                    if (route.legs[0].steps[0]?.name) {
+                        setCurrentStreet(route.legs[0].steps[0].name.toUpperCase());
+                    }
 
                     const nextNextStep = route.legs[0].steps[1];
                     const secondaryRoad = nextNextStep?.name || '';
@@ -581,6 +593,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
+            {/* Current Street Pill (Floating below marker area) */}
+            <div className={`absolute left-1/2 -translate-x-1/2 ${isMissionOverlayExpanded ? 'bottom-[520px]' : 'bottom-[330px]'} z-10 transition-all duration-700 pointer-events-none`}>
+                <div className="bg-zinc-900/90 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-full shadow-2xl flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
+                    <span className="text-[10px] font-black text-white tracking-widest uppercase italic">{currentStreet}</span>
+                </div>
+            </div>
+
             {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
                 <>
@@ -601,15 +621,35 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING & PROXIMITY HIDING */}
             {(!hideSpeedometer) && (
                 <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
-                    <div className="w-12 h-12 rounded-2xl bg-[#1A0A05] border border-[#FF6B00]/30 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-xl">
-                        <i className="fas fa-shield-halved text-xl"></i>
+                    <div className="bg-[#120502]/95 border border-white/10 rounded-full flex flex-col items-center justify-center w-16 h-16 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-2xl ring-2 ring-[#FF6B00]/20">
+                        <span className="text-2xl font-black text-white leading-none italic">{currentSpeed}</span>
+                        <span className="text-[7px] text-orange-500 font-black tracking-widest pt-0.5 uppercase">km/h</span>
                     </div>
-                    <div className="bg-[#120502]/90 border border-[#FF6B00]/20 rounded-2xl flex flex-col items-center justify-center w-16 h-20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-                        <span className="text-2xl font-black text-white leading-none neon-orange-glow-text">{currentSpeed}</span>
-                        <span className="text-[9px] text-chocolate-muted font-black tracking-widest pt-1 uppercase">km/h</span>
-                    </div>
+                    <button 
+                        className="w-12 h-12 rounded-full bg-[#1A0A05]/95 border border-white/10 shadow-xl flex items-center justify-center text-blue-500 backdrop-blur-xl active:scale-95 transition-transform"
+                    >
+                        <i className="fas fa-shield-halved text-lg"></i>
+                    </button>
                 </div>
             )}
+
+            {/* Right Side: Floating Actions (SOS & Settings) */}
+            <div className={`absolute right-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-4 items-center transition-all duration-500`}>
+                <button 
+                    onClick={onShowSOS}
+                    className="w-12 h-12 rounded-2xl bg-zinc-900/90 border border-red-500/20 shadow-2xl flex items-center justify-center text-white backdrop-blur-xl active:scale-90 transition-all hover:bg-black group"
+                >
+                    <div className="absolute inset-0 bg-red-500/5 rounded-2xl animate-pulse"></div>
+                    <i className="fas fa-triangle-exclamation text-xl text-red-500 group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                <button 
+                    onClick={onShowFilters}
+                    className="w-12 h-12 rounded-2xl bg-zinc-900/90 border border-white/10 shadow-2xl flex items-center justify-center text-white backdrop-blur-xl active:scale-90 transition-all hover:bg-black group"
+                >
+                    <i className="fas fa-route text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                </button>
+            </div>
 
             {/* Right Edge: Vertical Progress Bar - MINIMAL */}
             <div className="absolute right-1 top-[35%] bottom-[220px] w-[3px] bg-zinc-900 rounded-full overflow-hidden z-[100]">
