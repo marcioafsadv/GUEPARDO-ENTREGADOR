@@ -321,25 +321,25 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 
                 // Position the marker in the lower-third dynamically based on container height
                 const containerHeight = map.current.getContainer().getBoundingClientRect().height;
-                const dynamicPadding = containerHeight * (isMissionOverlayExpanded ? 0.55 : 0.40);
+                const dynamicTopPadding = containerHeight * (isMissionOverlayExpanded ? 0.55 : 0.40);
 
                 // Rotate MAP and center on location with dynamic padding
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
                     duration: 1200, 
-                    padding: { bottom: dynamicPadding },
+                    padding: { top: dynamicTopPadding, bottom: 80 }, 
                     pitch: 0,
                     easing: (t) => t
                 });
             } else {
                 const containerHeight = map.current.getContainer().getBoundingClientRect().height;
-                const dynamicPadding = containerHeight * (isMissionOverlayExpanded ? 0.55 : 0.40);
+                const dynamicTopPadding = containerHeight * (isMissionOverlayExpanded ? 0.55 : 0.40);
 
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: dynamicPadding },
+                    padding: { top: dynamicTopPadding, bottom: 80 },
                     pitch: 0,
                     duration: 1000,
                     easing: (t) => t
