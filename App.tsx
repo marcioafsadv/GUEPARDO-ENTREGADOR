@@ -2903,6 +2903,83 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
+            {/* 4. Seus Ganhos Summary Drawer (Restored) */}
+            {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
+              <div className={`absolute bottom-0 left-0 right-0 z-[1001] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4.5rem)]'}`}>
+                <div className={`p-8 pb-32 rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
+                  
+                  {/* Glassmorphism Background Glow */}
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
+                  
+                  {/* Handle Bar */}
+                  <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-4 cursor-pointer flex justify-center items-center group/handle">
+                    <div className="w-12 h-1.5 bg-zinc-800 rounded-full transition-all group-hover/handle:bg-zinc-600 group-hover/handle:w-16"></div>
+                  </div>
+
+                  {/* Header Component */}
+                  <div className="mb-8 flex justify-between items-center px-2">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00]">
+                        <i className="fas fa-sack-dollar text-xl"></i>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center space-x-3">
+                          <h3 className={`text-2xl font-black italic tracking-tighter text-white`}>Seus Ganhos</h3>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
+                            className="text-zinc-500 hover:text-white transition-colors p-1"
+                          >
+                            <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-sm`}></i>
+                          </button>
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]/60 italic">Resumo de Atividade</p>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => setCurrentScreen('WALLET')} 
+                      className="group flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/5 border border-white/5 hover:bg-[#FF6B00] hover:text-white transition-all duration-300"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] group-hover:text-white">Ver mais</span>
+                      <i className="fas fa-chevron-right text-[10px] text-[#FF6B00] group-hover:text-white group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Daily Earnings Card */}
+                    <div className="p-6 rounded-[32px] border border-white/5 bg-white/5 flex flex-col justify-center shadow-inner relative overflow-hidden group/card shadow-2xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
+                        <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest mb-2 italic">Ganhos Hoje</p>
+                        <p className={`text-3xl font-black italic tracking-tighter text-white`}>
+                          {showBalance ? formatCurrency(dailyEarnings) : 'R$ •••••'}
+                        </p>
+                    </div>
+
+                    {/* Stats List Card */}
+                    <div className="p-6 rounded-[32px] border border-white/5 bg-white/5 flex flex-col space-y-3 shadow-2xl">
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Aceitas</span>
+                        <span className="font-black italic text-sm text-white">{dailyStats.accepted}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Finalizadas</span>
+                        <span className="font-black italic text-sm text-[#00FF94] drop-shadow-[0_0_8px_rgba(0,255,148,0.3)]">{dailyStats.finished}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Recusadas</span>
+                        <span className="font-black italic text-sm text-red-500/80">{dailyStats.rejected}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Decoration */}
+                  <div className="mt-8 flex justify-center opacity-30">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            )}
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
                 <div className={`w-full rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-2 pb-5' : 'p-3 pb-5 sm:p-4 sm:pb-6'} ${cardBg}`}>
