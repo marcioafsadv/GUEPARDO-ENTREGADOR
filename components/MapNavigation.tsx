@@ -204,16 +204,24 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const el = document.createElement('div');
         el.className = 'navigation-marker';
         el.innerHTML = `
-            <div class="marker-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
-                <!-- Main Circle -->
-                <div style="width: 48px; height: 48px; background: rgba(255, 107, 0, 0.15); border: 2.5px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 25px rgba(255, 107, 0, 0.5), inset 0 0 10px rgba(255, 107, 0, 0.3); display: flex; align-items: center; justify-content: center; backdrop-blur: 8px;">
-                    <!-- Inner Arrow -->
-                    <svg viewBox="0 0 64 64" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                        <path d="M32 8L52 52L32 42L12 52L32 8Z" fill="#FFFFFF" stroke="#FF6B00" stroke-width="2" stroke-linejoin="round"/>
-                    </svg>
+            <div class="marker-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div class="marker-container" style="position: relative; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px;">
+                    <!-- Main Circle -->
+                    <div style="width: 48px; height: 48px; background: rgba(255, 107, 0, 0.15); border: 3px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 30px rgba(255, 107, 0, 0.6), inset 0 0 15px rgba(255, 107, 0, 0.4); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                        <!-- Inner Arrow -->
+                        <svg viewBox="0 0 64 64" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));">
+                            <path d="M32 8L54 52L32 40L10 52L32 8Z" fill="#FFFFFF" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <!-- Pulse Effect -->
+                    <div class="marker-pulse" style="position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3px solid #FF6B00; opacity: 0;"></div>
                 </div>
-                <!-- Pulse Effect -->
-                <div class="marker-pulse" style="position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #FF6B00; opacity: 0;"></div>
+                
+                <!-- Attached Street Pill -->
+                <div class="street-pill-attached" style="margin-top: 12px; background: rgba(24, 24, 27, 0.95); border: 1.5px solid rgba(255, 107, 0, 0.3); backdrop-filter: blur(12px); border-radius: 50px; padding: 6px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #FF6B00; box-shadow: 0 0 8px #FF6B00;"></div>
+                    <span id="marker-street-name" style="color: white; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; font-family: system-ui, -apple-system, sans-serif;">${currentStreet}</span>
+                </div>
             </div>
         `;
         
@@ -254,6 +262,15 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             map.current = null;
         };
     }, [theme]);
+
+    // Update Marker Street Name in HTML dynamically
+    useEffect(() => {
+        if (!marker.current) return;
+        const streetEl = marker.current.getElement().querySelector('#marker-street-name');
+        if (streetEl) {
+            streetEl.textContent = currentStreet;
+        }
+    }, [currentStreet]);
 
     // Update location, bearing and route
     useEffect(() => {
@@ -310,14 +327,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
                     duration: 1200, // Slightly longer for extra smoothness
-                    padding: { bottom: isMissionOverlayExpanded ? 550 : 380 }, // Increased padding for middle-lower position
+                    padding: { bottom: isMissionOverlayExpanded ? 650 : 450 }, // Significantly increased padding
                     easing: (t) => t
                 });
             } else {
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: isMissionOverlayExpanded ? 550 : 380 },
+                    padding: { bottom: isMissionOverlayExpanded ? 650 : 450 },
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -593,14 +610,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             )}
 
-            {/* Current Street Pill (Floating below marker area) */}
-            <div className={`absolute left-1/2 -translate-x-1/2 ${isMissionOverlayExpanded ? 'bottom-[520px]' : 'bottom-[330px]'} z-10 transition-all duration-700 pointer-events-none`}>
-                <div className="bg-zinc-900/90 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-full shadow-2xl flex items-center space-x-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
-                    <span className="text-[10px] font-black text-white tracking-widest uppercase italic">{currentStreet}</span>
-                </div>
-            </div>
-
             {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
                 <>
@@ -620,15 +629,15 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Left Side: Shield + Speedometer - DYNAMIC POSITIONING & PROXIMITY HIDING */}
             {(!hideSpeedometer) && (
-                <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-3 items-center transition-all duration-500`}>
-                    <div className="bg-[#120502]/95 border border-white/10 rounded-full flex flex-col items-center justify-center w-16 h-16 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-2xl ring-2 ring-[#FF6B00]/20">
-                        <span className="text-2xl font-black text-white leading-none italic">{currentSpeed}</span>
-                        <span className="text-[7px] text-orange-500 font-black tracking-widest pt-0.5 uppercase">km/h</span>
+                <div className={`absolute left-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-4 items-center transition-all duration-500`}>
+                    <div className="bg-zinc-950/90 border border-white/5 rounded-full flex flex-col items-center justify-center w-20 h-20 shadow-[0_20px_40px_rgba(0,0,0,0.9)] backdrop-blur-3xl ring-1 ring-white/5">
+                        <span className="text-3xl font-black text-white leading-none italic">{currentSpeed}</span>
+                        <span className="text-[8px] text-zinc-500 font-black tracking-widest pt-1 uppercase">km/h</span>
                     </div>
                     <button 
-                        className="w-12 h-12 rounded-full bg-[#1A0A05]/95 border border-white/10 shadow-xl flex items-center justify-center text-blue-500 backdrop-blur-xl active:scale-95 transition-transform"
+                        className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-blue-400 backdrop-blur-3xl active:scale-95 transition-transform ring-1 ring-white/5"
                     >
-                        <i className="fas fa-shield-halved text-lg"></i>
+                        <i className="fas fa-shield-halved text-xl"></i>
                     </button>
                 </div>
             )}
@@ -637,24 +646,25 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             <div className={`absolute right-4 ${isMissionOverlayExpanded ? 'bottom-[480px]' : 'bottom-[220px]'} z-[1000] flex flex-col gap-4 items-center transition-all duration-500`}>
                 <button 
                     onClick={onShowSOS}
-                    className="w-12 h-12 rounded-2xl bg-zinc-900/90 border border-red-500/20 shadow-2xl flex items-center justify-center text-white backdrop-blur-xl active:scale-90 transition-all hover:bg-black group"
+                    className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-red-500 backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5"
                 >
-                    <div className="absolute inset-0 bg-red-500/5 rounded-2xl animate-pulse"></div>
-                    <i className="fas fa-triangle-exclamation text-xl text-red-500 group-hover:scale-110 transition-transform"></i>
+                    <div className="absolute inset-0 bg-red-500/5 rounded-full animate-pulse"></div>
+                    <i className="fas fa-triangle-exclamation text-xl group-hover:scale-110 transition-transform"></i>
                 </button>
 
                 <button 
                     onClick={onShowFilters}
-                    className="w-12 h-12 rounded-2xl bg-zinc-900/90 border border-white/10 shadow-2xl flex items-center justify-center text-white backdrop-blur-xl active:scale-90 transition-all hover:bg-black group"
+                    className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5"
                 >
-                    <i className="fas fa-route text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                    <i className="fas fa-route text-xl group-hover:scale-110 transition-transform"></i>
                 </button>
             </div>
 
-            {/* Right Edge: Vertical Progress Bar - MINIMAL */}
-            <div className="absolute right-1 top-[35%] bottom-[220px] w-[3px] bg-zinc-900 rounded-full overflow-hidden z-[100]">
-                <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] transition-all duration-1000" style={{ height: `${progressPct}%` }}></div>
-                <div className="absolute left-1/2 -ml-[5px] w-2.5 h-2.5 bg-white border-2 border-[#FF6B00] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all duration-1000" style={{ bottom: `calc(${progressPct}% - 5px)` }}>
+            {/* Right Edge: Vertical Progress Bar - REFINED */}
+            <div className="absolute right-1.5 top-[30%] bottom-[220px] w-[5px] bg-zinc-900/50 backdrop-blur-sm rounded-full overflow-visible z-[100] border border-white/5">
+                <div className="absolute bottom-0 left-0 w-full bg-[#FF6B00] transition-all duration-1000 rounded-full" style={{ height: `${progressPct}%` }}></div>
+                <div className="absolute left-1/2 -ml-[8px] w-4 h-4 bg-white border-2 border-[#FF6B00] rounded-full shadow-[0_0_15px_rgba(255,107,0,0.5)] transition-all duration-1000 flex items-center justify-center" style={{ bottom: `calc(${progressPct}% - 8px)` }}>
+                    <div className="w-1 h-1 bg-[#FF6B00] rounded-full"></div>
                 </div>
             </div>
 
