@@ -87,7 +87,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     align-items: center;
                     justify-content: center;
                     z-index: 10;
-                    transition: transform 0.3s ease-out;
+                    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 .navigation-marker svg {
                     width: 100%;
@@ -294,20 +294,23 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 }
 
                 lastSmoothedBearing.current = targetBearing;
+                
+                // Rotate the marker icon independently (if needed) or let map rotation handle it
+                marker.current?.setRotation(targetBearing);
 
                 // Rotate map and icon to follow direction
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
                     duration: 1200, // Slightly longer for extra smoothness
-                    padding: { bottom: isMissionOverlayExpanded ? 460 : 200 }, // Keep center above overlay
+                    padding: { bottom: isMissionOverlayExpanded ? 460 : 300 }, // Increased padding from 200 to 300
                     easing: (t) => t
                 });
             } else {
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: isMissionOverlayExpanded ? 460 : 200 },
+                    padding: { bottom: isMissionOverlayExpanded ? 460 : 300 },
                     duration: 1000,
                     easing: (t) => t
                 });

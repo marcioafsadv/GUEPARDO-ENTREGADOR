@@ -2905,8 +2905,8 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
-                <div className={`p-8 pb-32 rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
+              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-8.5rem)]'}`}>
+                <div className={`p-5 sm:p-8 pb-16 sm:pb-32 rounded-t-[32px] sm:rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
@@ -2924,7 +2924,7 @@ const App: React.FC = () => {
                       </div>
                       <div className="flex flex-col">
                         <div className="flex items-center space-x-3">
-                          <h3 className={`text-2xl font-black italic tracking-tighter text-white`}>Seus Ganhos</h3>
+                          <h3 className={`text-xl sm:text-2xl font-black italic tracking-tighter text-white`}>Seus Ganhos</h3>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
                             className="text-zinc-500 hover:text-white transition-colors p-1"
@@ -2946,18 +2946,18 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-4 sm:gap-6">
                     {/* Daily Earnings Card */}
-                    <div className="p-6 rounded-[32px] border border-white/5 bg-white/5 flex flex-col justify-center shadow-inner relative overflow-hidden group/card shadow-2xl">
+                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-white/5 flex flex-col justify-center shadow-inner relative overflow-hidden group/card shadow-2xl">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
-                        <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest mb-2 italic">Ganhos Hoje</p>
-                        <p className={`text-3xl font-black italic tracking-tighter text-white`}>
+                        <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest mb-1 sm:mb-2 italic">Ganhos Hoje</p>
+                        <p className={`text-2xl sm:text-3xl font-black italic tracking-tighter text-white`}>
                           {showBalance ? formatCurrency(dailyEarnings) : 'R$ •••••'}
                         </p>
                     </div>
 
                     {/* Stats List Card */}
-                    <div className="p-6 rounded-[32px] border border-white/5 bg-white/5 flex flex-col space-y-3 shadow-2xl">
+                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-white/5 flex flex-col space-y-2 sm:space-y-3 shadow-2xl">
                       <div className="flex justify-between items-center pb-2 border-b border-white/5">
                         <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Aceitas</span>
                         <span className="font-black italic text-sm text-white">{dailyStats.accepted}</span>
