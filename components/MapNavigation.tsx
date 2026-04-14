@@ -148,7 +148,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
             center: currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
             zoom: 18,
-            pitch: 60,
+            pitch: 0,
             bearing: 0,
             antialias: true
         });
@@ -327,14 +327,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
                     duration: 1200, // Slightly longer for extra smoothness
-                    padding: { bottom: isMissionOverlayExpanded ? 650 : 450 }, // Significantly increased padding
+                    padding: { bottom: isMissionOverlayExpanded ? 700 : 500 }, // Increased padding for better clearance
+                    pitch: 0,
                     easing: (t) => t
                 });
             } else {
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: isMissionOverlayExpanded ? 650 : 450 },
+                    padding: { bottom: isMissionOverlayExpanded ? 700 : 500 },
+                    pitch: 0,
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -441,9 +443,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 } else if (route.distance >= 100 && isArriving) {
                     setIsArriving(false);
                     
-                    // Return to 3D mode
+                    // Return to top-down mode
                     map.current?.easeTo({
-                        pitch: 60,
+                        pitch: 0,
                         zoom: 18,
                         duration: 1500
                     });
