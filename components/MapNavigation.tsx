@@ -345,9 +345,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     easing: (t) => t
                 });
             }
-                    easing: (t) => t
-                });
-            }
         } else {
              map.current.setCenter([currentLocation.lng, currentLocation.lat]);
         }
