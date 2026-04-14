@@ -2873,46 +2873,33 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1002] flex flex-col space-y-3 animate-in fade-in slide-in-from-right-8 duration-700">
-                {/* Filter Button */}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1002] flex flex-col space-y-4 animate-in fade-in slide-in-from-right-8 duration-700">
+                {/* 1. Preferences Button */}
                 <button 
-                  onClick={() => setShowFilterDrawer(true)}
-                  className={`w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  onClick={() => setShowFiltersModal(true)}
+                  className={`w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
-                  <i className="fas fa-sliders text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
-                  {isFilterActive && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
+                  <i className="fas fa-sliders text-2xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                  {isFilterActive && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
                 </button>
 
-                {/* Recenter Button */}
-                <button 
-                  onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
-                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
-                >
-                  <i className="fas fa-location-crosshairs text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
-                </button>
-
-                {/* SOS Button */}
+                {/* 2. SOS Button (Central) */}
                 <button 
                   onClick={() => setShowSOSModal(true)}
-                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
-                  <i className="fas fa-tower-broadcast text-xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                  <i className="fas fa-tower-broadcast text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
                 </button>
 
-                {/* Quick Preferences Button */}
+                {/* 3. Recenter Button */}
                 <button 
-                  onClick={() => setCurrentScreen('SETTINGS')}
-                  className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
+                  className="w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
-                  <i className="fas fa-gear text-xl text-[#FFD700] opacity-80 group-hover:scale-110 transition-transform"></i>
-                </button>
-
-                {/* Radar/Heatmap Toggle */}
-                <button 
-                  onClick={() => setShowHeatMap(!showHeatMap)}
-                  className={`w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group ${showHeatMap ? 'border-[#FF6B00]/50' : ''}`}
-                >
-                  <i className={`fas fa-circle-dot text-xl ${showHeatMap ? 'text-[#FF6B00] animate-pulse' : 'text-[#FF6B00]/40'} group-hover:scale-110 transition-transform`}></i>
+                  <i className="fas fa-location-crosshairs text-2xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
                 </button>
               </div>
             )}
@@ -3748,20 +3735,7 @@ const App: React.FC = () => {
                       <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
                     </button>
 
-                    <button onClick={() => setSettingsView('MAPS')} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 text-[#FF6B00]`}><i className="fas fa-map-location-dot text-lg"></i></div>
-                        <div>
-                          <p className={`text-[13px] font-bold text-white`}>Navegador Padrão</p>
-                          <p className={`text-[9px] font-black uppercase text-chocolate-muted mt-0.5 tracking-tighter`}>
-                            {currentUser.preferredMap === 'internal' ? 'Guepardo Maps' : 
-                             currentUser.preferredMap === 'google' ? 'Google Maps' : 
-                             currentUser.preferredMap === 'waze' ? 'Waze' : 'Sempre perguntar'}
-                          </p>
-                        </div>
-                      </div>
-                      <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
-                    </button>
+
                   </div>
                 </section>
 
@@ -4156,35 +4130,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {settingsView === 'MAPS' && (
-                <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                  <div className={`p-8 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
-                    <h3 className={`font-black text-xl mb-6 text-white italic tracking-tight flex items-center gap-3`}>
-                      <i className="fas fa-map-location-dot text-[#FF6B00]"></i>
-                      <span>Navegação</span>
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        { id: 'internal', label: 'Guepardo Maps', icon: 'fa-location-crosshairs' },
-                        { id: 'google', label: 'Google Maps', icon: 'fa-map' },
-                        { id: 'waze', label: 'Waze', icon: 'fa-waze' },
-                      ].map((map) => (
-                        <button 
-                          key={map.id}
-                          onClick={() => setCurrentUser(prev => ({ ...prev, preferredMap: map.id as any }))}
-                          className={`w-full p-5 rounded-[24px] border transition-all flex items-center justify-between ${currentUser.preferredMap === map.id ? 'border-[#FF6B00] bg-[#FF6B00]/5 text-[#FF6B00]' : 'bg-black/40 border-white/5 text-chocolate-muted'}`}
-                        >
-                          <div className="flex items-center space-x-4">
-                            <i className={`fas ${map.id === 'waze' ? 'fab fa-waze' : map.icon} text-xl`}></i>
-                            <span className={`text-sm font-black ${currentUser.preferredMap === map.id ? 'text-white' : ''}`}>{map.label}</span>
-                          </div>
-                          {currentUser.preferredMap === map.id && <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] shadow-[0_0_10px_#FF6B00]"></div>}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
             </div>
           );
@@ -4520,65 +4466,138 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {showFiltersModal && (
-        <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className={`w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-500 pb-12 ${cardBg}`}>
-            <div className="flex justify-between items-center mb-8">
-              <h2 className={`text-2xl font-black italic ${textPrimary}`}>Filtros de Rota</h2>
-              <button onClick={() => setShowFiltersModal(false)} className={`w-10 h-10 rounded-full flex items-center justify-center ${innerBg} ${textMuted}`}>
-                <i className="fas fa-times text-lg"></i>
-              </button>
-            </div>
-            <div className="space-y-6">
-              <div className={`p-5 rounded-[28px] border border-white/5 ${backHome ? 'bg-[#33CCFF]/10 border-[#33CCFF]/30' : innerBg}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${backHome ? 'bg-[#33CCFF] text-white' : 'bg-zinc-700/50 text-zinc-500'}`}>
-                      <i className="fas fa-house-user"></i>
+       {showFiltersModal && (
+         <div className="absolute inset-0 bg-black/90 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-xl animate-in fade-in duration-300">
+           <div className={`w-full max-w-md h-[90vh] sm:h-auto rounded-t-[40px] sm:rounded-[40px] p-6 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-500 flex flex-col ${cardBg}`}>
+             <div className="flex justify-between items-center mb-6 shrink-0">
+               <div className="flex flex-col">
+                  <h2 className={`text-2xl font-black italic tracking-tight text-white uppercase`}>Preferências</h2>
+                  <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.2em]">Personalize sua operação</p>
+               </div>
+               <button onClick={() => setShowFiltersModal(false)} className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 text-zinc-400 active:scale-90 transition-all`}>
+                 <i className="fas fa-times text-xl"></i>
+               </button>
+             </div>
+
+             <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar pb-6">
+                {/* ── MAPA DE CALOR ── */}
+                <div className={`p-5 rounded-[28px] border border-white/5 bg-[#1a0c06]`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${showHeatMap ? 'bg-[#FF6B00] text-white shadow-[0_0_20px_rgba(255,107,0,0.3)]' : 'bg-white/5 text-zinc-600'}`}>
+                        <i className={`fas fa-fire-flame-curved text-xl ${showHeatMap ? 'animate-pulse' : ''}`}></i>
+                      </div>
+                      <div>
+                        <h3 className="text-[13px] font-black text-white uppercase tracking-wide">Mapa de Calor</h3>
+                        <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Ver locais com mais pedidos</p>
+                      </div>
                     </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={showHeatMap} onChange={(e) => setShowHeatMap(e.target.checked)} className="sr-only peer" />
+                      <div className="w-14 h-7 bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#FF6B00] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-6 after:transition-all shadow-inner"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* ── NAVEGADOR PADRÃO ── */}
+                <div className={`p-5 rounded-[32px] border border-white/5 bg-[#1a0c06]`}>
+                  <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em] mb-4 ml-1">Navegador Padrão</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'internal', label: 'Guepardo', icon: 'fa-location-crosshairs' },
+                      { id: 'google', label: 'Google', icon: 'fa-map' },
+                      { id: 'waze', label: 'Waze', icon: 'fa-waze' },
+                    ].map((map) => (
+                      <button 
+                        key={map.id}
+                        onClick={() => setCurrentUser(prev => ({ ...prev, preferredMap: map.id as any }))}
+                        className={`flex flex-col items-center justify-center p-3 rounded-[24px] border-2 transition-all active:scale-95 ${currentUser.preferredMap === map.id ? 'border-[#FF6B00] bg-[#FF6B00]/10' : 'border-white/5 bg-black/20'}`}
+                      >
+                        <i className={`fas ${map.id === 'waze' ? 'fab fa-waze' : map.icon} text-lg mb-2 ${currentUser.preferredMap === map.id ? 'text-[#FF6B00]' : 'text-zinc-600'}`}></i>
+                        <span className={`text-[9px] font-black uppercase ${currentUser.preferredMap === map.id ? 'text-white' : 'text-zinc-500'}`}>{map.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── REDIRECIONAR CASA ── */}
+                <div className={`p-5 rounded-[28px] border border-white/5 ${backHome ? 'bg-[#33CCFF]/5 border-[#33CCFF]/30' : 'bg-[#1a0c06]'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${backHome ? 'bg-[#33CCFF] text-white shadow-[0_0_20px_rgba(51,204,255,0.3)]' : 'bg-white/5 text-zinc-600'}`}>
+                        <i className="fas fa-house-chimney-user text-xl"></i>
+                      </div>
+                      <div>
+                        <h3 className="text-[13px] font-black text-white uppercase tracking-wide">Voltar p/ Casa</h3>
+                        <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Priorizar destino final</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={backHome} onChange={(e) => setBackHome(e.target.checked)} className="sr-only peer" />
+                      <div className="w-14 h-7 bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#33CCFF] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-6 after:transition-all"></div>
+                    </label>
+                  </div>
+                  {backHome && (
+                    <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                      <p className="text-[9px] font-black text-[#33CCFF] uppercase tracking-widest mb-2 ml-1">Seu Endereço de Destino</p>
+                      <div className="relative">
+                        <i className="fas fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-[#33CCFF] text-xs"></i>
+                        <input
+                          type="text"
+                          value={homeDestination}
+                          onChange={(e) => setHomeDestination(e.target.value)}
+                          placeholder="Ex: Rua das Flores, 123..."
+                          className={`w-full h-12 rounded-2xl pl-10 pr-4 text-xs font-black outline-none border border-[#33CCFF]/30 bg-black/40 text-white focus:border-[#33CCFF] transition-all`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── RAIO DE ENTREGA ── */}
+                <div className={`p-5 rounded-[32px] border border-white/5 bg-[#1a0c06]`}>
+                  <div className="flex justify-between items-center mb-4">
                     <div>
-                      <h3 className={`text-sm font-black uppercase tracking-wide ${textPrimary}`}>Voltar p/ Casa</h3>
-                      <p className={`text-[9px] font-bold ${textMuted}`}>Priorizar destino final</p>
+                       <h3 className="text-[13px] font-black text-white uppercase tracking-wide">Raio de Entrega</h3>
+                       <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Distância máxima das taxas</p>
+                    </div>
+                    <div className="bg-[#FF6B00]/10 px-4 py-2 rounded-2xl border border-[#FF6B00]/20">
+                       <span className={`text-[#FF6B00] font-black text-lg italic tracking-tighter`}>{maxDistance} km</span>
                     </div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={backHome} onChange={(e) => setBackHome(e.target.checked)} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#33CCFF]"></div>
-                  </label>
-                </div>
-                {backHome && (
-                  <div className="mt-3 animate-in fade-in slide-in-from-top-2">
-                    <input
-                      type="text"
-                      value={homeDestination}
-                      onChange={(e) => setHomeDestination(e.target.value)}
-                      placeholder="Digite seu endereço..."
-                      className={`w-full h-12 rounded-xl px-4 text-xs font-bold outline-none border focus:border-[#33CCFF] ${theme === 'dark' ? 'bg-black text-white border-zinc-700' : 'bg-white text-black border-zinc-200'}`}
-                    />
+                  <div className="px-2">
+                    <input type="range" min="1" max="50" step="5" value={maxDistance} onChange={(e) => setMaxDistance(parseInt(e.target.value))} className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#FF6B00]" />
+                    <div className="flex justify-between mt-2">
+                       <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Curta</span>
+                       <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Média</span>
+                       <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Longa</span>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg}`}>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`text-xs font-black uppercase tracking-widest ${textMuted}`}>Raio de Entrega</h3>
-                  <span className={`text-[#FF6B00] font-black text-lg`}>{maxDistance} km</span>
                 </div>
-                <input type="range" min="1" max="50" value={maxDistance} onChange={(e) => setMaxDistance(parseInt(e.target.value))} className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF6B00]" />
-              </div>
-              <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg}`}>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`text-xs font-black uppercase tracking-widest ${textMuted}`}>Valor Mínimo</h3>
-                  <span className={`text-green-500 font-black text-lg`}>R$ {minPrice.toFixed(0)}</span>
+
+                {/* ── VALOR MÍNIMO ── */}
+                <div className={`p-5 rounded-[32px] border border-white/5 bg-[#1a0c06]`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                       <h3 className="text-[13px] font-black text-white uppercase tracking-wide">Ganhos Mínimos</h3>
+                       <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Filtrar por valor da taxa</p>
+                    </div>
+                    <div className="bg-emerald-500/10 px-4 py-2 rounded-2xl border border-emerald-500/20">
+                       <span className={`text-emerald-500 font-black text-lg italic tracking-tighter`}>R$ {minPrice.toFixed(0)}</span>
+                    </div>
+                  </div>
+                  <div className="px-2">
+                    <input type="range" min="0" max="50" step="5" value={minPrice} onChange={(e) => setMinPrice(parseInt(e.target.value))} className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                  </div>
                 </div>
-                <input type="range" min="0" max="30" step="5" value={minPrice} onChange={(e) => setMinPrice(parseInt(e.target.value))} className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-green-500" />
-              </div>
-            </div>
-            <button onClick={() => setShowFiltersModal(false)} className="w-full h-16 mt-8 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-xl active:scale-95 transition-transform">
-              Aplicar Filtros
-            </button>
-          </div>
-        </div>
-      )}
+             </div>
+
+             <button onClick={() => setShowFiltersModal(false)} className="w-full h-16 mt-4 bg-[#FF6B00] rounded-[24px] font-black text-white uppercase italic tracking-[0.2em] shadow-[0_12px_40px_rgba(255,107,0,0.3)] active:scale-95 transition-all shrink-0">
+               Confirmar Ajustes
+             </button>
+           </div>
+         </div>
+       )}
 
       {selectedTransaction && (
         <div className="absolute inset-0 z-[7000] bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200">
