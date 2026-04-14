@@ -227,7 +227,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         
         marker.current = new mapboxgl.Marker({
             element: el,
-            rotationAlignment: 'map',
+            rotationAlignment: 'viewport', // Marker always points relative to screen top
             pitchAlignment: 'map'
         })
             .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]))
@@ -319,25 +319,32 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
                 lastSmoothedBearing.current = targetBearing;
                 
-                // Rotate the marker icon independently (if needed) or let map rotation handle it
-                marker.current?.setRotation(targetBearing);
+                // Position the marker in the lower-third dynamically based on container height
+                const containerHeight = map.current.getContainer().getBoundingClientRect().height;
+                const dynamicPadding = containerHeight * (isMissionOverlayExpanded ? 0.70 : 0.50);
 
-                // Rotate map and icon to follow direction
+                // Rotate MAP and center on location with dynamic padding
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
-                    duration: 1200, // Slightly longer for extra smoothness
-                    padding: { bottom: isMissionOverlayExpanded ? 700 : 500 }, // Increased padding for better clearance
+                    duration: 1200, 
+                    padding: { bottom: dynamicPadding },
                     pitch: 0,
                     easing: (t) => t
                 });
             } else {
+                const containerHeight = map.current.getContainer().getBoundingClientRect().height;
+                const dynamicPadding = containerHeight * (isMissionOverlayExpanded ? 0.70 : 0.50);
+
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
-                    padding: { bottom: isMissionOverlayExpanded ? 700 : 500 },
+                    padding: { bottom: dynamicPadding },
                     pitch: 0,
                     duration: 1000,
+                    easing: (t) => t
+                });
+            }
                     easing: (t) => t
                 });
             }
