@@ -3321,19 +3321,7 @@ const App: React.FC = () => {
                         <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
 
-                      {/* FORCED SYNC BUTTON (EMERGENCY) */}
-                      {status === DriverStatus.RETURNING && (
-                        <button 
-                          onClick={() => {
-                            if (navigator.vibrate) navigator.vibrate(100);
-                            setSyncId(prev => prev + 1);
-                          }}
-                          className="w-full mt-3 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 active:scale-95 transition-all"
-                        >
-                          <i className={`fas fa-rotate ${realtimeStatus === 'CONNECTING' ? 'animate-spin' : ''}`}></i>
-                          <span>O Lojista já finalizou? Forçar Sincronização</span>
-                        </button>
-                      )}
+                      </button>
                     </div>
                 </div>
               </div>
