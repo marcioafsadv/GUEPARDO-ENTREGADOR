@@ -1793,20 +1793,29 @@ const App: React.FC = () => {
 
 
 
-  const isProcessingDeliveryRef = useRef(false);
+  const isProcessingDeliveryRef = useRef<Set<string>>(new Set());
   const processedEarningsIdsRef = useRef<Set<string>>(new Set());
 
   const processDeliverySuccess = async () => {
     if (!mission || !userId) return;
     
-    console.log('✅ Finalizing mission(s) - Clearing states...');
-    isCompletingMission.current = true;
-    
-    if (isProcessingDeliveryRef.current) {
-        console.log('⏳ Delivery already processing. Skipping.');
+    // 🛡️ IDEMPOTENCY GUARD: Prevent simultaneous processing of the SAME mission ID
+    if (isProcessingDeliveryRef.current.has(mission.id)) {
+        console.log(`⏳ Mission ${mission.id.slice(-4)} is already being processed. Skipping redundant trigger.`);
         return;
     }
-    isProcessingDeliveryRef.current = true;
+    
+    const earningsLockId = `${mission.id}-earnings`;
+    if (processedEarningsIdsRef.current.has(earningsLockId)) {
+        console.log(`✅ Mission ${mission.id.slice(-4)} was already successfully finalized in this session. Skipping.`);
+        return;
+    }
+
+    // Mark as processing IMMEDIATELY (Atomic)
+    isProcessingDeliveryRef.current.add(mission.id);
+    
+    console.log(`✅ Finalizing mission ${mission.id.slice(-4)} - Clearing states...`);
+    isCompletingMission.current = true;
 
     const getNumericId = (m: any) => {
       if (m.displayId) return m.displayId;
@@ -1817,14 +1826,12 @@ const App: React.FC = () => {
     };
 
     const missionId = `Entrega #${getNumericId(mission)}`;
-    // Um ID exclusivo para não contabilizar na volta (mesmo que displayId/missionId seja igual)
-    const earningsLockId = `${mission.id}-earnings`;
     
-    // ⚠️ Transaction & Earnings logic: Only run if NOT already processed
-    const alreadyProcessed = processedEarningsIdsRef.current.has(earningsLockId) || history.some(h => h.type === missionId);
+    // ⚠️ Transaction & Earnings logic: Double check history state (Functional Check)
+    const alreadyInHistory = history.some(h => h.type === missionId);
 
     try {
-      if (!alreadyProcessed) {
+      if (!alreadyInHistory) {
         processedEarningsIdsRef.current.add(earningsLockId);
         const earned = mission.earnings;
 
@@ -1985,9 +1992,10 @@ const App: React.FC = () => {
       alert(`Erro ao finalizar entrega: ${errorMsg}\n\nTente novamente.`);
     } finally {
       isCompletingMission.current = false;
+      // Cleanup the processing SET after a delay to account for DB propagation/real-time echo
       setTimeout(() => {
-        isProcessingDeliveryRef.current = false;
-      }, 1000);
+        isProcessingDeliveryRef.current.delete(mission.id);
+      }, 2000); // Increased to 2s to be safer against slow network/realtime echo
     }
   };
 
