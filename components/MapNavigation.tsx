@@ -295,9 +295,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             // Speed in km/h
             const speedKmh = currentLocation.speed != null ? currentLocation.speed * 3.6 : (distMoved / 1) * 3.6;
 
-            // Only update bearing if we moved significantly (e.g. > 3m) or are moving at decent speed
+            // Only update bearing if we moved significantly (e.g. > 1.5m) or are moving at decent speed
             // This prevents "dancing" while stopped or moving very slowly with GPS jitter
-            if (distMoved > 3 && speedKmh > 2) {
+            if (distMoved > 1.5 && speedKmh > 1.5) {
                 const rawBearing = getBearing(
                     lastLocation.current.lat, lastLocation.current.lng,
                     currentLocation.lat, currentLocation.lng
@@ -313,8 +313,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     if (diff > 180) diff -= 360;
                     if (diff < -180) diff += 360;
                     
-                    // alpha = 0.3 (lower is smoother/slower, higher is more responsive)
-                    targetBearing = (lastSmoothedBearing.current + diff * 0.3 + 360) % 360;
+                    // alpha = 0.6 (increased from 0.3 for snappier rotations)
+                    targetBearing = (lastSmoothedBearing.current + diff * 0.6 + 360) % 360;
                 }
 
                 lastSmoothedBearing.current = targetBearing;
@@ -327,7 +327,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     bearing: targetBearing,
-                    duration: 1200, 
+                    duration: 500, // Reduced from 1200ms to eliminate rotation lag
                     padding: { top: dynamicTopPadding, bottom: 80 }, 
                     pitch: 0,
                     easing: (t) => t

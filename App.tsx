@@ -1103,14 +1103,29 @@ const App: React.FC = () => {
 
   const openNavigation = (provider: 'waze' | 'google', forcedAddress?: string) => {
     if (!mission && !forcedAddress) return;
+    
     const isGoingToStore = status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP;
+    
+    // Prioritize coordinates for absolute accuracy
+    const lat = isGoingToStore ? mission?.storeLngLat?.lat || mission?.storeLat : mission?.destinationLat;
+    const lng = isGoingToStore ? mission?.storeLngLat?.lng || mission?.storeLng : mission?.destinationLng;
     const address = forcedAddress || (isGoingToStore ? mission?.storeAddress : mission?.customerAddress);
-    if (!address) return;
-    const encodedAddress = encodeURIComponent(address);
-    const url = provider === 'waze'
-      ? `https://waze.com/ul?q=${encodedAddress}&navigate=yes`
-      : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
-    window.open(url, '_blank');
+
+    if (lat && lng) {
+      // COORDINATE BASED NAVIGATION (Most Accurate)
+      const url = provider === 'waze'
+        ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
+        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      window.open(url, '_blank');
+    } else if (address) {
+      // FALLBACK TO ADDRESS STRING
+      const encodedAddress = encodeURIComponent(address);
+      const url = provider === 'waze'
+        ? `https://waze.com/ul?q=${encodedAddress}&navigate=yes`
+        : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+      window.open(url, '_blank');
+    }
+    
     setShowMissionMapPicker(false);
   };
 
