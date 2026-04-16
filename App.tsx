@@ -2988,229 +2988,288 @@ const App: React.FC = () => {
                   
                   {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
-                    /* Exact Screenshot Replica Mode */
-                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-1.5 cursor-pointer active:scale-95 transition-all text-center">
-                      <div className="w-10 h-0.5 bg-zinc-700/60 rounded-full mb-3" />
+                    /* Exact Screenshot Replica Mode - Simplified for GOING_TO_CUSTOMER */
+                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center">
+                      <div className="w-12 h-1 bg-zinc-700/60 rounded-full mb-3" />
                       
-                      <h3 className="text-white text-sm font-bold mb-0.5">
-                        {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em curso'}
+                      <h3 className="text-white text-sm font-black uppercase tracking-widest mb-1 italic">
+                        {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em Rota'}
                       </h3>
                       
-                      <div className="flex items-center justify-center space-x-1.5 text-[#FF6B00] text-[11px] font-bold">
-                        <div className="w-1 h-1 rounded-full bg-[#FF6B00]" />
-                        <span>Chegada: {navMetrics?.time || '-- min'}</span>
+                      <div className="flex items-center justify-center space-x-2 text-[#FF6B00] text-[10px] font-black uppercase tracking-wider">
+                        <i className="far fa-clock text-[9px] opacity-70"></i>
+                        <span>Chegada em {navMetrics?.time || '-- min'}</span>
+                      </div>
+                      
+                      <div className="mt-2 text-[8px] font-bold text-zinc-600 uppercase tracking-[0.3em] animate-pulse">
+                        Arraste para Detalhes
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-start justify-between mb-3 shrink-0 gap-4">
-                        {/* Left Column: Status & Value */}
-                        <div className="flex flex-col space-y-1">
-                          <span className={`w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-lg' : 'bg-[#FF6B00] text-white shadow-lg'}`}>
-                            {getStatusLabel(status)}
-                          </span>
-                          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest italic pl-1">
-                            TAXA: {formatCurrency(mission.earnings || 0)}
-                          </span>
-                        </div>
+                      {/* Detailed Header for GOING_TO_CUSTOMER */}
+                      {status === DriverStatus.GOING_TO_CUSTOMER ? (
+                        <div className="flex flex-col space-y-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                           {/* Stop Counter & Close Icon */}
+                           <div className="flex items-center justify-between px-1">
+                              <div className="flex items-center space-x-3 bg-white/5 px-5 py-2.5 rounded-[20px] border border-white/10 shadow-inner">
+                                <div className="w-2 h-2 rounded-full bg-[#FF6B00] animate-pulse"></div>
+                                <span className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                                  {activeMissions.length > 1 
+                                    ? `PEDIDO ${activeMissions.findIndex(m => m.id === (mission?.id)) + 1} DE ${activeMissions.length}` 
+                                    : 'PEDIDO EM ROTA'}
+                                </span>
+                              </div>
+                              <button onClick={() => setIsMissionOverlayExpanded(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 active:scale-90 transition-transform">
+                                <i className="fas fa-chevron-down"></i>
+                              </button>
+                           </div>
 
-                        {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
-                        <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
-                          {/* Nav Metrics (Time | Dist) */}
-                          <div className="flex items-center px-2 space-x-3 border-r border-white/10 shrink-0">
-                            <div className="flex items-center space-x-1.5">
-                              <i className="far fa-clock text-zinc-400 text-[10px]"></i>
-                              <span className="text-[10px] font-black text-white">{navMetrics?.time || '0 min'}</span>
+                           {/* Main Customer Detail Card - Premium Style */}
+                           <div className={`p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden ${innerBg} ring-1 ring-white/5`}>
+                              <div className="flex justify-between items-start relative z-10">
+                                <div className="flex-1 min-w-0 pr-6">
+                                  <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.3em] mb-3 opacity-70">Destino da Entrega</p>
+                                  <h2 className={`text-4xl font-black italic tracking-tighter ${textPrimary} truncate mb-3 drop-shadow-md`}>{mission.customerName}</h2>
+                                  <div className="flex items-start space-x-3 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                    <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center shrink-0">
+                                      <i className="fas fa-location-dot text-[#FF6B00] text-sm"></i>
+                                    </div>
+                                    <p className={`${textMuted} text-xs font-bold leading-relaxed italic`}>{mission.customerAddress}</p>
+                                  </div>
+                                </div>
+                                
+                                {/* Action Buttons Column */}
+                                <div className="flex flex-col space-y-4">
+                                  <button 
+                                    onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} 
+                                    className={`w-16 h-16 rounded-[24px] flex flex-col items-center justify-center transition-all ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_15px_30px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                                  >
+                                    <i className="fas fa-location-arrow text-xl mb-1"></i>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">MAPAS</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} 
+                                    className={`w-16 h-16 rounded-[24px] flex flex-col items-center justify-center transition-all ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white shadow-[0_15px_30px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                                  >
+                                    <i className="fas fa-circle-question text-xl mb-1"></i>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">AJUDA</span>
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div className="guepardo-watermark opacity-[0.04] absolute -right-6 -bottom-6 rotate-12 pointer-events-none text-9xl"></div>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between mb-3 shrink-0 gap-4">
+                          {/* Left Column: Status & Value */}
+                          <div className="flex flex-col space-y-1">
+                            <span className={`w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest italic ${status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? 'bg-[#FFD700] text-black shadow-lg' : 'bg-[#FF6B00] text-white shadow-lg'}`}>
+                              {getStatusLabel(status)}
+                            </span>
+                            <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest italic pl-1">
+                              TAXA: {formatCurrency(mission.earnings || 0)}
+                            </span>
+                          </div>
+
+                          {/* Right Column: Unified Metrics & Buttons Row (Print 3 Style) */}
+                          <div className={`flex items-center p-1 rounded-2xl ${innerBg} border border-white/5 shadow-2xl overflow-x-auto no-scrollbar`}>
+                            {/* Nav Metrics (Time | Dist) */}
+                            <div className="flex items-center px-2 space-x-3 border-r border-white/10 shrink-0">
+                              <div className="flex items-center space-x-1.5">
+                                <i className="far fa-clock text-zinc-400 text-[10px]"></i>
+                                <span className="text-[10px] font-black text-white">{navMetrics?.time || '0 min'}</span>
+                              </div>
+                              <div className="flex items-center space-x-1.5">
+                                <i className="fas fa-road text-zinc-400 text-[10px]"></i>
+                                <span className="text-[10px] font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-1.5">
-                              <i className="fas fa-road text-zinc-400 text-[10px]"></i>
-                              <span className="text-[10px] font-black text-white">{navMetrics?.distance || '0.0 km'}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Action Buttons with Text Labels (Print 3) */}
-                          <div className="flex items-center p-1 space-x-1 shrink-0">
-                            <button 
-                              onClick={() => setShowOrderDetails(true)}
-                              className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/30'}`}
-                            >
-                              <i className="fas fa-suitcase text-[10px]"></i>
-                              <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
-                            </button>
                             
-                            <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40'}`}>
-                              <i className="fas fa-location-arrow text-[10px]"></i>
-                              <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
-                            </button>
-                            
-                            <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-8 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
-                              <i className="fas fa-circle-question text-[10px]"></i>
-                              <span className="text-[9px] font-black uppercase tracking-tighter">AJUDA</span>
-                            </button>
+                            {/* Action Buttons with Text Labels (Print 3) */}
+                            <div className="flex items-center p-1 space-x-1 shrink-0">
+                              <button 
+                                onClick={() => setShowOrderDetails(true)}
+                                className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showOrderDetails ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/30'}`}
+                              >
+                                <i className="fas fa-suitcase text-[10px]"></i>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">PEDIDO</span>
+                              </button>
+                              
+                              <button onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} className={`px-3 h-9 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_0_15px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40'}`}>
+                                <i className="fas fa-location-arrow text-[10px]"></i>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">GPS</span>
+                              </button>
+                              
+                              <button onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} className={`px-3 h-8 rounded-xl flex items-center space-x-2 transition-all active:scale-95 ${showDeliveryHelpModal ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]' : 'bg-[#FF6B00] text-white'}`}>
+                                <i className="fas fa-circle-question text-[10px]"></i>
+                                <span className="text-[9px] font-black uppercase tracking-tighter">AJUDA</span>
+                              </button>
 
-                            <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
-                              <i className="fas fa-headset text-[10px]"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <div className="flex-1 space-y-3 mb-4 pr-1 overflow-y-auto">
-                    
-                    {/* Map Picker Panel */}
-                    {showMissionMapPicker && (
-                      <div className={`p-4 rounded-[28px] border border-white/5 flex justify-center space-x-12 ${innerBg} animate-in zoom-in-95 duration-200`}>
-                        <button onClick={() => openNavigation('waze')} className="flex flex-col items-center space-y-2 active:scale-90 transition-transform">
-                          <div className="w-14 h-14 rounded-2xl bg-[#33CCFF]/10 flex items-center justify-center text-[#33CCFF]"><i className="fab fa-waze text-2xl"></i></div>
-                          <span className="text-[10px] font-black text-[#33CCFF] uppercase">Waze</span>
-                        </button>
-                        <button onClick={() => openNavigation('google')} className="flex flex-col items-center space-y-2 active:scale-90 transition-transform">
-                          <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500"><i className="fas fa-map-marked-alt text-2xl"></i></div>
-                          <span className="text-[10px] font-black text-green-500 uppercase">Maps</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Help Center Panel (Print 3 Style) */}
-                    {showDeliveryHelpModal && (
-                      <div className={`p-5 rounded-[28px] border border-white/5 space-y-4 ${innerBg} animate-in fade-in slide-in-from-top-4 duration-300`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className={`text-xs font-black uppercase tracking-[0.2em] ${textPrimary}`}>Central de Ajuda</h3>
-                          <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><i className="fas fa-times text-xs"></i></button>
-                        </div>
-
-                        {activeHelpOption === null ? (
-                          <div className="grid grid-cols-2 gap-6">
-                            <button
-                              onClick={() => setActiveHelpOption('customer_not_found')}
-                              className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white shadow-xl'}`}
-                            >
-                              <div className="w-14 h-14 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-2xl"><i className="fas fa-user-slash text-xl"></i></div>
-                              <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Cliente não localizado</span>
-                            </button>
-                            <button
-                              onClick={() => setActiveHelpOption('talk_to_store')}
-                              className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-zinc-200 bg-white shadow-xl'}`}
-                            >
-                              <div className="w-14 h-14 rounded-full bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-2xl"><i className="fas fa-store text-xl"></i></div>
-                              <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Falar com Lojista</span>
-                            </button>
-                          </div>
-                        ) : activeHelpOption === 'customer_not_found' ? (
-                          <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                            <p className={`${textMuted} text-[10px] font-bold uppercase`}>Mensagem p/ o cliente:</p>
-                            <textarea
-                              value={customerMessage}
-                              onChange={(e) => setCustomerMessage(e.target.value)}
-                              placeholder="Olá, estou em frente ao endereço..."
-                              className="w-full h-24 rounded-2xl p-4 text-xs font-bold outline-none resize-none border border-white/10 bg-black/40 text-white focus:border-[#FF6B00] transition-colors"
-                            />
-                            <div className="flex space-x-3">
-                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-12 rounded-2xl font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Voltar</button>
-                              <button onClick={handleSendCustomerMessage} className="flex-[2] h-12 bg-[#FF6B00] rounded-2xl font-black text-white text-[10px] uppercase shadow-lg flex items-center justify-center space-x-2 active:scale-95 transition-transform">
-                                <i className="fab fa-whatsapp text-sm"></i>
-                                <span>Enviar Whats</span>
+                              <button onClick={() => setShowSOSModal(true)} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-red-500/50 active:scale-95 transition-all">
+                                <i className="fas fa-headset text-[10px]"></i>
                               </button>
                             </div>
                           </div>
-                        ) : (
-                          <div className="space-y-4 animate-in slide-in-from-right duration-300 text-center">
-                            <p className={`${textMuted} text-[10px] font-bold uppercase`}>Contato Lojista:</p>
-                            <p className={`text-2xl font-black ${textPrimary} tracking-tight`}>{mission.storePhone || '(11) 90000-0000'}</p>
-                            <div className="flex space-x-3">
-                              <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-12 rounded-2xl font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Voltar</button>
-                              <button onClick={handleCallStore} className="flex-[2] h-12 bg-[#FFD700] rounded-2xl font-black text-black text-[10px] uppercase shadow-lg flex items-center justify-center space-x-2 active:scale-95 transition-transform">
-                                <i className="fas fa-phone text-sm"></i>
-                                <span>Ligar Agora</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    {/* Order Details Modal (Requested by User) */}
-                    {showOrderDetails && (
-                      <div className="fixed inset-0 z-[9000] flex items-center justify-center p-6 animate-in fade-in duration-300 pointer-events-auto">
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowOrderDetails(false)}></div>
-                        
-                        <div className="w-full max-w-sm chocolate-glass-card p-8 animate-in zoom-in-95 duration-300 relative z-10 border border-white/10">
-                          <div className="flex justify-between items-center mb-8">
-                            <h2 className={`text-2xl font-black italic tracking-tighter ${textPrimary}`}>Detalhes do Pedido</h2>
-                            <button onClick={() => setShowOrderDetails(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 active:scale-90 transition-all">
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-
-                          <div className="space-y-8">
-                            {/* Collection Section */}
-                            <div className="space-y-4">
-                              <div className="flex items-center space-x-2">
-                                <i className="fas fa-box-open text-[#FF6B00]"></i>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Coletado</span>
-                              </div>
-                              
-                              <div className={`p-4 rounded-3xl border border-white/5 ${innerBg} space-y-3`}>
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Onde:</span>
-                                  <span className={`text-xs font-black ${textPrimary}`}>{mission.storeName}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Pedido:</span>
-                                  <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-2 py-0.5 rounded-lg`}>#{mission.displayId || mission.id.slice(-4)}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Cód. Coleta:</span>
-                                  <span className={`text-sm font-black text-[#FFD700]`}>{mission.collectionCode}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Delivery Section */}
-                            <div className="space-y-4">
-                              <div className="flex items-center space-x-2">
-                                <i className="fas fa-truck-fast text-[#00FF94]"></i>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00FF94]">Entregando</span>
-                              </div>
-                              
-                              <div className={`p-4 rounded-3xl border border-white/5 ${innerBg} space-y-3`}>
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Onde:</span>
-                                  <span className={`text-xs font-black ${textPrimary}`}>{mission.customerName}</span>
-                                </div>
-                                <div className="flex flex-col space-y-1">
-                                  <span className={`text-[10px] font-bold uppercase ${textMuted}`}>Endereço:</span>
-                                  <span className={`text-xs font-medium leading-relaxed ${textPrimary} italic`}>{mission.customerAddress}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button 
-                            onClick={() => setShowOrderDetails(false)}
-                            className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest mt-10 shadow-xl active:scale-95 transition-all"
-                          >
-                            Entendido
+                    <div className="flex-1 space-y-3 mb-4 pr-1 overflow-y-auto">
+                      
+                      {/* Map Picker Panel */}
+                      {showMissionMapPicker && (
+                        <div className={`p-5 rounded-[32px] border border-white/10 flex justify-center space-x-12 ${innerBg} animate-in zoom-in-95 duration-200 shadow-2xl ring-1 ring-white/5`}>
+                          <button onClick={() => openNavigation('waze')} className="flex flex-col items-center space-y-3 active:scale-90 transition-transform group">
+                            <div className="w-16 h-16 rounded-[24px] bg-[#33CCFF]/10 flex items-center justify-center text-[#33CCFF] group-hover:bg-[#33CCFF]/20 transition-colors shadow-inner border border-[#33CCFF]/20"><i className="fab fa-waze text-3xl"></i></div>
+                            <span className="text-[10px] font-black text-[#33CCFF] uppercase tracking-widest">Waze</span>
+                          </button>
+                          <button onClick={() => openNavigation('google')} className="flex flex-col items-center space-y-3 active:scale-90 transition-transform group">
+                            <div className="w-16 h-16 rounded-[24px] bg-green-500/10 flex items-center justify-center text-green-500 group-hover:bg-green-500/20 transition-colors shadow-inner border border-green-500/20"><i className="fas fa-map-marked-alt text-3xl"></i></div>
+                            <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Maps</span>
                           </button>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                        <div className="px-1 flex justify-between items-start mb-1">
-                          <div className="flex-1 min-w-0">
-                            <h3 className={`text-xl sm:text-2xl font-black leading-tight italic tracking-tighter ${textPrimary} truncate mb-0`}>
-                              {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeName : mission.customerName}
-                            </h3>
-                            <p className={`${textMuted} text-[10px] font-bold leading-snug line-clamp-1 opacity-60`}>
-                              {status.includes('STORE') || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? mission.storeAddress : mission.customerAddress}
-                            </p>
+                      {/* Help Center Panel (Print 3 Style) */}
+                      {showDeliveryHelpModal && (
+                        <div className={`p-6 rounded-[32px] border border-white/10 space-y-5 ${innerBg} animate-in fade-in slide-in-from-top-4 duration-300 shadow-2xl ring-1 ring-white/5`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                               <i className="fas fa-hands-helping text-[#FF6B00] text-sm"></i>
+                               <h3 className={`text-xs font-black uppercase tracking-[0.2em] ${textPrimary}`}>Suporte Guepardo</h3>
+                            </div>
+                            <button onClick={() => { setShowDeliveryHelpModal(false); setActiveHelpOption(null); }} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-all active:scale-90"><i className="fas fa-times text-xs"></i></button>
                           </div>
-                          <div className="bg-[#FF6B00] text-white px-2 py-1 rounded-xl text-[9px] font-black italic shadow-lg shrink-0 ml-4 animate-pulse">
-                            +2 Pedidos
+
+                          {activeHelpOption === null ? (
+                            <div className="grid grid-cols-2 gap-4">
+                              <button
+                                onClick={() => setActiveHelpOption('customer_not_found')}
+                                className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10' : 'border-zinc-100 bg-white hover:bg-zinc-50 shadow-xl'}`}
+                              >
+                                <div className="w-14 h-14 rounded-[22px] bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-2xl"><i className="fas fa-user-slash text-xl"></i></div>
+                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Cliente Ausente</span>
+                              </button>
+                              <button
+                                onClick={() => setActiveHelpOption('talk_to_store')}
+                                className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10' : 'border-zinc-100 bg-white hover:bg-zinc-50 shadow-xl'}`}
+                              >
+                                <div className="w-14 h-14 rounded-[22px] bg-[#FFD700]/10 flex items-center justify-center text-black/80 shadow-2xl"><i className="fas fa-store text-xl"></i></div>
+                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Falar com Loja</span>
+                              </button>
+                            </div>
+                          ) : activeHelpOption === 'customer_not_found' ? (
+                            <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                               <div className="p-4 bg-[#FF6B00]/5 border border-[#FF6B00]/20 rounded-2xl flex items-center space-x-3 mb-2">
+                                  <i className="fab fa-whatsapp text-[#FF6B00] text-lg"></i>
+                                  <span className="text-[10px] font-bold text-[#FF6B00] uppercase tracking-wider">Enviar mensagem direta</span>
+                               </div>
+                              <textarea
+                                value={customerMessage}
+                                onChange={(e) => setCustomerMessage(e.target.value)}
+                                placeholder="Ex: Olá, Guepardo chegou com seu pedido! Estou no portão..."
+                                className="w-full h-28 rounded-2xl p-5 text-xs font-bold outline-none resize-none border border-white/10 bg-black/40 text-white focus:border-[#FF6B00] transition-colors placeholder:opacity-30"
+                              />
+                              <div className="flex space-x-3">
+                                <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-12 rounded-[20px] font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Cancelar</button>
+                                <button onClick={handleSendCustomerMessage} className="flex-[2] h-12 bg-[#FF6B00] rounded-[20px] font-black text-white text-[10px] uppercase shadow-lg shadow-orange-900/20 flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+                                  <i className="fab fa-whatsapp text-sm"></i>
+                                  <span>Enviar WhatsApp</span>
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-6 animate-in slide-in-from-right duration-300 text-center py-2">
+                              <p className={`${textMuted} text-[10px] font-black uppercase tracking-widest opacity-50`}>Contato Direto com a Loja</p>
+                              <div className="flex flex-col items-center">
+                                <p className={`text-3xl font-black ${textPrimary} tracking-tight tabular-nums italic`}>{mission.storePhone || '(11) 90000-0000'}</p>
+                                <div className="w-12 h-1 bg-[#FFD700] rounded-full mt-2 opacity-50"></div>
+                              </div>
+                              <div className="flex space-x-3">
+                                <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-14 rounded-[22px] font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Voltar</button>
+                                <button onClick={handleCallStore} className="flex-[2] h-14 bg-[#FFD700] rounded-[22px] font-black text-black text-[10px] uppercase shadow-lg shadow-amber-900/20 flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+                                  <i className="fas fa-phone text-sm"></i>
+                                  <span>Ligar para Loja</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Order Details Modal (Requested by User) */}
+                      {showOrderDetails && (
+                        <div className="fixed inset-0 z-[9000] flex items-center justify-center p-6 animate-in fade-in duration-300 pointer-events-auto">
+                          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setShowOrderDetails(false)}></div>
+                          
+                          <div className="w-full max-w-sm chocolate-glass-card p-10 animate-in zoom-in-95 duration-300 relative z-10 border border-white/10 ring-1 ring-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+                            <div className="flex justify-between items-center mb-10">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.4em] mb-1">Detalhes</span>
+                                <h2 className={`text-3xl font-black italic tracking-tighter ${textPrimary} leading-none`}>Meu Pedido</h2>
+                              </div>
+                              <button onClick={() => setShowOrderDetails(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-all active:scale-90 border border-white/10">
+                                <i className="fas fa-times"></i>
+                              </button>
+                            </div>
+
+                            <div className="space-y-10">
+                              {/* Collection Section */}
+                              <div className="space-y-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center"><i className="fas fa-shop text-[#FF6B00] text-xs"></i></div>
+                                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Ponto de Coleta</span>
+                                </div>
+                                
+                                <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
+                                  <div className="flex flex-col">
+                                    <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
+                                    <span className={`text-sm font-black ${textPrimary}`}>{mission.storeName}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                                    <div className="flex flex-col">
+                                       <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
+                                       <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                       <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
+                                       <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{mission.collectionCode}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Delivery Section */}
+                              <div className="space-y-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 rounded-xl bg-[#00FF94]/10 flex items-center justify-center"><i className="fas fa-house-chimney text-[#00FF94] text-xs"></i></div>
+                                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00FF94]">Ponto de Entrega</span>
+                                </div>
+                                
+                                <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
+                                  <div className="flex flex-col">
+                                    <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cliente:</span>
+                                    <span className={`text-sm font-black ${textPrimary}`}>{mission.customerName}</span>
+                                  </div>
+                                  <div className="flex flex-col space-y-2 pt-3 border-t border-white/5">
+                                    <span className={`text-[10px] font-bold uppercase ${textMuted} opacity-50`}>Endereço p/ Entrega:</span>
+                                    <span className={`text-xs font-medium leading-relaxed ${textPrimary} italic`}>{mission.customerAddress}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button 
+                              onClick={() => setShowOrderDetails(false)}
+                              className="w-full h-16 bg-[#FF6B00] rounded-[24px] font-black text-white uppercase tracking-[0.3em] mt-12 shadow-2xl shadow-orange-900/40 active:scale-95 transition-all text-xs border-t border-white/20"
+                            >
+                              Voltar ao Mapa
+                            </button>
                           </div>
                         </div>
+                      )}
+
 
                     {/* Pickup Phase Card (Print 3 Style Overhaul) */}
                     {(status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) && (
@@ -3301,6 +3360,7 @@ const App: React.FC = () => {
 
                   <div className="shrink-0 w-full mb-2">
                     {/* Action button: Always visible, but handleMainAction will perform proximity check */}
+                    {status !== DriverStatus.GOING_TO_CUSTOMER || (navMetrics?.distanceValue && navMetrics.distanceValue < 100) ? (
                     <button
                       onClick={handleMainAction}
                         disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING}
@@ -3320,47 +3380,54 @@ const App: React.FC = () => {
                         </span>
                         <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
-
-                      </button>
-                    </div>
-                </div>
-              </div>
-            )}
-
-            {showLayersModal && (
-              <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-300 pb-12 ${cardBg}`}>
-                  <div className="flex justify-between items-center mb-8">
-                    <h2 className={`text-2xl font-black italic ${textPrimary}`}>Camadas do Mapa</h2>
-                    <button onClick={() => setShowLayersModal(false)} className={`w-10 h-10 rounded-full flex items-center justify-center ${innerBg} ${textMuted} active:scale-90 transition-transform`}>
-                      <i className="fas fa-times text-lg"></i>
-                    </button>
+                    ) : (
+                      <div className="h-16 flex items-center justify-center p-4 bg-white/5 rounded-[24px] border border-white/5 border-dashed">
+                         <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest animate-pulse italic">
+                           Aguardando proximidade do destino...
+                         </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-4">
-                    <div onClick={() => { setMapMode(mapMode === 'satellite' ? 'standard' : 'satellite'); }} className={`p-5 rounded-3xl border transition-all active:scale-95 cursor-pointer ${mapMode === 'satellite' ? 'border-[#33CCFF] bg-[#33CCFF]/10' : 'border-white/5 bg-black/40'}`}>
-                      <div className="flex items-center justify-between pointer-events-none">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${mapMode === 'satellite' ? 'bg-[#33CCFF] text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                            <i className="fas fa-globe"></i>
-                          </div>
-                          <div>
-                            <h3 className={`font-black text-sm ${mapMode === 'satellite' ? 'text-[#33CCFF]' : 'text-white'}`}>Satélite</h3>
-                            <p className={`text-[9px] font-bold ${textMuted}`}>Visão Aérea</p>
-                          </div>
-                        </div>
-                        <div className={`w-11 h-6 rounded-full relative transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]' : 'bg-zinc-700'}`}>
-                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${mapMode === 'satellite' ? 'translate-x-5' : ''}`}></div>
-                        </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showLayersModal && (
+          <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom duration-300 pb-12 ${cardBg}`}>
+              <div className="flex justify-between items-center mb-8">
+                <h2 className={`text-2xl font-black italic ${textPrimary}`}>Camadas do Mapa</h2>
+                <button onClick={() => setShowLayersModal(false)} className={`w-10 h-10 rounded-full flex items-center justify-center ${innerBg} ${textMuted} active:scale-90 transition-transform`}>
+                  <i className="fas fa-times text-lg"></i>
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div onClick={() => { setMapMode(mapMode === 'satellite' ? 'standard' : 'satellite'); }} className={`p-5 rounded-3xl border transition-all active:scale-95 cursor-pointer ${mapMode === 'satellite' ? 'border-[#33CCFF] bg-[#33CCFF]/10' : 'border-white/5 bg-black/40'}`}>
+                  <div className="flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${mapMode === 'satellite' ? 'bg-[#33CCFF] text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                        <i className="fas fa-globe"></i>
+                      </div>
+                      <div>
+                        <h3 className={`font-black text-sm ${mapMode === 'satellite' ? 'text-[#33CCFF]' : 'text-white'}`}>Satélite</h3>
+                        <p className={`text-[9px] font-bold ${textMuted}`}>Visão Aérea</p>
                       </div>
                     </div>
+                    <div className={`w-11 h-6 rounded-full relative transition-colors ${mapMode === 'satellite' ? 'bg-[#33CCFF]' : 'bg-zinc-700'}`}>
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${mapMode === 'satellite' ? 'translate-x-5' : ''}`}></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-        );
-      }
+        )}
+      </div>
+    </div>
+  );
+}
       case 'IDENTITY_VERIFICATION': {
         return (
           <div className="flex flex-col items-center justify-center h-full p-8 bg-[#0f0502]">
