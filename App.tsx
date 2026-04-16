@@ -1475,7 +1475,7 @@ const App: React.FC = () => {
                 if (serverRank > currentRank) {
                   console.log(`🚀 [POLLING] Status advance detected for mission ${mainServerMission.id}: ${status} -> ${mainServerMission.status}`);
                   
-                  if (mainServerMission.status === 'completed' && (status === DriverStatus.RETURNING || status === DriverStatus.ARRIVED_AT_CUSTOMER)) {
+                  if (mainServerMission.status === 'completed') {
                     processDeliverySuccess();
                   } else if (mainServerMission.status === 'cancelled') {
                     setMission(null);
@@ -1754,8 +1754,8 @@ const App: React.FC = () => {
           if (newStatus === 'cancelled') {
             setMission(null);
             setStatus(DriverStatus.ONLINE);
-          } else if (newStatus === 'completed' && (currentStatus === DriverStatus.RETURNING || currentStatus === DriverStatus.ARRIVED_AT_CUSTOMER)) {
-            console.log("✅ Return confirmed by merchant.");
+          } else if (newStatus === 'completed') {
+            console.log("✅ Mission finalized externally.");
             processDeliverySuccess();
           } else if (newStatus === 'ready_for_pickup') {
             console.log("✅ [REALTIME] Store marked order as READY!");
