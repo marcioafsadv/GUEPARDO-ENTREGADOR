@@ -394,6 +394,7 @@ const App: React.FC = () => {
   const [settingsView, setSettingsView] = useState<SettingsView>('MAIN');
   const [showPostDeliveryModal, setShowPostDeliveryModal] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
+  const [showProximityModal, setShowProximityModal] = useState(false);
   const [isResumoExpanded, setIsResumoExpanded] = useState(false);
   const [mapCenterKey, setMapCenterKey] = useState(0);
   const [lastEarnings, setLastEarnings] = useState(0);
@@ -2390,27 +2391,33 @@ const App: React.FC = () => {
     else if (status === DriverStatus.GOING_TO_CUSTOMER) {
       // PROXIMITY CHECK: Warning if too far from destination
       if (navMetrics && navMetrics.distanceValue && navMetrics.distanceValue > 500) {
-        const confirmArrived = window.confirm(`Você parece estar a ${navMetrics.distance} do local. Tem certeza que deseja marcar como chegado?`);
-        if (!confirmArrived) return;
+        setShowProximityModal(true);
+        return;
       }
 
-      // Update database when courier arrives at customer
-      if (mission && userId) {
-        try {
-          await supabaseClient.supabase
-            .from('deliveries')
-            .update({ status: 'arrived_at_customer' })
-            .eq('id', mission.id)
-            .eq('driver_id', userId);
-          console.log('✅ Updated delivery status to arrived_at_customer');
-        } catch (error) {
-          console.error('❌ Error updating delivery status:', error);
-        }
-      }
-      setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
+      await confirmArrivalAtCustomer();
     }
     else if (mission && status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) {
       handleFinishDelivery();
+    }
+  };
+
+  const confirmArrivalAtCustomer = async () => {
+    if (mission && userId) {
+      try {
+        await supabaseClient.supabase
+          .from('deliveries')
+          .update({ status: 'arrived_at_customer' })
+          .eq('id', mission.id)
+          .eq('driver_id', userId);
+        console.log('✅ Updated delivery status to arrived_at_customer');
+        setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
+        setShowProximityModal(false);
+      } catch (error) {
+        console.error('❌ Error updating delivery status:', error);
+      }
+    } else {
+      setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
     }
   };
 
@@ -3383,7 +3390,6 @@ const App: React.FC = () => {
 
                   <div className="shrink-0 w-full mb-2">
                     {/* Action button: Always visible, but handleMainAction will perform proximity check */}
-                    {status !== DriverStatus.GOING_TO_CUSTOMER || (navMetrics?.distanceValue && navMetrics.distanceValue < 100) ? (
                     <button
                       onClick={handleMainAction}
                         disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING}
@@ -3403,13 +3409,6 @@ const App: React.FC = () => {
                         </span>
                         <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
-                    ) : (
-                      <div className="h-16 flex items-center justify-center p-4 bg-white/5 rounded-[24px] border border-white/5 border-dashed">
-                         <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest animate-pulse italic">
-                           Aguardando proximidade do destino...
-                         </span>
-                      </div>
-                    )}
                   </div>
                 </>
               )}
@@ -4563,6 +4562,71 @@ const App: React.FC = () => {
                   <p className="text-chocolate-muted font-bold text-[10px]">Buscar Próximo</p>
                 </div>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProximityModal && (
+        <div className="absolute inset-0 bg-black/80 z-[6500] flex items-end justify-center backdrop-blur-xl animate-in fade-in duration-300">
+          <div className={`w-full chocolate-bottom-panel rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-[#FF6B00]/30`}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-2 bg-white/10 rounded-full mb-8 opacity-20"></div>
+              
+              <div className="w-24 h-24 rounded-full bg-orange-600/20 flex items-center justify-center mb-6 relative">
+                 <div className="absolute inset-0 rounded-full border-2 border-orange-500/30 animate-ping"></div>
+                 <i className="fas fa-location-dot text-4xl text-[#FF6B00]"></i>
+              </div>
+
+              <h2 className="text-3xl font-black italic text-white tracking-tighter leading-tight uppercase mb-3">
+                Destino Distante
+              </h2>
+              
+              <p className="text-chocolate-muted text-sm font-bold max-w-[280px] mb-8">
+                Você parece estar a <span className="text-white font-black">{navMetrics?.distance || '--'}</span> do local de entrega. Deseja marcar como chegado mesmo assim?
+              </p>
+
+              {/* Proximity Map Graphic (Print-style radius) */}
+              <div className="w-full h-44 rounded-[32px] bg-zinc-900/50 border border-white/5 mb-10 relative overflow-hidden flex items-center justify-center">
+                 {/* Map Placeholder grid */}
+                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+                 
+                 {/* Radius Circle */}
+                 <div className="w-32 h-32 rounded-full border-2 border-[#FF6B00]/20 bg-[#FF6B00]/5 flex items-center justify-center relative">
+                    <div className="absolute inset-0 rounded-full border border-[#FF6B00]/40 animate-pulse"></div>
+                    
+                    {/* User Marker */}
+                    <div className="absolute top-[-10px] right-[10px] flex flex-col items-center">
+                       <div className="px-2 py-1 bg-white rounded-lg shadow-lg mb-1">
+                          <span className="text-[8px] font-black text-black">VOCÊ</span>
+                       </div>
+                       <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
+                    </div>
+
+                    {/* Destination Marker */}
+                    <div className="w-4 h-4 bg-[#FF6B00] rounded-full border-2 border-white shadow-[0_0_15px_#FF6B00]"></div>
+                 </div>
+
+                 {/* Labels */}
+                 <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <span className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.2em]">Raio de 500m</span>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <button
+                  onClick={() => setShowProximityModal(false)}
+                  className="h-16 rounded-[24px] bg-zinc-800 border border-white/5 text-zinc-400 font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmArrivalAtCustomer}
+                  className="h-16 rounded-[24px] bg-[#FF6B00] text-white font-black uppercase tracking-widest text-[10px] shadow-[0_10px_30px_rgba(255,107,0,0.3)] active:scale-95 transition-all"
+                >
+                  Confirmar Chegada
+                </button>
+              </div>
             </div>
           </div>
         </div>
