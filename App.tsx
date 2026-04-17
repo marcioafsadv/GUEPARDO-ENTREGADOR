@@ -2930,39 +2930,39 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[21rem] sm:-translate-y-[24rem]' : '-translate-y-[10.5rem]'} animate-in fade-in slide-in-from-right-8`}>
+              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-3.5 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[21rem] sm:-translate-y-[24rem]' : '-translate-y-[12.5rem]'} animate-in fade-in slide-in-from-right-8`}>
                 {/* 1. Preferences Button */}
                 <button 
                   onClick={() => setShowFiltersModal(true)}
-                  className={`w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[21px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-sliders text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
-                  {isFilterActive && <div className="absolute top-4 right-4 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
+                  <i className="fas fa-sliders text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
+                  {isFilterActive && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
                 </button>
 
                 {/* 2. SOS Button (Central) */}
                 <button 
                   onClick={() => setShowSOSModal(true)}
-                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-[21px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.15), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
-                  <i className="fas fa-tower-broadcast text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
+                  <i className="fas fa-tower-broadcast text-xl sm:text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
                 </button>
 
                 {/* 3. Recenter Button */}
                 <button 
                   onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
-                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-[21px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-location-crosshairs text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
+                  <i className="fas fa-location-crosshairs text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
                 </button>
               </div>
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-10.5rem)]'}`}>
+              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-12.5rem)]'}`}>
                 <div className={`p-5 sm:p-8 pb-6 sm:pb-10 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
