@@ -2930,21 +2930,21 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-3 sm:space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[22rem] sm:-translate-y-[24rem]' : '-translate-y-[8.5rem]'} animate-in fade-in slide-in-from-right-8`}>
+              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-4 sm:space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[22rem] sm:-translate-y-[24rem]' : '-translate-y-[8.8rem]'} animate-in fade-in slide-in-from-right-8`}>
                 {/* 1. Preferences Button */}
                 <button 
                   onClick={() => setShowFiltersModal(true)}
-                  className={`w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  className={`w-15 h-15 sm:w-16 sm:h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
                   <i className="fas fa-sliders text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
-                  {isFilterActive && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
+                  {isFilterActive && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
                 </button>
 
                 {/* 2. SOS Button (Central) */}
                 <button 
                   onClick={() => setShowSOSModal(true)}
-                  className="w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-15 h-15 sm:w-16 sm:h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.15), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
                   <i className="fas fa-tower-broadcast text-xl sm:text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
@@ -2953,7 +2953,7 @@ const App: React.FC = () => {
                 {/* 3. Recenter Button */}
                 <button 
                   onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
-                  className="w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-15 h-15 sm:w-16 sm:h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
                   <i className="fas fa-location-crosshairs text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
@@ -2962,7 +2962,7 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-6.8rem)]'}`}>
+              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-8.4rem)]'}`}>
                 <div className={`p-5 sm:p-8 pb-6 sm:pb-10 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
@@ -2970,7 +2970,7 @@ const App: React.FC = () => {
                   
                   {/* Handle Bar */}
                   <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-4 cursor-pointer flex justify-center items-center group/handle">
-                    <div className="w-14 h-1.5 bg-[#D4AF37]/15 rounded-full transition-all group-hover/handle:bg-[#D4AF37]/40 group-hover/handle:w-20"></div>
+                    <div className="w-14 h-1.5 bg-[#FF6B00] rounded-full transition-all shadow-[0_0_12px_rgba(255,107,0,0.6)] group-hover/handle:bg-[#FF8C00] group-hover/handle:w-20 group-hover/handle:shadow-[0_0_20px_rgba(255,107,0,0.8)]"></div>
                   </div>
 
                   {/* Header Component */}
