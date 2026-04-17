@@ -2962,8 +2962,8 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-28 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-5rem)]'}`}>
-                <div className={`p-5 sm:p-8 pb-10 sm:pb-12 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group min-h-[420px] sm:min-h-[480px]`}>
+              <div className={`absolute bottom-[5.2rem] sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+                <div className={`p-5 sm:p-8 pb-8 sm:pb-12 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group min-h-[380px] sm:min-h-[480px]`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
