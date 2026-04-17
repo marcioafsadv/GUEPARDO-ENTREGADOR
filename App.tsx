@@ -2962,8 +2962,8 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-[6.5rem] sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
-                <div className={`p-5 sm:p-8 pb-8 sm:pb-12 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group min-h-[380px] sm:min-h-[480px]`}>
+              <div className={`absolute bottom-[7.5rem] sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+                <div className={`p-5 sm:p-8 pb-4 sm:pb-12 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group min-h-[340px] sm:min-h-[480px]`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
@@ -3018,12 +3018,12 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Stats List Card */}
-                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#1A0C06]/80 flex flex-col space-y-2.5 sm:space-y-4 shadow-2xl backdrop-blur-md">
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <div className="p-3 sm:p-6 rounded-[20px] sm:rounded-[32px] border border-white/5 bg-[#1A0C06]/80 flex flex-col space-y-2 sm:space-y-4 shadow-2xl backdrop-blur-md">
+                      <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
                         <span className="text-zinc-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Aceitas</span>
                         <span className="font-black italic text-xs sm:text-sm text-white">{dailyStats.accepted}</span>
                       </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
                         <span className="text-zinc-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Finalizadas</span>
                         <span className="font-black italic text-xs sm:text-sm text-[#00FF94] drop-shadow-[0_0_8px_rgba(0,255,148,0.3)]">{dailyStats.finished}</span>
                       </div>
@@ -3032,11 +3032,6 @@ const App: React.FC = () => {
                         <span className="font-black italic text-xs sm:text-sm text-red-500/80">{dailyStats.rejected}</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Bottom Decoration */}
-                  <div className="mt-4 sm:mt-6 flex justify-center opacity-30">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
                   </div>
                 </div>
               </div>
