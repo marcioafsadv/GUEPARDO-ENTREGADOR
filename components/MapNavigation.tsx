@@ -31,6 +31,7 @@ interface MapNavigationProps {
     theme?: 'dark' | 'light';
     onShowSOS?: () => void;
     onShowFilters?: () => void;
+    delivererName?: string;
 }
 
 export const MapNavigation: React.FC<MapNavigationProps> = ({
@@ -43,7 +44,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     isMissionOverlayExpanded = false,
     theme = 'dark',
     onShowSOS,
-    onShowFilters
+    onShowFilters,
+    delivererName = 'Entregador'
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -65,6 +67,34 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const lastSmoothedBearing = useRef<number | null>(null);
     const lastBearingPos = useRef<{ lat: number; lng: number } | null>(null);
     const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
+    const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+
+    // Voice Discovery - Select the best pt-BR voice
+    useEffect(() => {
+        const loadVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Priority: Gabriela (System) > Daniel (Online) > Maria (Online) > Any Google pt-BR > Any pt-BR
+                const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
+                const preferred = ptVoices.find(v => v.name.includes('Gabriela')) ||
+                                  ptVoices.find(v => v.name.includes('Daniel') && v.name.includes('Online')) ||
+                                  ptVoices.find(v => v.name.includes('Maria') && v.name.includes('Online')) ||
+                                  ptVoices.find(v => v.name.includes('Google') && v.lang.includes('BR')) ||
+                                  ptVoices[0];
+                
+                if (preferred) setSelectedVoice(preferred);
+            }
+        };
+
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }, []);
+
+    const playNotificationSound = () => {
+        const audio = new Audio('/sounds/beep-notification.mp3');
+        audio.volume = 0.4;
+        audio.play().catch(e => console.log('Audio play blocked:', e));
+    };
 
     const speak = (text: string) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
@@ -72,10 +102,34 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         
         lastAnnouncedText.current = text;
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 1.1;
-        window.speechSynthesis.speak(utterance);
+        
+        playNotificationSound();
+
+        // Slight delay to speak after the beep
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (selectedVoice) utterance.voice = selectedVoice;
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.0; // More natural rate
+            utterance.pitch = 1.1; // Slightly more premium pitch
+            window.speechSynthesis.speak(utterance);
+        }, 300);
+    };
+
+    // NLP Helper for natural phrasing
+    const getNaturalPhrase = (distValue: number, action: string, street: string) => {
+        let naturalDist = "";
+        if (distValue < 50) {
+            return `Vire agora à ${action.includes('esquerda') ? 'esquerda' : 'direita'} na ${street}`;
+        } else if (distValue < 1000) {
+            naturalDist = `Em ${Math.round(distValue / 10) * 10} metros`;
+        } else {
+            const km = (distValue / 1000).toFixed(1).replace('.', ',');
+            naturalDist = `Em ${km} quilômetros`;
+        }
+
+        const cleanAction = action.replace('Vire à ', '').replace('Siga em ', '');
+        return `${naturalDist}, ${action} na ${street}`;
     };
 
     // Inject custom styles for the map marker
@@ -99,13 +153,13 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     height: 100%;
                     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
                 }
-                @keyframes pulse-orange {
-                    0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
-                    70% { box-shadow: 0 0 0 15px rgba(255, 107, 0, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+                @keyframes pulse-gold {
+                    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+                    70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
                 }
                 .marker-pulse {
-                    animation: pulse-orange 2s infinite !important;
+                    animation: pulse-gold 2s infinite !important;
                 }
                 .destination-marker-wrapper {
                     width: 40px;
@@ -115,7 +169,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     justify-content: center;
                 }
                 .destination-marker-svg {
-                    filter: drop-shadow(0 0 8px rgba(204, 255, 0, 0.9));
+                    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
                 }
             `;
             document.head.appendChild(style);
@@ -207,20 +261,20 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             <div class="marker-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div class="marker-container" style="position: relative; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px;">
                     <!-- Main Circle -->
-                    <div style="width: 48px; height: 48px; background: rgba(255, 107, 0, 0.15); border: 3px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 30px rgba(255, 107, 0, 0.6), inset 0 0 15px rgba(255, 107, 0, 0.4); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                    <div style="width: 48px; height: 48px; background: rgba(13, 5, 2, 0.8); border: 3.5px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 30px rgba(255, 107, 0, 0.4), inset 0 0 15px rgba(212, 175, 55, 0.3); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); outline: 1px solid rgba(212, 175, 55, 0.5);">
                         <!-- Inner Arrow -->
-                        <svg viewBox="0 0 64 64" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));">
-                            <path d="M32 8L54 52L32 40L10 52L32 8Z" fill="#FFFFFF" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+                        <svg viewBox="0 0 64 64" style="width: 32px; height: 32px; filter: drop-shadow(0 0 5px #FF6B00);">
+                            <path d="M32 8L54 52L32 40L10 52L32 8Z" fill="#D4AF37" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
                         </svg>
                     </div>
                     <!-- Pulse Effect -->
-                    <div class="marker-pulse" style="position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3px solid #FF6B00; opacity: 0;"></div>
+                    <div class="marker-pulse" style="position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3.5px solid #D4AF37; opacity: 0;"></div>
                 </div>
                 
                 <!-- Attached Street Pill -->
-                <div class="street-pill-attached" style="margin-top: 12px; background: rgba(24, 24, 27, 0.95); border: 1.5px solid rgba(255, 107, 0, 0.3); backdrop-filter: blur(12px); border-radius: 50px; padding: 6px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #FF6B00; box-shadow: 0 0 8px #FF6B00;"></div>
-                    <span id="marker-street-name" style="color: white; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; font-family: system-ui, -apple-system, sans-serif;">${currentStreet}</span>
+                <div class="street-pill-attached" style="margin-top: 12px; background: rgba(13, 5, 2, 0.95); border: 1.5px solid rgba(212, 175, 55, 0.3); backdrop-filter: blur(12px); border-radius: 50px; padding: 6px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #D4AF37; box-shadow: 0 0 8px #D4AF37;"></div>
+                    <span id="marker-street-name" style="color: #F5E6D3; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; font-family: system-ui, -apple-system, sans-serif;">${currentStreet}</span>
                 </div>
             </div>
         `;
@@ -405,6 +459,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         return simplified;
     };
+    
+    // Track distance checkpoints to avoid repetitive announcements
+    const lastCheckPoint = useRef<number>(0);
 
     const fetchRoute = async (start: { lat: number, lng: number }, end: { lat: number, lng: number }) => {
         const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_TOKEN}&language=pt`;
@@ -483,11 +540,22 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         nextRoadName: secondaryRoad
                     });
 
-                    // Voice Guidance: Announce ONLY ONCE at 200m before the turn
-                    const stepKey = `${simplified}`;
-                    if (nextStep.distance <= 200 && lastAnnouncedStep.current !== stepKey) {
-                        lastAnnouncedStep.current = stepKey;
-                        speak(`${simplified}`);
+                    // Voice Guidance: Refined checkpoints (500m, 200m, 50m)
+                    const normalizedSimplified = simplified.toLowerCase();
+                    const checkKey = `${normalizedSimplified}-${distText}`;
+                    
+                    if (nextStep.distance <= 500 && nextStep.distance > 450 && lastCheckPoint.current !== 500) {
+                         lastCheckPoint.current = 500;
+                         const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
+                         speak(phrase);
+                    } else if (nextStep.distance <= 200 && nextStep.distance > 150 && lastCheckPoint.current !== 200) {
+                        lastCheckPoint.current = 200;
+                        const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
+                        speak(phrase);
+                    } else if (nextStep.distance <= 50 && lastCheckPoint.current !== 50) {
+                        lastCheckPoint.current = 50;
+                        const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
+                        speak(phrase);
                     }
                 }
 
@@ -568,22 +636,22 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Print 3 style Header Instructions */}
             <div className="absolute top-0 left-0 right-0 z-20">
-                <div className="bg-[#0a0502]/95 backdrop-blur-md rounded-b-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pb-3 pt-6 px-6 flex flex-col uppercase border-b border-orange-500/10">
+                <div className="bg-[#0D0502]/95 backdrop-blur-xl rounded-b-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] pb-4 pt-8 px-6 flex flex-col uppercase border-b border-[#D4AF37]/20">
                     <div className="flex items-center">
-                        <div className="mr-4 text-white flex-shrink-0 flex items-center justify-center relative w-10 h-10 bg-orange-500/10 rounded-xl border border-orange-500/20">
+                        <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-zinc-900/50 rounded-2xl border border-[#D4AF37]/30 shadow-[inset_0_0_15px_rgba(212,175,55,0.1)]">
                              {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-orange-500"></i>
+                                <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
                             ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-up rotate-[90deg] text-3xl text-orange-500"></i>
+                                <i className="fas fa-arrow-up rotate-[90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
                             ) : (
-                                <i className="fas fa-arrow-up text-3xl text-orange-500"></i>
+                                <i className="fas fa-arrow-up text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
                             )}
                         </div>
                         <div className="flex flex-col flex-1">
-                            <h1 className="text-white text-2xl font-[900] leading-none tracking-tighter italic">
+                            <h1 className="text-[#F5E6D3] text-3xl font-[900] leading-none tracking-tighter italic">
                                 {instruction?.distanceText || '0 M'}
                             </h1>
-                            <p className="text-orange-500/80 text-[10px] font-black leading-tight tracking-[0.2em] mt-1 line-clamp-1">
+                            <p className="text-[#D4AF37] text-[10px] font-black leading-tight tracking-[0.25em] mt-1.5 line-clamp-1 opacity-90">
                                 {instruction?.roadName || 'SIGA EM FRENTE'}
                             </p>
                         </div>
@@ -600,7 +668,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     <div className="flex items-center mt-3 pt-2 border-t border-white/5 space-x-3 opacity-40">
                          <i className="fas fa-location-arrow text-[8px] text-orange-500 rotate-45"></i>
                          <p className="text-[8px] font-black tracking-[0.3em] overflow-hidden truncate">
-                             {instruction?.nextRoadName || 'GUEPARDO MAPS NAVIGATION'}
+                             {instruction?.nextRoadName || `GUEPARDO MAPS • ${delivererName.toUpperCase()}`}
                          </p>
                     </div>
                 </div>
@@ -608,10 +676,13 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Arrival Alert Overlay */}
             {isArriving && !['ARRIVED_AT_STORE', 'READY_FOR_PICKUP', 'PICKING_UP', 'ARRIVED_AT_CUSTOMER', 'RETURNING'].includes(status) && (
-                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-700">
-                    <div className="bg-[#FF6B00] text-white px-10 py-5 rounded-[32px] text-2xl font-black uppercase tracking-tighter shadow-[0_0_50px_rgba(255,107,0,0.6)] border-4 border-white/20 animate-bounce flex flex-col items-center gap-2">
-                        <i className="fas fa-location-dot text-4xl"></i>
-                        <span>CHEGANDO AO LOCAL</span>
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-700">
+                    <div className="bg-gradient-to-br from-[#FF6B00] to-[#CC5200] text-white px-12 py-7 rounded-[40px] shadow-[0_0_60px_rgba(255,107,0,0.5),0_0_20px_rgba(212,175,55,0.3)] border-4 border-[#D4AF37]/40 animate-bounce flex flex-col items-center gap-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1 italic transform -skew-x-6">{delivererName}</p>
+                        <i className="fas fa-location-dot text-5xl text-[#FFD700] drop-shadow-[0_0_15px_rgba(255,215,0,0.6)]"></i>
+                        <span className="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                            {status === 'GOING_TO_STORE' ? 'chegando na loja' : 'chegando no cliente'}
+                        </span>
                     </div>
                 </div>
             )}
@@ -619,14 +690,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
                 <>
-                    <div className="absolute top-[135px] left-4 right-4 z-[10005] flex items-start justify-center animate-in slide-in-from-top duration-700 pointer-events-none">
-                        <div className="w-full max-w-[360px] bg-[#FFD700] text-black p-5 rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(255,215,0,0.2)] border-2 border-black/5 flex items-center space-x-4 pointer-events-auto active:scale-95 transition-transform">
-                            <div className="bg-black/10 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
-                                <i className="fas fa-box-open text-2xl"></i>
+                    <div className="absolute top-[150px] left-5 right-5 z-[10005] flex items-start justify-center animate-in slide-in-from-top duration-700 pointer-events-none">
+                        <div className="w-full max-w-[360px] bg-gradient-to-br from-[#FFD700] to-[#D4AF37] text-black p-6 rounded-[32px] shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_40px_rgba(212,175,55,0.4)] border-2 border-black/10 flex items-center space-x-5 pointer-events-auto active:scale-95 transition-transform">
+                            <div className="bg-black/10 w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border border-black/5 shadow-inner">
+                                <i className="fas fa-box-open text-3xl"></i>
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-lg font-black uppercase tracking-tighter leading-tight">Retirar no Balcão</h2>
-                                <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 leading-tight mt-0.5">O lojista marcou como pronto!</p>
+                                <h2 className="text-xl font-black uppercase tracking-tighter leading-tight italic">Retirar no Balcão</h2>
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em] opacity-70 leading-tight mt-1">O lojista marcou como pronto!</p>
                             </div>
                         </div>
                     </div>

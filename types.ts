@@ -163,8 +163,8 @@ export interface RegistrationData {
 }
 
 
-export type SenderType = 'STORE' | 'COURIER' | 'CLIENT';
-export type ChatRoomType = 'STORE_COURIER' | 'COURIER_CLIENT';
+export type SenderType = 'STORE' | 'COURIER' | 'CENTRAL';
+export type ChatRoomType = 'STORE_COURIER' | 'COURIER_CENTRAL';
 
 export interface ChatMessage {
   id: string;

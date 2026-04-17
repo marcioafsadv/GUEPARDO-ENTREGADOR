@@ -160,14 +160,14 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
             <i className="fas fa-store text-xs" /> Loja
           </button>
           <button
-            onClick={() => setActiveTab('COURIER_CLIENT')}
+            onClick={() => setActiveTab('COURIER_CENTRAL')}
             className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border ${
-              activeTab === 'COURIER_CLIENT' 
+              activeTab === 'COURIER_CENTRAL' 
               ? 'bg-white/10 border-white/20 text-white shadow-xl' 
               : 'bg-white/5 border-white/5 text-[#FFC099]/40 hover:text-[#FFC099] hover:bg-white/10'
             }`}
           >
-            <i className="fas fa-user text-xs" /> Cliente
+            <i className="fas fa-headset text-xs" /> Central
           </button>
         </div>
 

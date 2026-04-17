@@ -363,6 +363,7 @@ const App: React.FC = () => {
 
   // Estados Globais
   const [status, setStatus] = useState<DriverStatus>(DriverStatus.OFFLINE);
+  const [cancellationToast, setCancellationToast] = useState({ show: false, message: '' });
   // Ref to always have the latest status inside realtime callbacks (avoids stale closure)
   const statusRef = useRef<DriverStatus>(DriverStatus.OFFLINE);
   useEffect(() => { statusRef.current = status; }, [status]);
@@ -423,7 +424,7 @@ const App: React.FC = () => {
 
 
   // Estado Heatmap e Camadas
-  const [showHeatMap, setShowHeatMap] = useState(true);
+  const [showHeatMap, setShowHeatMap] = useState(false);
   const [showLayersModal, setShowLayersModal] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('standard');
   const [showTraffic, setShowTraffic] = useState(false);
@@ -470,17 +471,16 @@ const App: React.FC = () => {
   const [historicalOrder, setHistoricalOrder] = useState<DeliveryMission | null>(null);
   const [chatTab, setChatTab] = useState<ChatRoomType>('STORE_COURIER');
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [activeHelpOption, setActiveHelpOption] = useState<'customer_not_found' | 'talk_to_store' | null>(null);
-  const [customerMessage, setCustomerMessage] = useState('');
+  const [activeHelpOption, setActiveHelpOption] = useState<'central_support' | 'talk_to_store' | null>(null);
+  const [centralMessage, setCentralMessage] = useState('');
 
-  const handleSendCustomerMessage = () => {
+  const handleSendCentralMessage = () => {
     if (!mission) return;
-    const text = encodeURIComponent(customerMessage);
-    const url = `https://wa.me/${mission.customerPhone}?text=${text}`;
-    window.open(url, '_blank');
+    setChatTab('COURIER_CENTRAL');
+    setShowChatModal(true);
     setShowDeliveryHelpModal(false);
     setActiveHelpOption(null);
-    setCustomerMessage('');
+    setCentralMessage('');
   };
 
   const handleCallStore = () => {
@@ -604,7 +604,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
-    document.body.className = theme === 'dark' ? 'bg-[#121212] text-white' : 'bg-zinc-50 text-zinc-900';
+    document.body.className = theme === 'dark' ? 'bg-[#0D0502] text-white' : 'bg-zinc-50 text-zinc-900';
   }, [theme]);
 
   useEffect(() => {
@@ -1208,14 +1208,12 @@ const App: React.FC = () => {
           }
 
           // Handle Cancellation/Rejection/Closing
-          if (['canceled', 'rejected', 'closed'].includes(newStatus)) {
+          if (['canceled', 'rejected', 'closed', 'cancelled'].includes(newStatus)) {
             console.log(`🚀 [MISSION_UPDATE] Entrega foi ${newStatus}. Limpando sessão...`);
+            triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
             setActiveMissions([]);
             setStatus(DriverStatus.ONLINE);
             setIsNavigating(false);
-            if (newStatus === 'canceled' && navigator.vibrate) {
-              navigator.vibrate([300, 100, 300, 100, 300]);
-            }
           }
         }
       )
@@ -1460,7 +1458,7 @@ const App: React.FC = () => {
               .select('*')
               .eq('id', missionRef.current.id)
               .single();
-            if (currentMissionStatus && (currentMissionStatus.status === 'completed' || currentMissionStatus.status === 'cancelled' || currentMissionStatus.status === 'returning')) {
+            if (currentMissionStatus && (['completed', 'cancelled', 'returning', 'closed', 'returned'].includes(currentMissionStatus.status))) {
               dbMissions.push(currentMissionStatus);
             }
           }
@@ -1491,11 +1489,14 @@ const App: React.FC = () => {
                 if (serverRank > currentRank) {
                   console.log(`🚀 [POLLING] Status advance detected for mission ${mainServerMission.id}: ${status} -> ${mainServerMission.status}`);
                   
-                  if (mainServerMission.status === 'completed') {
+                  if (['completed', 'closed', 'returned'].includes(mainServerMission.status)) {
                     processDeliverySuccess();
-                  } else if (mainServerMission.status === 'cancelled') {
+                  } else if (['cancelled', 'canceled'].includes(mainServerMission.status)) {
+                    triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
                     setMission(null);
                     setStatus(DriverStatus.ONLINE);
+                    setIsNavigating(false);
+                    setActiveMissions([]);
                   } else {
                     const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
                     setStatus(nextStatus);
@@ -1550,9 +1551,21 @@ const App: React.FC = () => {
                 return activeOnlySyncMissions;
               });
             } else {
-              // Ensure we clear missions if none are found in DB, 
-              // BUT ONLY if we are not currently ALERTING (to avoid flickering R$ 3.88)
-              if (statusRef.current !== DriverStatus.ALERTING) {
+              // SECURITY: If we were in an active mission state but the DB is now empty, 
+              // we MUST force a return to the lobby (ONLINE).
+              const currentStatus = statusRef.current;
+              const isInMission = ![DriverStatus.OFFLINE, DriverStatus.ONLINE, DriverStatus.ALERTING].includes(currentStatus);
+              
+              if (isInMission) {
+                console.log(`🛡️ [POLLING] No missions found in DB while in status ${currentStatus}. Forcing recovery to ONLINE.`);
+                setStatus(DriverStatus.ONLINE);
+                setMission(null);
+                setActiveMissions([]);
+                setIsNavigating(false);
+                setBatchHasReturn(false);
+                // Trigger success sound to signal finalization
+                playSuccess();
+              } else if (currentStatus !== DriverStatus.ALERTING) {
                 setActiveMissions([]);
               }
             }
@@ -1761,17 +1774,20 @@ const App: React.FC = () => {
             setMission(null);
             setStatus(DriverStatus.ONLINE);
             setAlertCountdown(0);
-            if (newStatus === 'cancelled') alert('O pedido foi cancelado pela loja.');
-            else alert('Esta entrega acabou de ser aceita por outro entregador.');
+            if (newStatus === 'cancelled') triggerCancellationAlert('O pedido foi cancelado pela loja.');
+            else triggerCancellationAlert('Esta entrega acabou de ser aceita por outro entregador.');
           }
         }
         // CASE 2: Active delivery — handle cancellation, completion and merchant validation
         else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE) {
-          if (newStatus === 'cancelled') {
+          if (['cancelled', 'canceled'].includes(newStatus)) {
+            triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
-          } else if (newStatus === 'completed') {
-            console.log("✅ Mission finalized externally.");
+            setIsNavigating(false);
+            setActiveMissions([]);
+          } else if (['completed', 'closed', 'returned'].includes(newStatus)) {
+            console.log(`✅ [REALTIME] Mission finalized externally (Status: ${newStatus})`);
             processDeliverySuccess();
           } else if (newStatus === 'ready_for_pickup') {
             console.log("✅ [REALTIME] Store marked order as READY!");
@@ -2249,6 +2265,14 @@ const App: React.FC = () => {
       setPreloadedCoords({ store: null, customer: null }); // Clear preloaded coords on error
       setIsNavigating(false);
     }
+  };
+
+  const triggerCancellationAlert = (message: string) => {
+    setCancellationToast({ show: true, message });
+    // Automagicamente fecha após 3.5 segundos (3s + 0.5s animação)
+    setTimeout(() => {
+      setCancellationToast({ show: false, message: '' });
+    }, 3500);
   };
 
   const handleRejectMission = async () => {
@@ -2850,6 +2874,7 @@ const App: React.FC = () => {
                   isMissionOverlayExpanded={isMissionOverlayExpanded}
                   onShowSOS={() => setShowSOSModal(true)}
                   onShowFilters={() => setShowFiltersModal(true)}
+                  delivererName={currentUser?.name || 'Entregador'}
                   destinationAddress={
                     (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? mission?.storeAddress || null
@@ -2905,22 +2930,22 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1002] flex flex-col space-y-4 animate-in fade-in slide-in-from-right-8 duration-700">
+              <div className={`absolute right-6 bottom-24 z-[1020] flex flex-col space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[24rem]' : '-translate-y-[8.5rem]'} animate-in fade-in slide-in-from-right-8`}>
                 {/* 1. Preferences Button */}
                 <button 
                   onClick={() => setShowFiltersModal(true)}
-                  className={`w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
-                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+                  className={`w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-sliders text-2xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                  <i className="fas fa-sliders text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
                   {isFilterActive && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
                 </button>
 
                 {/* 2. SOS Button (Central) */}
                 <button 
                   onClick={() => setShowSOSModal(true)}
-                  className="w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
-                  style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.15), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
                   <i className="fas fa-tower-broadcast text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
                 </button>
@@ -2928,68 +2953,72 @@ const App: React.FC = () => {
                 {/* 3. Recenter Button */}
                 <button 
                   onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
-                  className="w-16 h-16 rounded-[22px] bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
-                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-location-crosshairs text-2xl text-[#FF6B00] group-hover:scale-110 transition-transform"></i>
+                  <i className="fas fa-location-crosshairs text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
                 </button>
               </div>
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-8.5rem)]'}`}>
-                <div className={`p-5 sm:p-8 pb-16 sm:pb-32 rounded-t-[32px] sm:rounded-t-[42px] shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-white/10 transition-all duration-500 bg-black/95 backdrop-blur-3xl relative overflow-hidden group`}>
+              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
+                <div className={`p-6 sm:p-8 pb-6 sm:pb-10 rounded-t-[40px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.9)] border-t border-[#D4AF37]/20 transition-all duration-500 bg-[#0D0502]/95 backdrop-blur-3xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
                   
                   {/* Handle Bar */}
                   <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-4 cursor-pointer flex justify-center items-center group/handle">
-                    <div className="w-12 h-1.5 bg-zinc-800 rounded-full transition-all group-hover/handle:bg-zinc-600 group-hover/handle:w-16"></div>
+                    <div className="w-14 h-1.5 bg-[#D4AF37]/20 rounded-full transition-all group-hover/handle:bg-[#D4AF37]/40 group-hover/handle:w-20"></div>
                   </div>
 
                   {/* Header Component */}
-                  <div className="mb-8 flex justify-between items-center px-2">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00]">
-                        <i className="fas fa-sack-dollar text-xl"></i>
+                  <div className="mb-6 flex justify-between items-center px-2">
+                    <div className="flex items-center space-x-5">
+                      <div className="w-12 h-12 rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.15)]">
+                        <i className="fas fa-chart-line text-xl"></i>
                       </div>
                       <div className="flex flex-col">
-                        <div className="flex items-center space-x-3">
-                          <h3 className={`text-xl sm:text-2xl font-black italic tracking-tighter text-white`}>Seus Ganhos</h3>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
-                            className="text-zinc-500 hover:text-white transition-colors p-1"
-                          >
-                            <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-sm`}></i>
-                          </button>
+                        <div className="flex items-center space-x-4">
+                          <h3 className={`text-2xl sm:text-3xl font-[900] italic tracking-tighter text-[#F5E6D3] transform -skew-x-6`}>Resumo</h3>
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]/60 italic">Resumo de Atividade</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#D4AF37]/70 italic">Guepardo Elite</p>
                       </div>
                     </div>
                     
                     <button 
                       onClick={() => setCurrentScreen('WALLET')} 
-                      className="group flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/5 border border-white/5 hover:bg-[#FF6B00] hover:text-white transition-all duration-300"
+                      className="group flex items-center space-x-3 px-5 py-2.5 rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#25120a] transition-all duration-500 shadow-lg"
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] group-hover:text-white">Ver mais</span>
-                      <i className="fas fa-chevron-right text-[10px] text-[#FF6B00] group-hover:text-white group-hover:translate-x-1 transition-transform"></i>
+                      <span className="text-[11px] font-[900] text-[#D4AF37] uppercase tracking-widest">Painel</span>
+                      <i className="fas fa-chevron-right text-[10px] text-[#D4AF37] group-hover:translate-x-1 transition-transform"></i>
                     </button>
                   </div>
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-4 sm:gap-6">
                     {/* Daily Earnings Card */}
-                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-white/5 flex flex-col justify-center shadow-inner relative overflow-hidden group/card shadow-2xl">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
-                        <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-widest mb-1 sm:mb-2 italic">Ganhos Hoje</p>
-                        <p className={`text-2xl sm:text-3xl font-black italic tracking-tighter text-white`}>
+                    <div className="p-6 sm:p-7 rounded-[32px] sm:rounded-[40px] border border-[#FF6B00]/20 bg-[#1A0C06] flex flex-col justify-center shadow-2xl relative overflow-hidden group/card shadow-orange-950/20">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/10 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
+                        
+                        <div className="flex justify-between items-start relative z-10">
+                          <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-[0.3em] mb-2 sm:mb-3 italic">Ganhos Hoje</p>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
+                            className="text-[#D4AF37]/50 hover:text-[#D4AF37] transition-colors -mt-1 -mr-2 p-3"
+                          >
+                            <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-base`}></i>
+                          </button>
+                        </div>
+
+                        <p className={`text-3xl sm:text-4xl font-[900] italic tracking-tighter text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] relative z-10`}>
                           {showBalance ? formatCurrency(dailyEarnings) : 'R$ •••••'}
                         </p>
                     </div>
 
                     {/* Stats List Card */}
-                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-white/5 flex flex-col space-y-2 sm:space-y-3 shadow-2xl">
+                    <div className="p-4 sm:p-5 rounded-[24px] sm:rounded-[32px] border border-[#FF6B00]/10 bg-[#1A0C06] flex flex-col space-y-2 sm:space-y-3 shadow-2xl">
                       <div className="flex justify-between items-center pb-2 border-b border-white/5">
                         <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Aceitas</span>
                         <span className="font-black italic text-sm text-white">{dailyStats.accepted}</span>
@@ -3006,7 +3035,7 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Bottom Decoration */}
-                  <div className="mt-8 flex justify-center opacity-30">
+                  <div className="mt-4 sm:mt-6 flex justify-center opacity-30">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></div>
                   </div>
                 </div>
@@ -3014,7 +3043,7 @@ const App: React.FC = () => {
             )}
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.6)] border-t border-white/10 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-2 pb-5' : 'p-3 pb-5 sm:p-4 sm:pb-6'} ${cardBg}`}>
+                <div className={`w-full rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.9)] border-t border-[#D4AF37]/30 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-3 pb-8' : 'p-4 pb-8 sm:p-6 sm:pb-12'} bg-[#0D0502]/95 backdrop-blur-3xl`}>
                   
                   {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
@@ -3022,13 +3051,13 @@ const App: React.FC = () => {
                     <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center">
                       <div className="w-12 h-1 bg-zinc-700/60 rounded-full mb-3" />
                       
-                      <h3 className="text-white text-sm font-black uppercase tracking-widest mb-1 italic">
+                      <h3 className="text-[#F5E6D3] text-sm font-[900] uppercase tracking-[0.3em] mb-1.5 italic transform -skew-x-6">
                         {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em Rota'}
                       </h3>
                       
-                      <div className="flex items-center justify-center space-x-2 text-[#FF6B00] text-[10px] font-black uppercase tracking-wider">
-                        <i className="far fa-clock text-[9px] opacity-70"></i>
-                        <span>Chegada em {navMetrics?.time || '-- min'}</span>
+                      <div className="flex items-center justify-center space-x-3 text-[#FF6B00] text-[11px] font-black uppercase tracking-widest">
+                        <i className="far fa-clock text-[10px] opacity-80"></i>
+                        <span className="drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]">Chegada em {navMetrics?.time || '-- min'}</span>
                       </div>
                       
                       <div className="mt-2 text-[8px] font-bold text-zinc-600 uppercase tracking-[0.3em] animate-pulse">
@@ -3041,26 +3070,26 @@ const App: React.FC = () => {
                       {status === DriverStatus.GOING_TO_CUSTOMER ? (
                         <div className="flex flex-col space-y-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
                            {/* Stop Counter & Close Icon */}
-                           <div className="flex items-center justify-between px-1">
-                              <div className="flex items-center space-x-3 bg-white/5 px-5 py-2.5 rounded-[20px] border border-white/10 shadow-inner">
-                                <div className="w-2 h-2 rounded-full bg-[#FF6B00] animate-pulse"></div>
-                                <span className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                           <div className="flex items-center justify-between px-2">
+                              <div className="flex items-center space-x-4 bg-[#FF6B00]/10 px-6 py-3 rounded-full border border-[#FF6B00]/30 shadow-[0_0_20px_rgba(255,107,0,0.1)]">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] animate-pulse shadow-[0_0_10px_#FF6B00]"></div>
+                                <span className="text-[11px] font-[900] uppercase tracking-[0.3em] text-[#FF6B00]">
                                   {activeMissions.length > 1 
                                     ? `PEDIDO ${activeMissions.findIndex(m => m.id === (mission?.id)) + 1} DE ${activeMissions.length}` 
-                                    : 'PEDIDO EM ROTA'}
+                                    : 'ENTREGA ATIVA'}
                                 </span>
                               </div>
-                              <button onClick={() => setIsMissionOverlayExpanded(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 active:scale-90 transition-transform">
-                                <i className="fas fa-chevron-down"></i>
+                              <button onClick={() => setIsMissionOverlayExpanded(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-[#D4AF37] active:scale-90 transition-transform border border-white/5 shadow-xl">
+                                <i className="fas fa-chevron-down text-lg"></i>
                               </button>
                            </div>
 
                            {/* Main Customer Detail Card - Premium Style */}
-                           <div className={`p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden ${innerBg} ring-1 ring-white/5`}>
+                           <div className={`p-8 rounded-[48px] border border-[#D4AF37]/20 shadow-2xl relative overflow-hidden bg-[#1A0C06] ring-1 ring-white/5`}>
                               <div className="flex justify-between items-start relative z-10">
-                                <div className="flex-1 min-w-0 pr-6">
-                                  <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.3em] mb-3 opacity-70">Destino da Entrega</p>
-                                  <h2 className={`text-4xl font-black italic tracking-tighter ${textPrimary} truncate mb-3 drop-shadow-md`}>{mission.customerName}</h2>
+                                <div className="flex-1 min-w-0 pr-8">
+                                  <p className="text-[10px] font-black uppercase text-[#D4AF37] tracking-[0.4em] mb-3 opacity-80">CLIENTE</p>
+                                  <h2 className={`text-4xl font-[900] italic tracking-tighter text-[#F5E6D3] truncate mb-4 drop-shadow-lg transform -skew-x-6`}>{mission.customerName}</h2>
                                   <div className="flex items-start space-x-3 bg-black/20 p-4 rounded-2xl border border-white/5">
                                     <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center shrink-0">
                                       <i className="fas fa-location-dot text-[#FF6B00] text-sm"></i>
@@ -3175,37 +3204,32 @@ const App: React.FC = () => {
                           {activeHelpOption === null ? (
                             <div className="grid grid-cols-2 gap-4">
                               <button
-                                onClick={() => setActiveHelpOption('customer_not_found')}
-                                className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10' : 'border-zinc-100 bg-white hover:bg-zinc-50 shadow-xl'}`}
+                                onClick={() => { setChatTab('COURIER_CENTRAL'); setShowChatModal(true); setShowDeliveryHelpModal(false); }}
+                                className={`p-6 rounded-[32px] border border-white/5 bg-white/5 hover:bg-white/10 flex flex-col items-center text-center space-y-4 active:scale-95 transition-all shadow-xl`}
                               >
-                                <div className="w-14 h-14 rounded-[22px] bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] shadow-2xl"><i className="fas fa-user-slash text-xl"></i></div>
-                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Cliente Ausente</span>
+                                <div className="w-14 h-14 rounded-[22px] bg-[#007AFF]/10 flex items-center justify-center text-[#007AFF] shadow-2xl"><i className="fas fa-headset text-xl"></i></div>
+                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight text-white`}>Guepardo Central</span>
                               </button>
                               <button
-                                onClick={() => setActiveHelpOption('talk_to_store')}
-                                className={`p-6 rounded-[32px] border flex flex-col items-center text-center space-y-4 active:scale-95 transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10' : 'border-zinc-100 bg-white hover:bg-zinc-50 shadow-xl'}`}
+                                onClick={() => { setChatTab('STORE_COURIER'); setShowChatModal(true); setShowDeliveryHelpModal(false); }}
+                                className={`p-6 rounded-[32px] border border-white/5 bg-white/5 hover:bg-white/10 flex flex-col items-center text-center space-y-4 active:scale-95 transition-all shadow-xl`}
                               >
-                                <div className="w-14 h-14 rounded-[22px] bg-[#FFD700]/10 flex items-center justify-center text-black/80 shadow-2xl"><i className="fas fa-store text-xl"></i></div>
-                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight ${textPrimary}`}>Falar com Loja</span>
+                                <div className="w-14 h-14 rounded-[22px] bg-[#FFD700]/10 flex items-center justify-center text-[#FFD700] shadow-2xl"><i className="fas fa-store text-xl"></i></div>
+                                <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight text-white`}>Chat com Loja</span>
                               </button>
                             </div>
-                          ) : activeHelpOption === 'customer_not_found' ? (
+                          ) : activeHelpOption === 'central_support' ? (
                             <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                               <div className="p-4 bg-[#FF6B00]/5 border border-[#FF6B00]/20 rounded-2xl flex items-center space-x-3 mb-2">
-                                  <i className="fab fa-whatsapp text-[#FF6B00] text-lg"></i>
-                                  <span className="text-[10px] font-bold text-[#FF6B00] uppercase tracking-wider">Enviar mensagem direta</span>
+                               <div className="p-4 bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-2xl flex items-center space-x-3 mb-2">
+                                  <i className="fas fa-headset text-[#007AFF] text-lg"></i>
+                                  <span className="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">Suporte Direto</span>
                                </div>
-                              <textarea
-                                value={customerMessage}
-                                onChange={(e) => setCustomerMessage(e.target.value)}
-                                placeholder="Ex: Olá, Guepardo chegou com seu pedido! Estou no portão..."
-                                className="w-full h-28 rounded-2xl p-5 text-xs font-bold outline-none resize-none border border-white/10 bg-black/40 text-white focus:border-[#FF6B00] transition-colors placeholder:opacity-30"
-                              />
-                              <div className="flex space-x-3">
-                                <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-12 rounded-[20px] font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Cancelar</button>
-                                <button onClick={handleSendCustomerMessage} className="flex-[2] h-12 bg-[#FF6B00] rounded-[20px] font-black text-white text-[10px] uppercase shadow-lg shadow-orange-900/20 flex items-center justify-center space-x-2 active:scale-95 transition-transform">
-                                  <i className="fab fa-whatsapp text-sm"></i>
-                                  <span>Enviar WhatsApp</span>
+                              <p className="text-[11px] font-bold text-[#FFC099]/60 leading-relaxed px-2">Precisa de ajuda com esta entrega? Nossa central está pronta para te auxiliar agora.</p>
+                              <div className="flex space-x-3 mt-4">
+                                <button onClick={() => setActiveHelpOption(null)} className={`flex-1 h-12 rounded-[20px] font-black text-[10px] uppercase ${textMuted} border border-white/5 active:scale-90 transition-transform`}>Voltar</button>
+                                <button onClick={handleSendCentralMessage} className="flex-[2] h-12 bg-[#007AFF] rounded-[20px] font-black text-white text-[10px] uppercase shadow-lg shadow-blue-900/20 flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+                                  <i className="fas fa-comment-dots text-sm"></i>
+                                  <span>Abrir Chat Central</span>
                                 </button>
                               </div>
                             </div>
@@ -3481,34 +3505,34 @@ const App: React.FC = () => {
         const activeWeekLabel = MOCK_WEEKS.find(w => w.id === activeWeekId)?.range || 'Semana Atual';
 
         return (
-          <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
+          <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]`}>
             <div className="flex items-center justify-between mb-8">
-              <h1 className={`text-3xl font-black italic text-white tracking-tight`}>Meus Ganhos</h1>
-              <div className="px-4 py-1 bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-full text-[10px] font-black uppercase text-[#FF6B00] tracking-wider">
-                Versão 2.1
+              <h1 className={`text-4xl font-[900] italic text-[#F5E6D3] tracking-tighter transform -skew-x-6`}>Ganhos</h1>
+              <div className="px-4 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-full text-[10px] font-black uppercase text-[#D4AF37] tracking-widest shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+                PREMIUM
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className={`p-4 rounded-[28px] border chocolate-inner-card-v2 flex flex-col justify-center`}>
-                <p className={`text-chocolate-muted text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos da Semana</p>
-                <p className={`text-[10px] font-bold text-chocolate-muted mb-2`}>{activeWeekLabel}</p>
-                <p className={`text-xl font-black text-white`}>R$ {(weeklyEarningsTotal || 0).toFixed(2)}</p>
+              <div className={`p-5 rounded-[32px] border border-[#D4AF37]/20 bg-[#1A0C06]/80 flex flex-col justify-center shadow-lg`}>
+                <p className={`text-[#D4AF37] text-[9px] font-black uppercase mb-1.5 tracking-widest opacity-80`}>Ganhos da Semana</p>
+                <p className={`text-[10px] font-bold text-[#F5E6D3]/40 mb-3`}>{activeWeekLabel}</p>
+                <p className={`text-2xl font-black text-white italic tracking-tighter`}>R$ {(weeklyEarningsTotal || 0).toFixed(2)}</p>
               </div>
-              <div className={`p-4 rounded-[28px] border chocolate-inner-card-v2 flex flex-col justify-center`}>
-                <p className={`text-chocolate-muted text-[9px] font-black uppercase mb-1 tracking-widest`}>Ganhos de Hoje</p>
-                <p className="text-[10px] font-bold opacity-0 mb-2">Hoje</p>
-                <p className={`text-xl font-black text-[#FF6B00] neon-orange-glow-text`}>R$ {(dailyEarnings || 0).toFixed(2)}</p>
+              <div className={`p-5 rounded-[32px] border border-[#FF6B00]/20 bg-[#1A0C06]/80 flex flex-col justify-center shadow-lg shadow-orange-950/20`}>
+                <p className={`text-[#FF6B00] text-[9px] font-black uppercase mb-1.5 tracking-widest opacity-80`}>Ganhos de Hoje</p>
+                <p className={`text-[10px] font-bold text-white/0 mb-3`}>Hoje</p>
+                <p className={`text-2xl font-black text-white italic tracking-tighter drop-shadow-[0_0_10px_rgba(255,107,0,0.3)]`}>R$ {(dailyEarnings || 0).toFixed(2)}</p>
               </div>
             </div>
 
-            <div className={`rounded-[32px] p-8 border mb-8 chocolate-inner-card-v2 relative overflow-hidden bg-[#1a0c06]/80`}>
-              <div className="absolute -right-4 -top-4 opacity-5"><i className="fas fa-wallet text-8xl text-[#FF6B00]"></i></div>
-              <p className={`text-chocolate-muted font-bold uppercase text-[10px] tracking-widest mb-2 relative z-10`}>Saldo Disponível</p>
-              <h2 className={`text-4xl font-black text-white mb-6 relative z-10 tracking-tighter`}>R$ {(balance || 0).toFixed(2)}</h2>
+            <div className={`rounded-[40px] p-8 border border-[#D4AF37]/30 mb-10 relative overflow-hidden bg-gradient-to-br from-[#1A0C06] to-[#0D0502] shadow-[0_30px_70px_rgba(0,0,0,0.8)]`}>
+              <div className="absolute -right-6 -top-6 opacity-[0.05]"><i className="fas fa-sack-dollar text-9xl text-[#D4AF37]"></i></div>
+              <p className={`text-[#D4AF37] font-black uppercase text-[10px] tracking-[0.3em] mb-2 relative z-10 opacity-80`}>Saldo Disponível</p>
+              <h2 className={`text-5xl font-black text-[#F5E6D3] mb-8 relative z-10 tracking-tighter italic transform -skew-x-6`}>R$ {(balance || 0).toFixed(2)}</h2>
 
-              <button disabled={balance <= 0} onClick={() => setCurrentScreen('WITHDRAWAL_REQUEST')} className={`w-full h-16 rounded-[24px] text-white font-black text-xs uppercase italic tracking-widest shadow-lg flex items-center justify-center space-x-2 transition-all relative z-10 btn-lava-accept ${balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
-                <i className="fas fa-hand-holding-dollar text-lg"></i>
+              <button disabled={balance <= 0} onClick={() => setCurrentScreen('WITHDRAWAL_REQUEST')} className={`w-full h-20 rounded-[28px] text-white font-[900] text-sm uppercase italic tracking-[0.2em] shadow-[0_15px_40px_rgba(255,107,0,0.4),inset_0_1px_0_rgba(212,175,55,0.3)] flex items-center justify-center space-x-3 transition-all relative z-10 btn-lava-accept ${balance <= 0 ? 'opacity-50 grayscale' : ''}`}>
+                <i className="fas fa-bolt text-lg text-[#FFD700]"></i>
                 <span>Antecipar Repasse</span>
               </button>
             </div>
@@ -3641,7 +3665,7 @@ const App: React.FC = () => {
       }
       case 'WITHDRAWAL_REQUEST': {
         return (
-        <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
+        <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]`}>
           <div className="flex items-center space-x-4 mb-8">
             <button onClick={() => setCurrentScreen('WALLET')} className={`w-11 h-11 rounded-2xl flex items-center justify-center border chocolate-inner-card-v2`}>
               <i className="fas fa-chevron-left text-white"></i>
@@ -3692,18 +3716,18 @@ const App: React.FC = () => {
     }
       case 'ORDERS': {
         return (
-          <div className={'h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]'}>
-            <h1 className={'text-3xl font-black italic mb-2 text-white tracking-tight'}>Como podemos te ajudar?</h1>
-            <p className="text-chocolate-muted font-bold text-xs uppercase tracking-widest mb-8">Central de Ajuda Guepardo</p>
+          <div className={'h-full w-full p-8 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]'}>
+            <h1 className={'text-4xl font-[900] italic mb-3 text-[#F5E6D3] tracking-tighter transform -skew-x-6'}>Suporte</h1>
+            <p className="text-[#D4AF37] font-black uppercase text-[10px] tracking-[0.4em] mb-10 italic">Elite Help Center</p>
 
-            <div className="relative mb-10">
-              <div className={'absolute left-5 top-1/2 -translate-y-1/2 text-[#FF6B00]'}>
-                <i className="fas fa-search text-lg"></i>
+            <div className="relative mb-12">
+              <div className={'absolute left-6 top-1/2 -translate-y-1/2 text-[#FF6B00]'}>
+                <i className="fas fa-search text-xl"></i>
               </div>
               <input
                 type="text"
-                placeholder="Digite sua dúvida aqui..."
-                className={'w-full h-16 pl-14 pr-6 rounded-[24px] border border-white/10 outline-none font-bold text-sm transition-all bg-black/40 text-white placeholder:font-normal placeholder:text-zinc-600 focus:border-[#FF6B00]/50 focus:bg-black/60 shadow-xl'}
+                placeholder="Busque por soluções..."
+                className={'w-full h-18 pl-16 pr-8 rounded-[28px] border border-[#D4AF37]/20 outline-none font-bold text-base transition-all bg-[#1A0C06] text-white placeholder:font-medium placeholder:text-zinc-700 focus:border-[#FF6B00]/50 shadow-2xl'}
               />
             </div>
 
@@ -3748,17 +3772,17 @@ const App: React.FC = () => {
       }
       case 'NOTIFICATIONS': {
         return (
-          <div className={'h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]'}>
-            <div className="flex items-center justify-between mb-8">
+          <div className={'h-full w-full p-8 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]'}>
+            <div className="flex items-center justify-between mb-10">
               <div className="flex items-center space-x-4">
-                <button onClick={() => setCurrentScreen('HOME')} className={'w-11 h-11 rounded-2xl flex items-center justify-center border chocolate-inner-card-v2'}>
-                  <i className={'fas fa-chevron-left text-white'}></i>
+                <button onClick={() => setCurrentScreen('HOME')} className={'w-12 h-12 rounded-2xl flex items-center justify-center border border-[#D4AF37]/20 bg-[#1A0C06] shadow-xl text-[#F5E6D3]'}>
+                  <i className={'fas fa-chevron-left'}></i>
                 </button>
-                <h1 className={'text-2xl font-black italic text-white tracking-tight'}>Avisos</h1>
+                <h1 className={'text-3xl font-[900] italic text-[#F5E6D3] tracking-tighter transform -skew-x-6 ml-4'}>Avisos</h1>
               </div>
               <button
                 onClick={markAllNotificationsRead}
-                className={'text-[10px] font-black uppercase tracking-widest text-[#FF6B00] active:scale-95 transition-transform px-3 py-1 bg-[#FF6B00]/10 rounded-full'}
+                className={'text-[10px] font-black uppercase tracking-widest text-[#FF6B00] active:scale-95 transition-transform px-5 py-2 bg-[#FF6B00]/10 rounded-full border border-[#FF6B00]/20 shadow-[0_0_15px_rgba(255,107,0,0.1)]'}
               >
                 Limpar
               </button>
@@ -3813,12 +3837,12 @@ const App: React.FC = () => {
       case 'SETTINGS': {
         if (settingsView === 'MAIN') {
           return (
-            <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0f0502]`}>
-              <h1 className={`text-4xl font-black italic mb-8 text-white tracking-tighter`}>Perfil</h1>
+            <div className={`h-full w-full p-8 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]`}>
+              <h1 className={`text-5xl font-[900] italic mb-10 text-[#F5E6D3] tracking-tighter transform -skew-x-6`}>Meu Perfil</h1>
               
-              <div className={`flex items-center space-x-5 mb-10 p-6 rounded-[32px] border chocolate-inner-card-v2 bg-[#1a0c06]`}>
+              <div className={`flex items-center space-x-6 mb-12 p-8 rounded-[40px] border border-[#D4AF37]/20 bg-[#1A0C06] shadow-2xl`}>
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-full p-1.5 border-2 border-[#FF6B00] shadow-[0_0_25px_rgba(255,107,0,0.3)] bg-black">
+                  <div className="w-24 h-24 rounded-full p-1.5 border-2 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.25)] bg-black">
                     <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-full" alt="Perfil" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 rounded-full border-4 border-[#1a0c06] flex items-center justify-center text-white text-[10px]">
@@ -4388,7 +4412,7 @@ const App: React.FC = () => {
 
   return (
     <div className={`h-screen w-screen flex flex-col relative overflow-hidden transition-colors duration-300 bg-transparent ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
-      <header className={`z-[1002] ${isNavigating ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-between backdrop-blur-2xl border-b transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-white/5' : 'bg-white/80 border-zinc-200'}`}>
+      <header className={`z-[1002] ${isNavigating ? 'hidden sm:flex' : 'flex'} flex-col items-center justify-between backdrop-blur-2xl border-b transition-all duration-300 bg-[#0D0502]/95 border-[#D4AF37]/10`}>
         {(!(isNavigating && !isMissionOverlayExpanded)) && (
           <div className="w-full px-4 py-1.5 sm:py-3 flex items-center justify-between relative h-14 sm:h-16 animate-in fade-in duration-500">
             <div className="flex items-center justify-center">
@@ -4398,15 +4422,15 @@ const App: React.FC = () => {
             </div>
 
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button onClick={toggleOnlineStatus} className={`h-8 px-5 rounded-full flex items-center space-x-2.5 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-zinc-800 border border-white/5'}`}>
-                <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : theme === 'dark' ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                <span className={`font-black text-[9px] uppercase tracking-widest ${status === DriverStatus.ONLINE ? 'text-white' : 'text-zinc-500'}`}>{status === DriverStatus.ONLINE ? 'Online' : 'Offline'}</span>
+              <button onClick={toggleOnlineStatus} className={`h-8 px-5 rounded-full flex items-center space-x-2.5 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-[#1A0C06] border border-[#D4AF37]/20 text-zinc-500'}`}>
+                <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : 'bg-zinc-700'}`}></div>
+                <span className={`font-black text-[9px] uppercase tracking-widest`}>{status === DriverStatus.ONLINE ? 'Online' : 'Offline'}</span>
               </button>
             </div>
 
             <button
               onClick={handleOpenNotifications}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 ${cardBg} border shadow-lg relative`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-[#1A0C06] border border-[#D4AF37]/30 shadow-lg relative`}
             >
               <div className="relative">
                 <i className={`fas fa-bell text-base ${textPrimary}`}></i>
@@ -4495,15 +4519,15 @@ const App: React.FC = () => {
 
 
       {showSOSModal && (
-        <div className="absolute inset-0 bg-black/80 z-[6000] flex items-end justify-center backdrop-blur-xl animate-in fade-in duration-300">
-          <div className={`w-full chocolate-bottom-panel rounded-t-[40px] p-6 pb-12 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-[#FF6B00]/20`}>
-            <div className="flex justify-between items-center mb-8 px-2">
+        <div className="absolute inset-0 bg-black/85 z-[6000] flex items-end justify-center backdrop-blur-2xl animate-in fade-in duration-300">
+          <div className={`w-full bg-[#0D0502]/95 rounded-t-[48px] p-8 pb-14 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-[#D4AF37]/25`}>
+            <div className="flex justify-between items-center mb-10 px-2">
               <div>
-                <h2 className="text-2xl font-black italic text-white tracking-tight flex items-center gap-3">
-                  <i className="fas fa-tower-broadcast text-[#FF6B00] animate-pulse"></i>
+                <h2 className="text-3xl font-[900] italic text-white tracking-tighter flex items-center gap-4">
+                  <i className="fas fa-tower-broadcast text-[#FF6B00] drop-shadow-[0_0_10px_rgba(255,107,0,0.5)] animate-pulse"></i>
                   <span>Central SOS</span>
                 </h2>
-                <p className="text-chocolate-muted text-[10px] font-black uppercase tracking-[0.2em] mt-1">EMERGÊNCIA E SUPORTE</p>
+                <p className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-80">Segurança Guepardo Premium</p>
               </div>
               <button 
                 onClick={() => setShowSOSModal(false)} 
@@ -4568,18 +4592,18 @@ const App: React.FC = () => {
       )}
 
       {showProximityModal && (
-        <div className="absolute inset-0 bg-black/80 z-[6500] flex items-end justify-center backdrop-blur-xl animate-in fade-in duration-300">
-          <div className={`w-full chocolate-bottom-panel rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500 shadow-2xl border-t border-[#FF6B00]/30`}>
+        <div className="absolute inset-0 bg-black/90 z-[6500] flex items-end justify-center backdrop-blur-3xl animate-in fade-in duration-300">
+          <div className={`w-full bg-[#0D0502]/98 rounded-t-[48px] p-10 pb-14 animate-in slide-in-from-bottom duration-500 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] border-t border-[#D4AF37]/30`}>
             <div className="flex flex-col items-center text-center">
               <div className="w-20 h-2 bg-white/10 rounded-full mb-8 opacity-20"></div>
               
-              <div className="w-24 h-24 rounded-full bg-orange-600/20 flex items-center justify-center mb-6 relative">
-                 <div className="absolute inset-0 rounded-full border-2 border-orange-500/30 animate-ping"></div>
-                 <i className="fas fa-location-dot text-4xl text-[#FF6B00]"></i>
+              <div className="w-24 h-24 rounded-[32px] bg-orange-600/10 flex items-center justify-center mb-8 relative border border-[#D4AF37]/20">
+                 <div className="absolute inset-0 rounded-[32px] border-2 border-[#D4AF37]/30 animate-pulse"></div>
+                 <i className="fas fa-location-dot text-4xl text-[#FF6B00] drop-shadow-[0_0_12px_rgba(255,107,0,0.4)]"></i>
               </div>
 
-              <h2 className="text-3xl font-black italic text-white tracking-tighter leading-tight uppercase mb-3">
-                Destino Distante
+              <h2 className="text-4xl font-[900] italic text-white tracking-tighter leading-none uppercase mb-4 transform -skew-x-6">
+                LOCAL DISTANTE
               </h2>
               
               <p className="text-chocolate-muted text-sm font-bold max-w-[280px] mb-8">
@@ -4891,7 +4915,7 @@ const App: React.FC = () => {
       )}
 
       {status === DriverStatus.ALERTING && mission && (
-        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-6 chocolate-lava-backdrop pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-6 bg-[#0D0502]/95 backdrop-blur-3xl overflow-hidden">
           
           <div className="absolute top-0 left-0 w-full h-[30%] bg-gradient-to-b from-[#FF6B00]/20 to-transparent pointer-events-none"></div>
 
@@ -4914,20 +4938,20 @@ const App: React.FC = () => {
                   <div className="flex flex-col items-center">
                     <div className="mb-6 sm:mb-10 relative">
                       {/* Sub-label */}
-                      <span className="text-[11px] font-black uppercase text-[#FF6B00] tracking-[0.4em] mb-3 block opacity-60">Ganhos Estimados</span>
-                      <h2 className="text-[64px] sm:text-[80px] font-black text-white drop-shadow-[0_0_25px_rgba(255,107,0,0.5)] leading-none tracking-tighter italic">
+                      <span className="text-[11px] font-black uppercase text-[#D4AF37] tracking-[0.45em] mb-4 block opacity-90 drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]">Ganhos Estimados</span>
+                      <h2 className="text-[64px] sm:text-[80px] font-[900] text-white drop-shadow-[0_0_25px_rgba(255,107,0,0.6)] leading-none tracking-tighter italic transform -skew-x-6">
                          {formatCurrency(totalE)}
                       </h2>
                     </div>
                     
                     <div className="flex items-center space-x-4">
-                      <div className="metric-badge-chocolate flex items-center space-x-2">
+                      <div className="metric-badge-chocolate flex items-center space-x-2 border border-[#D4AF37]/20 bg-[#1A0C06]/60">
                         <i className="fas fa-motorcycle text-[#FF6B00] text-sm"></i>
-                        <span className="text-sm font-black tracking-tight">{totalD.toFixed(2).replace('.', ',')} km</span>
+                        <span className="text-sm font-black tracking-tight text-[#F5E6D3]">{totalD.toFixed(2).replace('.', ',')} km</span>
                       </div>
-                      <div className="metric-badge-chocolate flex items-center space-x-2">
-                        <i className="fas fa-map-pin text-[#FF6B00] text-sm"></i>
-                        <span className="text-sm font-black tracking-tight">{totalStops} {totalStops === 1 ? 'Parada' : 'Paradas'}</span>
+                      <div className="metric-badge-chocolate flex items-center space-x-2 border border-[#D4AF37]/20 bg-[#1A0C06]/60">
+                        <i className="fas fa-map-pin text-[#D4AF37] text-sm"></i>
+                        <span className="text-sm font-black tracking-tight text-[#F5E6D3]">{totalStops} {totalStops === 1 ? 'Parada' : 'Paradas'}</span>
                       </div>
                     </div>
                   </div>
@@ -4999,8 +5023,8 @@ const App: React.FC = () => {
                     <circle 
                       cx="50" cy="50" r="46" 
                       fill="none" 
-                      stroke="#FF6B00" 
-                      strokeWidth="4" 
+                      stroke="#D4AF37" 
+                      strokeWidth="3" 
                       strokeLinecap="round"
                       style={{ 
                         strokeDasharray: 289, 
@@ -5010,12 +5034,12 @@ const App: React.FC = () => {
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-3xl font-black text-white tracking-tighter tabular-nums">{alertCountdown}</span>
-                    <span className="text-[8px] font-black text-[#FF6B00] uppercase tracking-[0.25em] mt-[-3px]">Tempo</span>
+                    <span className="text-3xl font-[900] text-white tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{alertCountdown}</span>
+                    <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.3em] mt-[-2px] opacity-80">SEG</span>
                   </div>
                 </div>
 
-                <div className="flex space-x-2 opacity-10 text-[#FF6B00]">
+                <div className="flex space-x-2 opacity-20 text-[#D4AF37]">
                   <i className="fas fa-chevron-right text-xs"></i>
                   <i className="fas fa-chevron-right text-xs"></i>
                 </div>
@@ -5061,9 +5085,52 @@ const App: React.FC = () => {
           theme={theme}
         />
       )}
+      {/* Card de Notificação Premium para Cancelamentos (Toast) */}
+      {cancellationToast.show && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none p-6">
+          <div className="w-full max-w-sm chocolate-glass-card border border-[#D4AF37]/30 shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in fade-in duration-500 pointer-events-auto">
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+            
+            <div className="relative p-8 flex flex-col items-center text-center">
+              {/* Icon Container with Pulse */}
+              <div className="mb-6 relative">
+                 <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full animate-pulse"></div>
+                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center relative shadow-inner">
+                    <i className="fas fa-exclamation-triangle text-3xl text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]"></i>
+                 </div>
+              </div>
+
+              <h2 className="text-[#D4AF37] font-black text-xs uppercase tracking-[0.4em] mb-4 opacity-70">
+                Aviso do Sistema
+              </h2>
+              
+              <p className="text-white text-xl font-bold leading-tight tracking-tight drop-shadow-sm mb-2">
+                {cancellationToast.message}
+              </p>
+              
+              <p className="text-white/40 text-[10px] font-medium uppercase tracking-widest mt-4">
+                Retornando ao Lobby em segundos...
+              </p>
+
+              {/* Progress Bar (Visualizer for 3s) */}
+              <div className="absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-red-500 to-[#D4AF37] w-full animate-shrink-x origin-left"></div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
 };
+<style dangerouslySetInnerHTML={{ __html: `
+  @keyframes shrink-x {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+  .animate-shrink-x {
+    animation: shrink-x 3.5s linear forwards;
+  }
+`}} />
 
 export default App;

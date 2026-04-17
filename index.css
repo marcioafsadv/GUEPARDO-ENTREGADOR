@@ -19,8 +19,12 @@
   --chocolate-primary: #f8f6f5;
   --chocolate-muted: #8b7d77;
   --neon-orange: #FF6B00;
+  --premium-gold: #D4AF37;
+  --premium-gold-glow: rgba(212, 175, 55, 0.4);
+  --chocolate-bg: #0D0502;
   --neon-emerald: #00FF94;
   --neon-emerald-glow: rgba(0, 255, 148, 0.4);
+  --silk-text: #D1C4B9;
 }
 
 body {
@@ -149,11 +153,13 @@ body {
 }
 
 .chocolate-glass-card {
-  background: linear-gradient(135deg, rgba(26, 10, 5, 0.95) 0%, rgba(15, 5, 2, 0.98) 100%);
-  border-radius: 48px;
-  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 
-              inset 0 0 40px rgba(255, 107, 0, 0.05);
-  border: 1.5px solid rgba(255, 107, 0, 0.1);
+  background: linear-gradient(135deg, rgba(26, 10, 5, 0.95) 0%, rgba(13, 5, 2, 0.98) 100%);
+  border-radius: 40px;
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.9), 
+              inset 0 0 40px rgba(212, 175, 55, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   animation: ultra-modal-entrance 1s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
@@ -281,15 +287,29 @@ body {
 }
 
 .chocolate-inner-card-v2 {
-  background: rgba(26, 12, 6, 0.6);
-  border: 1px solid rgba(255, 107, 0, 0.08);
+  background: rgba(26, 12, 6, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.08);
   border-radius: 28px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chocolate-inner-card-v2:hover {
-  background: rgba(35, 16, 8, 0.8);
-  border-color: rgba(255, 107, 0, 0.2);
+  background: rgba(40, 20, 10, 0.6);
+  border-color: rgba(212, 175, 55, 0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.premium-gold-border {
+  border: 1px solid transparent;
+  background: linear-gradient(#1a0c06, #1a0c06) padding-box,
+              linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.05)) border-box;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #B8860B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
 }
 
 .chocolate-glass-button {

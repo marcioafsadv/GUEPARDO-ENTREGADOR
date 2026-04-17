@@ -3,14 +3,14 @@ import React from 'react';
 import { NotificationModel, NotificationType } from './types';
 
 export const COLORS = {
-  primary: '#FF6B00', // Guepardo Orange
-  secondary: '#FFFFFF',
-  accent: '#FFD700', // Gold Yellow
-  background: '#121212', // Dark Mode Default
-  card: '#1E1E1E',
+  primary: '#FF6B00', // Guepardo Orange (Vibrant)
+  secondary: '#F5E6D3', // Champagne/Silk
+  accent: '#D4AF37', // Metallic Gold
+  background: '#0D0502', // Espresso Deep
+  card: '#1A0C06',
   text: '#FFFFFF',
   textMuted: '#A0A0A0',
-  success: '#22C55E',
+  success: '#00A36C', // Imperial Emerald
   danger: '#EF4444'
 };
 
