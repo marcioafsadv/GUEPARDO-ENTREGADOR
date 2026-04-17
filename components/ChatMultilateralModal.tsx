@@ -223,22 +223,22 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
 
         {/* INPUT AREA */}
         {!isHistorical ? (
-          <div className="p-8 bg-gradient-to-t from-[#0f0502] to-transparent border-t border-white/5 backdrop-blur-3xl pb-10 relative z-10">
-            <div className="flex gap-4 p-3 pr-3 bg-white/5 rounded-[2.5rem] border border-white/10 focus-within:border-[#FF6B00]/40 focus-within:bg-white/[0.08] transition-all duration-500 shadow-2xl">
+          <div className="p-4 sm:p-8 bg-gradient-to-t from-[#0f0502] to-transparent border-t border-white/5 backdrop-blur-3xl pb-6 sm:pb-10 relative z-10">
+            <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-white/5 rounded-[2.5rem] border border-white/10 focus-within:border-[#FF6B00]/40 focus-within:bg-white/[0.08] transition-all duration-500 shadow-2xl">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Digitar..."
-                className="flex-1 bg-transparent border-none focus:outline-none text-[15px] font-bold text-white px-5 placeholder:text-[#FFC099]/20"
+                className="flex-1 bg-transparent border-none focus:outline-none text-[14px] sm:text-[15px] font-bold text-white px-3 sm:px-5 placeholder:text-[#FFC099]/20"
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim()}
-                className="w-14 h-14 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-110 active:scale-90 transition-all disabled:opacity-20 disabled:scale-100 shadow-[0_10px_25px_rgba(255,107,0,0.4)] heartbeat-pulse"
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-[#FF6B00] rounded-2xl text-white flex items-center justify-center hover:scale-110 active:scale-90 transition-all disabled:opacity-20 disabled:scale-100 shadow-[0_10px_25px_rgba(255,107,0,0.4)]"
               >
-                <i className="fas fa-paper-plane text-xl transform rotate-[15deg]"></i>
+                <i className="fas fa-paper-plane text-lg sm:text-xl transform rotate-[15deg] ml-0.5"></i>
               </button>
             </div>
           </div>

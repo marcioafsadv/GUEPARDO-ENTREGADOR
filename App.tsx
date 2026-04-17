@@ -2962,74 +2962,74 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.5rem)]'}`}>
-                <div className={`p-6 sm:p-8 pb-6 sm:pb-10 rounded-t-[40px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.9)] border-t border-[#D4AF37]/20 transition-all duration-500 bg-[#0D0502]/95 backdrop-blur-3xl relative overflow-hidden group`}>
+              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.2rem)]'}`}>
+                <div className={`p-5 sm:p-8 pb-6 sm:pb-10 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.95)] border-t border-[#D4AF37]/20 transition-all duration-500 bg-[#0D0502]/98 backdrop-blur-3xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
                   
                   {/* Handle Bar */}
                   <div onClick={() => setIsResumoExpanded(!isResumoExpanded)} className="w-full py-4 cursor-pointer flex justify-center items-center group/handle">
-                    <div className="w-14 h-1.5 bg-[#D4AF37]/20 rounded-full transition-all group-hover/handle:bg-[#D4AF37]/40 group-hover/handle:w-20"></div>
+                    <div className="w-14 h-1.5 bg-[#D4AF37]/15 rounded-full transition-all group-hover/handle:bg-[#D4AF37]/40 group-hover/handle:w-20"></div>
                   </div>
 
                   {/* Header Component */}
-                  <div className="mb-6 flex justify-between items-center px-2">
-                    <div className="flex items-center space-x-5">
-                      <div className="w-12 h-12 rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.15)]">
-                        <i className="fas fa-chart-line text-xl"></i>
+                  <div className="mb-6 flex justify-between items-center px-1 sm:px-2">
+                    <div className="flex items-center space-x-4 sm:space-x-5">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.15)]">
+                        <i className="fas fa-chart-line text-lg sm:text-xl"></i>
                       </div>
                       <div className="flex flex-col">
-                        <div className="flex items-center space-x-4">
-                          <h3 className={`text-2xl sm:text-3xl font-[900] italic tracking-tighter text-[#F5E6D3] transform -skew-x-6`}>Resumo</h3>
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <h3 className={`text-xl sm:text-3xl font-[900] italic tracking-tighter text-[#F5E6D3] transform -skew-x-6`}>Resumo</h3>
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#D4AF37]/70 italic">Guepardo Elite</p>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-[#D4AF37]/60 italic">Guepardo Elite</p>
                       </div>
                     </div>
                     
                     <button 
                       onClick={() => setCurrentScreen('WALLET')} 
-                      className="group flex items-center space-x-3 px-5 py-2.5 rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#25120a] transition-all duration-500 shadow-lg"
+                      className="group flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:bg-[#25120a] transition-all duration-500 shadow-lg"
                     >
-                      <span className="text-[11px] font-[900] text-[#D4AF37] uppercase tracking-widest">Painel</span>
-                      <i className="fas fa-chevron-right text-[10px] text-[#D4AF37] group-hover:translate-x-1 transition-transform"></i>
+                      <span className="text-[10px] sm:text-[11px] font-[900] text-[#D4AF37] uppercase tracking-widest">Painel</span>
+                      <i className="fas fa-chevron-right text-[8px] sm:text-[10px] text-[#D4AF37] group-hover:translate-x-1 transition-transform"></i>
                     </button>
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-6">
                     {/* Daily Earnings Card */}
-                    <div className="p-6 sm:p-7 rounded-[32px] sm:rounded-[40px] border border-[#FF6B00]/20 bg-[#1A0C06] flex flex-col justify-center shadow-2xl relative overflow-hidden group/card shadow-orange-950/20">
+                    <div className="p-5 sm:p-7 rounded-[28px] sm:rounded-[40px] border border-[#FF6B00]/20 bg-[#1A0C06] flex flex-col justify-center shadow-2xl relative overflow-hidden group/card shadow-orange-950/30">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/10 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
                         
                         <div className="flex justify-between items-start relative z-10">
-                          <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-[0.3em] mb-2 sm:mb-3 italic">Ganhos Hoje</p>
+                          <p className="text-[#FF6B00] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] mb-2 sm:mb-3 italic opacity-80">Ganhos Hoje</p>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
-                            className="text-[#D4AF37]/50 hover:text-[#D4AF37] transition-colors -mt-1 -mr-2 p-3"
+                            className="text-[#D4AF37]/40 hover:text-[#D4AF37] transition-colors -mt-2 -mr-2 p-3"
                           >
-                            <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-base`}></i>
+                            <i className={`fas ${showBalance ? 'fa-eye' : 'fa-eye-slash'} text-sm sm:text-base`}></i>
                           </button>
                         </div>
 
-                        <p className={`text-3xl sm:text-4xl font-[900] italic tracking-tighter text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] relative z-10`}>
+                        <p className={`text-2xl sm:text-4xl font-[900] italic tracking-tighter text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] relative z-10`}>
                           {showBalance ? formatCurrency(dailyEarnings) : 'R$ •••••'}
                         </p>
                     </div>
 
                     {/* Stats List Card */}
-                    <div className="p-4 sm:p-5 rounded-[24px] sm:rounded-[32px] border border-[#FF6B00]/10 bg-[#1A0C06] flex flex-col space-y-2 sm:space-y-3 shadow-2xl">
+                    <div className="p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-white/5 bg-[#1A0C06]/80 flex flex-col space-y-2.5 sm:space-y-4 shadow-2xl backdrop-blur-md">
                       <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Aceitas</span>
-                        <span className="font-black italic text-sm text-white">{dailyStats.accepted}</span>
+                        <span className="text-zinc-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Aceitas</span>
+                        <span className="font-black italic text-xs sm:text-sm text-white">{dailyStats.accepted}</span>
                       </div>
                       <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Finalizadas</span>
-                        <span className="font-black italic text-sm text-[#00FF94] drop-shadow-[0_0_8px_rgba(0,255,148,0.3)]">{dailyStats.finished}</span>
+                        <span className="text-zinc-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Finalizadas</span>
+                        <span className="font-black italic text-xs sm:text-sm text-[#00FF94] drop-shadow-[0_0_8px_rgba(0,255,148,0.3)]">{dailyStats.finished}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Recusadas</span>
-                        <span className="font-black italic text-sm text-red-500/80">{dailyStats.rejected}</span>
+                        <span className="text-zinc-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Recusadas</span>
+                        <span className="font-black italic text-xs sm:text-sm text-red-500/80">{dailyStats.rejected}</span>
                       </div>
                     </div>
                   </div>
