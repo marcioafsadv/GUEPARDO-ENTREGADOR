@@ -2930,40 +2930,40 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className={`absolute right-6 bottom-24 z-[1020] flex flex-col space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[24rem]' : '-translate-y-[8.5rem]'} animate-in fade-in slide-in-from-right-8`}>
+              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-3 sm:space-y-4 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[22rem] sm:-translate-y-[24rem]' : '-translate-y-[8.5rem]'} animate-in fade-in slide-in-from-right-8`}>
                 {/* 1. Preferences Button */}
                 <button 
                   onClick={() => setShowFiltersModal(true)}
-                  className={`w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
+                  className={`w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all relative group`}
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-sliders text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
-                  {isFilterActive && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
+                  <i className="fas fa-sliders text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
+                  {isFilterActive && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full border-2 border-black animate-pulse"></div>}
                 </button>
 
                 {/* 2. SOS Button (Central) */}
                 <button 
                   onClick={() => setShowSOSModal(true)}
-                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-red-500/20 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(239,68,68,0.15), inset 0 1px 0 rgba(255,255,255,0.05)' }}
                 >
-                  <i className="fas fa-tower-broadcast text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
+                  <i className="fas fa-tower-broadcast text-xl sm:text-2xl text-red-500 group-hover:scale-110 transition-transform animate-pulse"></i>
                 </button>
 
                 {/* 3. Recenter Button */}
                 <button 
                   onClick={() => { setMapCenterKey(prev => prev + 1); if (navigator.vibrate) navigator.vibrate(50); }}
-                  className="w-16 h-16 rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
+                  className="w-13 h-13 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[22px] bg-[#1A0C06]/95 backdrop-blur-md border border-[#D4AF37]/30 flex items-center justify-center shadow-2xl active:scale-90 transition-all group"
                   style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.05)' }}
                 >
-                  <i className="fas fa-location-crosshairs text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
+                  <i className="fas fa-location-crosshairs text-xl sm:text-2xl text-[#D4AF37] group-hover:scale-110 transition-transform"></i>
                 </button>
               </div>
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-7.2rem)]'}`}>
-                <div className={`p-5 sm:p-8 pb-6 sm:pb-10 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.95)] border-t border-[#D4AF37]/20 transition-all duration-500 bg-[#0D0502]/98 backdrop-blur-3xl relative overflow-hidden group`}>
+              <div className={`absolute bottom-16 sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-6.8rem)]'}`}>
+                <div className={`p-5 sm:p-8 pb-6 sm:pb-10 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group`}>
                   
                   {/* Glassmorphism Background Glow */}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF6B00]/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#FF6B00]/20 transition-all duration-1000"></div>
@@ -4492,25 +4492,25 @@ const App: React.FC = () => {
       <footer className={`fixed bottom-0 left-0 right-0 z-[1050] ${isNavigating ? 'hidden' : 'block'}`}>
         <div className="w-full chocolate-nav-bar flex items-center justify-around h-20 sm:h-24 px-4 pb-2 sm:pb-4 rounded-t-[32px]">
           <button onClick={() => { playClick(); setCurrentScreen('HOME'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'HOME' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
-            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <div className={`w-8 h-1 bg-[#FF6B00] absolute bottom-[-4px] rounded-full transition-all shadow-[0_0_12px_#FF6B00] ${currentScreen === 'HOME' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-compass text-lg sm:text-xl ${currentScreen === 'HOME' ? 'neon-orange-glow-text' : ''}`}></i>
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Mapa</span>
           </button>
           
           <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
-            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <div className={`w-8 h-1 bg-[#FF6B00] absolute bottom-[-4px] rounded-full transition-all shadow-[0_0_12px_#FF6B00] ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-wallet text-lg sm:text-xl ${currentScreen === 'WALLET' ? 'neon-orange-glow-text' : ''}`}></i>
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ganhos</span>
           </button>
           
           <button onClick={() => { playClick(); setCurrentScreen('ORDERS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'ORDERS' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
-            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <div className={`w-8 h-1 bg-[#FF6B00] absolute bottom-[-4px] rounded-full transition-all shadow-[0_0_12px_#FF6B00] ${currentScreen === 'ORDERS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-question-circle text-lg sm:text-xl ${currentScreen === 'ORDERS' ? 'neon-orange-glow-text' : ''}`}></i>
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ajuda</span>
           </button>
           
           <button onClick={() => { playClick(); setCurrentScreen('SETTINGS'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'SETTINGS' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
-            <div className={`w-10 h-1.5 bg-[#FF6B00] absolute -top-10 rounded-b-full transition-all shadow-[0_0_15px_#FF6B00] ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
+            <div className={`w-8 h-1 bg-[#FF6B00] absolute bottom-[-4px] rounded-full transition-all shadow-[0_0_12px_#FF6B00] ${currentScreen === 'SETTINGS' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-user-gear text-lg sm:text-xl ${currentScreen === 'SETTINGS' ? 'neon-orange-glow-text' : ''}`}></i>
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Perfil</span>
           </button>
