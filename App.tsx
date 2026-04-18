@@ -1490,7 +1490,20 @@ const App: React.FC = () => {
                   console.log(`🚀 [POLLING] Status advance detected for mission ${mainServerMission.id}: ${status} -> ${mainServerMission.status}`);
                   
                   if (['completed', 'closed', 'returned'].includes(mainServerMission.status)) {
-                    processDeliverySuccess();
+                    // If already in RETURNING state, the merchant just finalized the return.
+                    // Earnings were already recorded at delivery-complete time — just show victory screen.
+                    if (statusRef.current === DriverStatus.RETURNING) {
+                      console.log('🎉 [RANK-ADVANCE] Merchant finalized return. Showing post-delivery modal.');
+                      setStatus(DriverStatus.ONLINE);
+                      setMission(null);
+                      setActiveMissions([]);
+                      setIsNavigating(false);
+                      setBatchHasReturn(false);
+                      playRugido();
+                      setShowPostDeliveryModal(true);
+                    } else {
+                      processDeliverySuccess();
+                    }
                   } else if (['cancelled', 'canceled'].includes(mainServerMission.status)) {
                     triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
                     setMission(null);
@@ -1502,8 +1515,6 @@ const App: React.FC = () => {
                     setStatus(nextStatus);
                     setMission(mainServerMission);
                   }
-                } else if (serverRank < currentRank) {
-                  console.log(`🛡️ [POLLING] Blocked status regression: Local is ${status} (${currentRank}), Server is ${mainServerMission.status} (${serverRank})`);
                 }
               }
 
@@ -1557,14 +1568,46 @@ const App: React.FC = () => {
               const isInMission = ![DriverStatus.OFFLINE, DriverStatus.ONLINE, DriverStatus.ALERTING].includes(currentStatus);
               
               if (isInMission) {
-                console.log(`🛡️ [POLLING] No missions found in DB while in status ${currentStatus}. Forcing recovery to ONLINE.`);
-                setStatus(DriverStatus.ONLINE);
-                setMission(null);
-                setActiveMissions([]);
-                setIsNavigating(false);
-                setBatchHasReturn(false);
-                // Trigger success sound to signal finalization
-                playSuccess();
+                console.log(`🛡️ [POLLING] No missions found in DB while in status ${currentStatus}. Checking last mission status...`);
+
+                let finalDbStatus: string | null = null;
+                if (missionRef.current?.id) {
+                    const { data: lastMissionData } = await supabaseClient.supabase
+                        .from('deliveries')
+                        .select('status')
+                        .eq('id', missionRef.current.id)
+                        .single();
+                    finalDbStatus = lastMissionData?.status || null;
+                }
+
+                if (['cancelled', 'canceled'].includes(finalDbStatus || '')) {
+                    // Mission was explicitly cancelled — show cancellation alert
+                    triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
+                    setStatus(DriverStatus.ONLINE);
+                    setMission(null);
+                    setActiveMissions([]);
+                    setIsNavigating(false);
+                    setBatchHasReturn(false);
+                } else if (['completed', 'returned', 'closed'].includes(finalDbStatus || '') || currentStatus === DriverStatus.RETURNING) {
+                    // ✅ Merchant finalized the return — show victory screen!
+                    // Note: earnings were already recorded when the delivery was first completed.
+                    // We must NOT call processDeliverySuccess() again to avoid double-counting.
+                    console.log('🎉 [POLLING] Return phase finalized by merchant. Showing post-delivery modal.');
+                    setStatus(DriverStatus.ONLINE);
+                    setMission(null);
+                    setActiveMissions([]);
+                    setIsNavigating(false);
+                    setBatchHasReturn(false);
+                    playRugido();
+                    setShowPostDeliveryModal(true);
+                } else {
+                    // Generic fallback — go back to lobby silently
+                    setStatus(DriverStatus.ONLINE);
+                    setMission(null);
+                    setActiveMissions([]);
+                    setIsNavigating(false);
+                    setBatchHasReturn(false);
+                }
               } else if (currentStatus !== DriverStatus.ALERTING) {
                 setActiveMissions([]);
               }
