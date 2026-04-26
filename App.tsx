@@ -430,6 +430,32 @@ const App: React.FC = () => {
   const [showTraffic, setShowTraffic] = useState(false);
   const [mapTheme, setMapTheme] = useState<'dark' | 'light'>('light');
 
+  // ---------------- AUTOMATIC MAP THEME (DAY/NIGHT) ----------------
+  useEffect(() => {
+    const updateMapTheme = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // Modo dia: 06:00 até 17:59
+      // Modo noite: 18:00 até 05:59
+      const newTheme = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+      
+      setMapTheme(prev => {
+        if (prev !== newTheme) return newTheme;
+        return prev;
+      });
+      
+      console.log(`[Auto-Theme] Horário: ${hour}h - Aplicando tema: ${newTheme}`);
+    };
+
+    // Executa imediatamente ao montar
+    updateMapTheme();
+
+    // Verifica a cada minuto para garantir a transição suave
+    const interval = setInterval(updateMapTheme, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Estado para Tabs da Wallet e Filtros
   const [walletTab, setWalletTab] = useState<'ENTRIES' | 'PAYOUTS'>('ENTRIES');
   const [activeWeekId, setActiveWeekId] = useState('current');
