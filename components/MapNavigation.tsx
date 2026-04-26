@@ -202,13 +202,27 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
             center: currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
             zoom: 18,
-            pitch: 0,
+            pitch: 65,
             bearing: 0,
             antialias: true
         });
 
         const add3DBuildings = () => {
             if (!map.current) return;
+
+            // Add Sky Layer for realistic horizon in 3D
+            if (!map.current.getLayer('sky')) {
+                map.current.addLayer({
+                    'id': 'sky',
+                    'type': 'sky',
+                    'paint': {
+                        'sky-type': 'atmosphere',
+                        'sky-atmosphere-sun': [0.0, 0.0],
+                        'sky-atmosphere-sun-intensity': 15
+                    }
+                });
+            }
+
             const layers = map.current.getStyle()?.layers;
             const labelLayerId = layers?.find(
                 (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
@@ -225,7 +239,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     'type': 'fill-extrusion',
                     'minzoom': 15,
                     'paint': {
-                        'fill-extrusion-color': theme === 'dark' ? '#444' : '#aaa',
+                        'fill-extrusion-color': theme === 'dark' ? '#333' : '#ddd',
                         'fill-extrusion-height': [
                             'interpolate',
                             ['linear'],
@@ -244,7 +258,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                             15.05,
                             ['get', 'min_height']
                         ],
-                        'fill-extrusion-opacity': 0.6
+                        'fill-extrusion-opacity': 0.8
                     }
                 },
                 labelLayerId
@@ -383,7 +397,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     bearing: targetBearing,
                     duration: 500, // Reduced from 1200ms to eliminate rotation lag
                     padding: { top: dynamicTopPadding, bottom: 80 }, 
-                    pitch: 0,
+                    pitch: 65,
                     easing: (t) => t
                 });
             } else {
@@ -394,7 +408,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     padding: { top: dynamicTopPadding, bottom: 80 },
-                    pitch: 0,
+                    pitch: 65,
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -497,7 +511,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     // Exit 3D mode and zoom in
                     map.current?.easeTo({
-                        pitch: 0,
+                        pitch: 65,
                         zoom: 18.5,
                         duration: 1500
                     });
@@ -506,7 +520,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     // Return to top-down mode
                     map.current?.easeTo({
-                        pitch: 0,
+                        pitch: 65,
                         zoom: 18,
                         duration: 1500
                     });
@@ -567,9 +581,10 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         geometry: route.geometry
                     });
                 } else {
-                    map.current?.on('load', () => {
-                         if (map.current?.getSource('route')) return;
-                         map.current?.addSource('route', {
+                    const addRouteLayers = () => {
+                        if (!map.current || map.current.getSource('route')) return;
+                        
+                        map.current.addSource('route', {
                             type: 'geojson',
                             data: {
                                 type: 'Feature',
@@ -577,33 +592,35 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 geometry: route.geometry
                             }
                         });
-                        map.current?.addLayer({
-                            id: 'route',
+
+                        // Route Shadow Layer for "Elevated" look
+                        map.current.addLayer({
+                            id: 'route-shadow',
                             type: 'line',
                             source: 'route',
                             layout: { 'line-join': 'round', 'line-cap': 'round' },
-                            paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 0.8 }
-                        });
-                    });
-                    
-                    // If map is already loaded but source doesn't exist
-                     if (map.current?.loaded()) {
-                        map.current?.addSource('route', {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                properties: {},
-                                geometry: route.geometry
+                            paint: { 
+                                'line-color': '#000', 
+                                'line-width': 8, 
+                                'line-opacity': 0.3,
+                                'line-translate': [3, 3] 
                             }
                         });
-                        map.current?.addLayer({
+
+                        map.current.addLayer({
                             id: 'route',
                             type: 'line',
                             source: 'route',
                             layout: { 'line-join': 'round', 'line-cap': 'round' },
-                            paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 0.8 }
+                            paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 1.0 }
                         });
-                     }
+                    };
+
+                    if (map.current?.loaded()) {
+                        addRouteLayers();
+                    } else {
+                        map.current?.on('load', addRouteLayers);
+                    }
                 }
             }
         } catch (e) {
