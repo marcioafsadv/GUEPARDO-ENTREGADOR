@@ -202,7 +202,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
             center: currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
             zoom: 18,
-            pitch: 65,
+            pitch: 45,
             bearing: 0,
             antialias: true
         });
@@ -295,8 +295,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         
         marker.current = new mapboxgl.Marker({
             element: el,
-            rotationAlignment: 'viewport', // Marker always points relative to screen top
-            pitchAlignment: 'map'
+            rotationAlignment: 'viewport', 
+            pitchAlignment: 'viewport'
         })
             .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]))
             .addTo(map.current);
@@ -397,7 +397,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     bearing: targetBearing,
                     duration: 500, // Reduced from 1200ms to eliminate rotation lag
                     padding: { top: dynamicTopPadding, bottom: 80 }, 
-                    pitch: 65,
+                    pitch: 45,
                     easing: (t) => t
                 });
             } else {
@@ -408,7 +408,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     padding: { top: dynamicTopPadding, bottom: 80 },
-                    pitch: 65,
+                    pitch: 45,
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -511,7 +511,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     // Exit 3D mode and zoom in
                     map.current?.easeTo({
-                        pitch: 65,
+                        pitch: 45,
                         zoom: 18.5,
                         duration: 1500
                     });
@@ -520,7 +520,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     // Return to top-down mode
                     map.current?.easeTo({
-                        pitch: 65,
+                        pitch: 45,
                         zoom: 18,
                         duration: 1500
                     });
