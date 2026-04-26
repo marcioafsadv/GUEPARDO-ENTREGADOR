@@ -244,6 +244,20 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
   };
 };
 
+/**
+ * Calcula a distância entre dois pontos usando a fórmula de Haversine (em km)
+ */
+const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Raio da Terra em km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 const App: React.FC = () => {
   // Splash Screen
   const [showSplash, setShowSplash] = useState(true);
@@ -418,6 +432,41 @@ const App: React.FC = () => {
   }>({ store: null, customer: null });
 
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
+
+  /**
+   * Regra de Chamada Progressiva (Raio/Tempo)
+   * 0-30s: 1km | 30-60s: 2km | 60-120s: 3km | >120s: 5km
+   */
+  const shouldShowAlert = (dbMission: any) => {
+    // Se não temos a localização do entregador, permitimos a chamada (fallback seguro)
+    if (!currentLocation) return true;
+
+    // Obtém coordenadas da loja (origem da chamada)
+    const storeLat = dbMission.store_lat || dbMission.stores?.lat;
+    const storeLng = dbMission.store_lng || dbMission.stores?.lng;
+
+    if (!storeLat || !storeLng) return true;
+
+    // Calcula distância e tempo decorrido
+    const dist = getDistance(currentLocation.lat, currentLocation.lng, storeLat, storeLng);
+    const now = new Date();
+    const created = new Date(dbMission.created_at);
+    const diffSeconds = (now.getTime() - created.getTime()) / 1000;
+
+    // Define raio máximo permitido
+    let maxRadius = 1.0;
+    if (diffSeconds >= 120) maxRadius = 5.0;
+    else if (diffSeconds >= 60) maxRadius = 3.0;
+    else if (diffSeconds >= 30) maxRadius = 2.0;
+
+    const isAllowed = dist <= maxRadius;
+
+    if (!isAllowed) {
+      console.log(`[Dispatch-Rule] Missão ${dbMission.id} ocultada: Dist ${dist.toFixed(2)}km > Max ${maxRadius}km (Tempo: ${diffSeconds.toFixed(0)}s)`);
+    }
+
+    return isAllowed;
+  };
   const [isNavigating, setIsNavigating] = useState(false);
   const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string } | null>(null);
 
@@ -1308,8 +1357,8 @@ const App: React.FC = () => {
           }
 
           if (pendingDeliveries && pendingDeliveries.length > 0) {
-            // Find the first pending delivery that hasn't been rejected
-            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)));
+            // Find the first pending delivery that hasn't been rejected and satisfies the dispatch rule
+            const firstPending = pendingDeliveries.find(d => !rejectedMissions.includes(String(d.id)) && shouldShowAlert(d));
 
             if (firstPending) {
               console.log("✅ Found valid pending delivery:", firstPending);
@@ -1367,6 +1416,11 @@ const App: React.FC = () => {
           // Only show if not already showing a mission
           if ((mission as any) && (!(mission as any).batch_id || (mission as any).batch_id !== newMissionPayload.batch_id)) {
             console.log("⚠️ Already showing a different mission or batch, ignoring new one");
+            return;
+          }
+
+          // Regra de Chamada Progressiva (Raio/Tempo)
+          if (!shouldShowAlert(newMissionPayload)) {
             return;
           }
 
@@ -1650,8 +1704,8 @@ const App: React.FC = () => {
               .limit(10);
 
             if (allPending && allPending.length > 0) {
-              // Filter locally: Only public OR targeted to ME
-              const availablePending = allPending.filter(d => (!d.driver_id || d.driver_id === userId) && !rejectedMissions.includes(String(d.id)));
+              // Filter locally: Only public OR targeted to ME AND satisfying the dispatch rule
+              const availablePending = allPending.filter(d => (!d.driver_id || d.driver_id === userId) && !rejectedMissions.includes(String(d.id)) && shouldShowAlert(d));
 
               const firstPending = availablePending[0];
               if (firstPending) {
