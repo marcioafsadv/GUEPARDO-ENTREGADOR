@@ -504,8 +504,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     progress: progressPct
                 });
 
-                // Proximity-based UI refinement: Hide speedometer within 500m
-                setHideSpeedometer(route.distance < 500);
 
                 // Arrival Alert Detection (within 100m)
                 if (route.distance < 100 && !isArriving) {
