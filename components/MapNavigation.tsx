@@ -400,7 +400,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     bearing: targetBearing,
                     duration: 500, // Reduced from 1200ms to eliminate rotation lag
                     padding: { top: dynamicTopPadding, bottom: 80 }, 
-                    pitch: 55,
+                    pitch: isArriving ? 0 : 55,
                     easing: (t) => t
                 });
             } else {
@@ -411,7 +411,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 map.current.easeTo({
                     center: [currentLocation.lng, currentLocation.lat],
                     padding: { top: dynamicTopPadding, bottom: 80 },
-                    pitch: 55,
+                    pitch: isArriving ? 0 : 55,
                     duration: 1000,
                     easing: (t) => t
                 });
@@ -514,8 +514,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     
                     // Exit 3D mode and zoom in
                     map.current?.easeTo({
-                        pitch: 55,
-                        zoom: 18.5,
+                        pitch: 0,
+                        zoom: 19,
                         duration: 1500
                     });
                 } else if (route.distance >= 100 && isArriving) {
@@ -694,18 +694,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 </div>
             </div>
 
-            {/* Arrival Alert Overlay */}
-            {isArriving && !['ARRIVED_AT_STORE', 'READY_FOR_PICKUP', 'PICKING_UP', 'ARRIVED_AT_CUSTOMER', 'RETURNING'].includes(status) && (
-                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-700">
-                    <div className="bg-gradient-to-br from-[#FF6B00] to-[#CC5200] text-white px-12 py-7 rounded-[40px] shadow-[0_0_60px_rgba(255,107,0,0.5),0_0_20px_rgba(212,175,55,0.3)] border-4 border-[#D4AF37]/40 animate-bounce flex flex-col items-center gap-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1 italic transform -skew-x-6">{delivererName}</p>
-                        <i className="fas fa-location-dot text-5xl text-[#FFD700] drop-shadow-[0_0_15px_rgba(255,215,0,0.6)]"></i>
-                        <span className="text-3xl font-black italic uppercase tracking-tighter leading-none">
-                            {status === 'GOING_TO_STORE' ? 'chegando na loja' : 'chegando no cliente'}
-                        </span>
-                    </div>
-                </div>
-            )}
 
             {/* Ready for Pickup Alert Overlay - Floating at top map area (not covering footer) */}
             {status === 'READY_FOR_PICKUP' && (
