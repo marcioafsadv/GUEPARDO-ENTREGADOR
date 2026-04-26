@@ -305,20 +305,23 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const destEl = document.createElement('div');
         destEl.className = 'destination-marker-wrapper';
         destEl.innerHTML = `
-            <svg width="40" height="40" viewBox="0 0 40 40" class="destination-marker-svg">
-                <circle cx="20" cy="20" r="15" fill="rgba(204, 255, 0, 0.3)">
-                    <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" />
+            <svg width="50" height="50" viewBox="0 0 50 50" class="destination-marker-svg">
+                <!-- Pulse Effect around the pin base -->
+                <circle cx="25" cy="40" r="10" fill="rgba(204, 255, 0, 0.4)">
+                    <animate attributeName="r" values="8;15;8" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                 </circle>
-                <circle cx="20" cy="20" r="10" fill="#7B3F00" stroke="#CCFF00" stroke-width="3" />
-                <circle cx="20" cy="20" r="3" fill="#CCFF00" />
+                <!-- Pin Shape -->
+                <path d="M25 42C25 42 38 28 38 18C38 10.8203 32.1797 5 25 5C17.8203 5 12 10.8203 12 18C12 28 25 42 25 42Z" fill="#7B3F00" stroke="#CCFF00" stroke-width="2.5" />
+                <!-- Inner Dot -->
+                <circle cx="25" cy="18" r="5" fill="#CCFF00" />
             </svg>
         `;
 
         destinationMarker.current = new mapboxgl.Marker({
             element: destEl,
-            rotationAlignment: 'map',
-            pitchAlignment: 'map'
+            rotationAlignment: 'viewport',
+            pitchAlignment: 'viewport'
         });
 
         if (destinationCoords) {
