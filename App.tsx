@@ -3667,8 +3667,24 @@ const App: React.FC = () => {
                   <p className="text-[10px] font-bold text-zinc-500 mt-2">Fique atento, novas missões podem surgir a qualquer segundo!</p>
                 </div>
               ) : (
-                missionsToShow.map((m) => {
+              missionsToShow.map((m) => {
                   const missionData = mapDbDeliveryToMission(m);
+                  const scheduledAt = m.items?.scheduledAt || m.items?.scheduled_at || null;
+                  const isScheduledMission = !!scheduledAt;
+
+                  // Parse scheduled time to check if it's already due
+                  let isScheduledTimeDue = false;
+                  let minutesUntilScheduled = null;
+                  if (scheduledAt) {
+                    const now = new Date();
+                    const [hh, mm] = scheduledAt.split(':').map(Number);
+                    const scheduledDate = new Date();
+                    scheduledDate.setHours(hh, mm, 0, 0);
+                    const diffMs = scheduledDate.getTime() - now.getTime();
+                    isScheduledTimeDue = diffMs <= 0;
+                    minutesUntilScheduled = Math.max(0, Math.ceil(diffMs / 60000));
+                  }
+
                   return (
                     <div key={m.id} className="p-6 rounded-[32px] border border-white/5 bg-[#1A0C06] shadow-2xl relative overflow-hidden group animate-in slide-in-from-bottom-4 duration-500">
                       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><i className="fas fa-paw text-6xl text-[#FF6B00]"></i></div>
@@ -3689,43 +3705,55 @@ const App: React.FC = () => {
                           <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center mt-0.5"><i className="fas fa-location-dot text-[#FF6B00] text-[10px]"></i></div>
                           <div>
                             <p className="text-[11px] font-bold text-zinc-400 leading-tight italic line-clamp-2">{missionData.customerAddress}</p>
-                            {m.items && (m.items.scheduledAt || m.items.scheduled_at) && (
+                            {isScheduledMission && (
                               <div className="mt-2 flex items-center space-x-2 text-[#FFD700]">
                                 <i className="far fa-clock text-[10px]"></i>
-                                <span className="text-[9px] font-black uppercase tracking-widest">Agendado para {m.items.scheduledAt || m.items.scheduled_at}</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest">Agendado para {scheduledAt}</span>
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <button
-                        onClick={async () => {
-                          if (status !== DriverStatus.ONLINE) {
-                             alert("Você precisa estar Online para aceitar missões.");
-                             return;
-                          }
-                          try {
-                            const accepted = await supabaseClient.acceptMission(m.id, userId);
-                            if (accepted) {
-                              if (playAccept) playAccept();
-                              // Sync state locally
-                              const dynamicMission = mapDbDeliveryToMission(accepted);
-                              setMission(dynamicMission);
-                              setActiveMissions([dynamicMission]);
-                              setStatus(DriverStatus.GOING_TO_STORE);
-                              setIsNavigating(true);
-                              setCurrentScreen('HOME');
+                      {/* SCHEDULED: show countdown, no accept button */}
+                      {isScheduledMission && !isScheduledTimeDue ? (
+                        <div className="w-full py-5 px-6 rounded-[22px] border-2 border-dashed border-[#FFD700]/30 bg-[#FFD700]/5 flex flex-col items-center text-center space-y-2">
+                          <i className="far fa-clock text-[#FFD700] text-xl animate-pulse"></i>
+                          <p className="text-[#FFD700] font-black text-xs uppercase tracking-widest">Disponível às {scheduledAt}</p>
+                          <p className="text-zinc-500 font-bold text-[10px]">
+                            {minutesUntilScheduled === 0 ? 'Em instantes...' : `Em ${minutesUntilScheduled} minuto${minutesUntilScheduled !== 1 ? 's' : ''}`}
+                          </p>
+                          <p className="text-zinc-600 text-[9px] uppercase tracking-widest">O Guepardo mais próximo será chamado automaticamente</p>
+                        </div>
+                      ) : (
+                        /* PENDING or SCHEDULED but time has passed: show accept button */
+                        <button
+                          onClick={async () => {
+                            if (status !== DriverStatus.ONLINE) {
+                               alert("Você precisa estar Online para aceitar missões.");
+                               return;
                             }
-                          } catch (err) {
-                            alert("Não foi possível aceitar esta missão. Ela pode já ter sido aceita por outro Guepardo.");
-                            fetchAvailableMissions();
-                          }
-                        }}
-                        className="w-full h-16 bg-[#FF6B00] rounded-[22px] font-black text-white uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 active:scale-95 transition-all text-xs italic"
-                      >
-                        Aceitar Missão
-                      </button>
+                            try {
+                              const accepted = await supabaseClient.acceptMission(m.id, userId);
+                              if (accepted) {
+                                if (playAccept) playAccept();
+                                const dynamicMission = mapDbDeliveryToMission(accepted);
+                                setMission(dynamicMission);
+                                setActiveMissions([dynamicMission]);
+                                setStatus(DriverStatus.GOING_TO_STORE);
+                                setIsNavigating(true);
+                                setCurrentScreen('HOME');
+                              }
+                            } catch (err) {
+                              alert("Não foi possível aceitar esta missão. Ela pode já ter sido aceita por outro Guepardo.");
+                              fetchAvailableMissions();
+                            }
+                          }}
+                          className="w-full h-16 bg-[#FF6B00] rounded-[22px] font-black text-white uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 active:scale-95 transition-all text-xs italic"
+                        >
+                          Aceitar Missão
+                        </button>
+                      )}
                     </div>
                   );
                 })
