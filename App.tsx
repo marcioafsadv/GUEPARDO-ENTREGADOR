@@ -15,7 +15,7 @@ import { ChatMultilateralModal } from './components/ChatMultilateralModal';
 import { processWizardRegistration } from './utils/wizardProcessor';
 
 
-type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'IDENTITY_VERIFICATION';
+type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'IDENTITY_VERIFICATION' | 'AVAILABLE_MISSIONS';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION' | 'PENDING_APPROVAL';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
@@ -412,6 +412,9 @@ const App: React.FC = () => {
   const [showProximityModal, setShowProximityModal] = useState(false);
   const [isResumoExpanded, setIsResumoExpanded] = useState(false);
   const [mapCenterKey, setMapCenterKey] = useState(0);
+  const [availableMissions, setAvailableMissions] = useState<any[]>([]);
+  const [availableMissionsTab, setAvailableMissionsTab] = useState<'PENDING' | 'SCHEDULED'>('PENDING');
+  const [isLoadingMissions, setIsLoadingMissions] = useState(false);
   const [lastEarnings, setLastEarnings] = useState(0);
   const [batchEarnings, setBatchEarnings] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
@@ -467,6 +470,33 @@ const App: React.FC = () => {
 
     return isAllowed;
   };
+
+  const fetchAvailableMissions = async () => {
+    if (status !== DriverStatus.ONLINE) return;
+    setIsLoadingMissions(true);
+    try {
+      const { data, error } = await supabaseClient.supabase
+        .from('deliveries')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAvailableMissions(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar mural de missões:", err);
+    } finally {
+      setIsLoadingMissions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentScreen === 'AVAILABLE_MISSIONS') {
+      fetchAvailableMissions();
+      const interval = setInterval(fetchAvailableMissions, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [currentScreen, status]);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string } | null>(null);
 
@@ -1335,7 +1365,8 @@ const App: React.FC = () => {
       console.log("Listening for new missions...");
 
       // FETCH EXISTING PENDING DELIVERIES FIRST
-      const fetchPendingDeliveries = async () => {
+
+  const fetchPendingDeliveries = async () => {
         try {
           console.log("🔍 Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
           const { data: allPending, error } = await supabaseClient.supabase
@@ -1504,7 +1535,8 @@ const App: React.FC = () => {
     let pollingInterval: any;
 
     if (status !== DriverStatus.OFFLINE && userId && currentUser) {
-      const checkForDeliveries = async () => {
+
+  const checkForDeliveries = async () => {
         // Skip if currently processing a completion to avoid race conditions
         if (isCompletingMission.current) {
           console.log('⏳ Skipping polling update: Mission completion in progress...');
@@ -3592,6 +3624,115 @@ const App: React.FC = () => {
     </div>
   );
 }
+      case 'AVAILABLE_MISSIONS': {
+        const missionsToShow = availableMissions.filter(m => {
+          const isScheduled = m.status === 'scheduled' || (m.items && (m.items.scheduledAt || m.items.scheduled_at));
+          return availableMissionsTab === 'PENDING' ? !isScheduled : isScheduled;
+        });
+
+        return (
+          <div className={`h-full w-full p-6 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]`}>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-4">
+                <button onClick={() => setCurrentScreen('HOME')} className={`w-11 h-11 rounded-2xl flex items-center justify-center border border-white/10 bg-[#1A0C06] text-white shadow-xl`}>
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+                <h1 className={`text-3xl font-black italic text-[#F5E6D3] tracking-tighter transform -skew-x-6`}>Mural do Guepardo</h1>
+              </div>
+              {isLoadingMissions && <i className="fas fa-circle-notch animate-spin text-[#FF6B00]"></i>}
+            </div>
+
+            <div className={`flex p-1 rounded-2xl mb-8 bg-black/40 border border-white/5`}>
+              <button
+                onClick={() => setAvailableMissionsTab('PENDING')}
+                className={`flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${availableMissionsTab === 'PENDING' ? 'bg-[#FF6B00] text-white shadow-lg shadow-orange-950/20' : 'text-zinc-500'}`}
+              >
+                Pendentes ({availableMissions.filter(m => !(m.status === 'scheduled' || (m.items && (m.items.scheduledAt || m.items.scheduled_at)))).length})
+              </button>
+              <button
+                onClick={() => setAvailableMissionsTab('SCHEDULED')}
+                className={`flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${availableMissionsTab === 'SCHEDULED' ? 'bg-[#FF6B00] text-white shadow-lg shadow-orange-900/20' : 'text-zinc-500'}`}
+              >
+                Programadas ({availableMissions.filter(m => (m.status === 'scheduled' || (m.items && (m.items.scheduledAt || m.items.scheduled_at)))).length})
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {missionsToShow.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-black/40 border border-white/5">
+                    <i className={`fas ${availableMissionsTab === 'PENDING' ? 'fa-box-open' : 'fa-calendar-clock'} text-3xl text-[#FF6B00]`}></i>
+                  </div>
+                  <p className="text-sm font-black text-white uppercase tracking-[0.2em]">Sem missões no momento</p>
+                  <p className="text-[10px] font-bold text-zinc-500 mt-2">Fique atento, novas missões podem surgir a qualquer segundo!</p>
+                </div>
+              ) : (
+                missionsToShow.map((m) => {
+                  const missionData = mapDbDeliveryToMission(m);
+                  return (
+                    <div key={m.id} className="p-6 rounded-[32px] border border-white/5 bg-[#1A0C06] shadow-2xl relative overflow-hidden group animate-in slide-in-from-bottom-4 duration-500">
+                      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><i className="fas fa-paw text-6xl text-[#FF6B00]"></i></div>
+                      
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="flex-1 pr-4">
+                          <p className="text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.3em] mb-1.5 italic">LOJA</p>
+                          <h3 className="text-xl font-black text-white truncate italic transform -skew-x-3">{missionData.storeName}</h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1.5 italic">GANHO</p>
+                          <p className="text-2xl font-black text-white italic tracking-tighter">{formatCurrency(missionData.earnings || 0)}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 mb-8">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center mt-0.5"><i className="fas fa-location-dot text-[#FF6B00] text-[10px]"></i></div>
+                          <div>
+                            <p className="text-[11px] font-bold text-zinc-400 leading-tight italic line-clamp-2">{missionData.customerAddress}</p>
+                            {m.items && (m.items.scheduledAt || m.items.scheduled_at) && (
+                              <div className="mt-2 flex items-center space-x-2 text-[#FFD700]">
+                                <i className="far fa-clock text-[10px]"></i>
+                                <span className="text-[9px] font-black uppercase tracking-widest">Agendado para {m.items.scheduledAt || m.items.scheduled_at}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          if (status !== DriverStatus.ONLINE) {
+                             alert("Você precisa estar Online para aceitar missões.");
+                             return;
+                          }
+                          try {
+                            const accepted = await supabaseClient.acceptMission(m.id, userId);
+                            if (accepted) {
+                              if (playAccept) playAccept();
+                              // Sync state locally
+                              const dynamicMission = mapDbDeliveryToMission(accepted);
+                              setMission(dynamicMission);
+                              setActiveMissions([dynamicMission]);
+                              setStatus(DriverStatus.GOING_TO_STORE);
+                              setIsNavigating(true);
+                              setCurrentScreen('HOME');
+                            }
+                          } catch (err) {
+                            alert("Não foi possível aceitar esta missão. Ela pode já ter sido aceita por outro Guepardo.");
+                            fetchAvailableMissions();
+                          }
+                        }}
+                        className="w-full h-16 bg-[#FF6B00] rounded-[22px] font-black text-white uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 active:scale-95 transition-all text-xs italic"
+                      >
+                        Aceitar Missão
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        );
       case 'IDENTITY_VERIFICATION': {
         return (
           <div className="flex flex-col items-center justify-center h-full p-8 bg-[#0f0502]">
@@ -4546,19 +4687,29 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            <button
-              onClick={handleOpenNotifications}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-[#1A0C06] border border-[#D4AF37]/30 shadow-lg relative`}
-            >
-              <div className="relative">
-                <i className={`fas fa-bell text-base ${textPrimary}`}></i>
-                {unreadCount > 0 && !notificationsSeen && (
-                  <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
-                    <span className="text-[8px] font-black text-white">{unreadCount}</span>
-                  </div>
-                )}
-              </div>
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* Mural de Missões */}
+              <button
+                onClick={() => { playClick(); setCurrentScreen('AVAILABLE_MISSIONS'); }}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-[#1A0C06] border border-[#FF6B00]/30 shadow-lg relative ${currentScreen === 'AVAILABLE_MISSIONS' ? 'bg-[#FF6B00]/20' : ''}`}
+              >
+                <i className={`fas fa-clipboard-list text-base text-[#FF6B00]`}></i>
+              </button>
+
+              <button
+                onClick={handleOpenNotifications}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-[#1A0C06] border border-[#D4AF37]/30 shadow-lg relative`}
+              >
+                <div className="relative">
+                  <i className={`fas fa-bell text-base ${textPrimary}`}></i>
+                  {unreadCount > 0 && !notificationsSeen && (
+                    <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-black flex items-center justify-center">
+                      <span className="text-[8px] font-black text-white">{unreadCount}</span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            </div>
           </div>
         )}
 
