@@ -15,15 +15,17 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}']
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.png'],
       manifest: {
         name: 'Guepardo Entregador',
         short_name: 'Guepardo',
-        description: 'Aplicativo para entregadores do Papaléguas Delivery',
+        description: 'Aplicativo oficial para entregadores da Guepardo Delivery',
         theme_color: '#FF6B00',
         background_color: '#121212',
         display: 'standalone',
         orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
