@@ -441,6 +441,23 @@ const App: React.FC = () => {
    * 0-30s: 1km | 30-60s: 2km | 60-120s: 3km | >120s: 5km
    */
   const shouldShowAlert = (dbMission: any) => {
+    // ── SCHEDULED ORDER GUARD ──────────────────────────────────────────────
+    // If the mission has a future scheduledAt time, block the dispatch alert.
+    // The Lojista's scheduler will remove scheduledAt at the due time,
+    // after which this guard passes and normal radius dispatch takes over.
+    const scheduledAt = dbMission.items?.scheduledAt || dbMission.items?.scheduled_at;
+    if (scheduledAt) {
+      const now = new Date();
+      const [hh, mm] = String(scheduledAt).split(':').map(Number);
+      const scheduledDate = new Date();
+      scheduledDate.setHours(hh, mm, 0, 0);
+      if (scheduledDate.getTime() > now.getTime()) {
+        console.log(`[Dispatch-Rule] Missão ${dbMission.id} bloqueada: Agendada para ${scheduledAt}, ainda não chegou o horário.`);
+        return false;
+      }
+    }
+    // ── END SCHEDULED ORDER GUARD ──────────────────────────────────────────
+
     // Se não temos a localização do entregador, permitimos a chamada (fallback seguro)
     if (!currentLocation) return true;
 
