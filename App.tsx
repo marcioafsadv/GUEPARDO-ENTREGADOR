@@ -3733,6 +3733,7 @@ const App: React.FC = () => {
             </div>
           </div>
         );
+      }
       case 'IDENTITY_VERIFICATION': {
         return (
           <div className="flex flex-col items-center justify-center h-full p-8 bg-[#0f0502]">
