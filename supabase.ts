@@ -285,18 +285,38 @@ export const acceptMission = async (missionId: string, driverId: string) => {
       accepted_at: new Date().toISOString()
     })
     .eq('id', missionId)
-    .eq('status', 'pending') // Ensure it's still pending
+    .eq('status', 'pending') // Atomic: only succeeds if still pending
     .select()
-    .single();
-
+    .maybeSingle(); // Returns null instead of error if no rows matched
 
   if (error) throw error;
-  
+
+  // If update matched 0 rows (mission already accepted), check if WE own it
+  // This handles the idempotent case: courier tapped twice or had a stale state
+  if (!data) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('deliveries')
+      .select()
+      .eq('id', missionId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // If WE already own this mission, return it as if we just accepted it
+    if (existing && existing.driver_id === driverId) {
+      console.log(`✅ [acceptMission] Mission ${missionId} was already accepted by this driver. Resuming.`);
+      return existing;
+    }
+
+    // Truly accepted by someone else
+    throw new Error('ALREADY_ACCEPTED_BY_OTHER');
+  }
+
   // High-Speed Broadcast Fallback
   if (data && data.store_id) {
     emitMissionUpdate(data.store_id, data);
   }
-  
+
   return data;
 };
 

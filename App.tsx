@@ -499,7 +499,9 @@ const App: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAvailableMissions(data || []);
+      // Filter out missions the courier already rejected locally
+      const filtered = (data || []).filter(d => !rejectedMissions.includes(String(d.id)));
+      setAvailableMissions(filtered);
     } catch (err) {
       console.error("Erro ao buscar mural de missões:", err);
     } finally {
@@ -3761,8 +3763,12 @@ const App: React.FC = () => {
                                 setIsNavigating(true);
                                 setCurrentScreen('HOME');
                               }
-                            } catch (err) {
-                              alert("Não foi possível aceitar esta missão. Ela pode já ter sido aceita por outro Guepardo.");
+                            } catch (err: any) {
+                              if (err?.message === 'ALREADY_ACCEPTED_BY_OTHER') {
+                                alert("Esta missão já foi aceita por outro Guepardo.");
+                              } else {
+                                alert("Não foi possível aceitar esta missão. Tente novamente.");
+                              }
                               fetchAvailableMissions();
                             }
                           }}
