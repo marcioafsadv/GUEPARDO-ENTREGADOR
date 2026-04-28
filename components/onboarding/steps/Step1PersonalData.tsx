@@ -73,13 +73,13 @@ const Step1PersonalData: React.FC<Step1PersonalDataProps> = ({ data, onUpdate, o
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
     return (
-        <div className="space-y-6">
-            <div>
+        <div className="flex flex-col h-full space-y-4">
+            <div className="shrink-0">
                 <h2 className={`text-3xl font-black italic ${textPrimary} mb-2`}>Dados Pessoais</h2>
                 <p className={`text-sm ${textMuted}`}>Preencha seus dados para começar</p>
             </div>
 
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
                 {/* Nome Completo */}
                 <div>
                     <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
@@ -215,12 +215,14 @@ const Step1PersonalData: React.FC<Step1PersonalDataProps> = ({ data, onUpdate, o
                 )}
             </div>
 
-            <button
-                onClick={validateAndNext}
-                className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
-            >
-                Continuar
-            </button>
+            <div className="shrink-0 pt-2">
+                <button
+                    onClick={validateAndNext}
+                    className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
+                >
+                    Continuar
+                </button>
+            </div>
         </div>
     );
 };

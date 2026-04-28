@@ -139,9 +139,9 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
     const textPrimary = theme === 'dark' ? 'text-white' : 'text-zinc-900';
 
     return (
-        <div className={`min-h-full w-full flex flex-col p-6 bg-transparent`}>
+        <div className={`h-full w-full flex flex-col p-4 sm:p-6 bg-transparent overflow-hidden`}>
             {/* Header with progress */}
-            <div className="w-full mb-6">
+            <div className="w-full mb-4 sm:mb-6 shrink-0">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className={`text-2xl font-black italic ${textPrimary}`}>
                         Cadastro de Entregador
@@ -158,7 +158,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
             </div>
 
             {/* Step content */}
-            <div className={`flex-1 w-full rounded-3xl border p-8 ${cardBg}`}>
+            <div className={`flex-1 w-full rounded-3xl border p-5 sm:p-8 ${cardBg} flex flex-col overflow-hidden relative`}>
                 {currentStep === 1 && (
                     <Step1PersonalData
                         data={{
@@ -264,7 +264,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
 
             {/* Navigation buttons */}
             {currentStep > 1 && currentStep < 6 && (
-                <div className="w-full mt-6">
+                <div className="w-full mt-4 sm:mt-6 shrink-0">
                     <button
                         onClick={handleBack}
                         className={`w-full h-14 rounded-2xl font-black uppercase tracking-widest ${theme === 'dark' ? 'bg-zinc-800 text-white' : 'bg-zinc-200 text-zinc-900'} hover:scale-105 transition-transform`}

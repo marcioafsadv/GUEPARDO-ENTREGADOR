@@ -166,14 +166,14 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
     };
 
     return (
-        <div className="space-y-6">
-            <div>
+        <div className="flex flex-col h-full space-y-4">
+            <div className="shrink-0">
                 <h2 className={`text-3xl font-black italic ${textPrimary} mb-2`}>Documentos</h2>
                 <p className={`text-sm ${textMuted}`}>Envie fotos dos documentos necessários</p>
             </div>
 
             {/* Instructions */}
-            <div className={`p-4 rounded-xl ${innerBg} space-y-2`}>
+            <div className={`shrink-0 p-4 rounded-xl ${innerBg} space-y-2`}>
                 <p className={`text-xs font-black uppercase tracking-widest ${textMuted}`}>
                     Dicas para fotos de documentos:
                 </p>
@@ -193,7 +193,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                 </ul>
             </div>
 
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
                 {Object.entries(documents).map(([key, doc]) => renderDocumentUpload(key, doc))}
             </div>
 
@@ -203,12 +203,14 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                 </div>
             )}
 
-            <button
-                onClick={validateAndNext}
-                className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
-            >
-                Continuar
-            </button>
+            <div className="shrink-0 pt-2">
+                <button
+                    onClick={validateAndNext}
+                    className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
+                >
+                    Continuar
+                </button>
+            </div>
         </div>
     );
 };
