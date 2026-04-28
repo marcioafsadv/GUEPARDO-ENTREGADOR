@@ -13,15 +13,15 @@
   "backgroundColor": "#121212",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://guepardodelivery-entregador.com/pwa-512x512.png",
-  "maskableIconUrl": "https://guepardodelivery-entregador.com/pwa-512x512.png",
+  "iconUrl": "https://guepardodelivery-entregador.com/GUEPARDO ENTREGADOR - LOGO.png",
+  "maskableIconUrl": "https://guepardodelivery-entregador.com/GUEPARDO ENTREGADOR - LOGO.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
     "alias": "android"
   },
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersionName": "3",
+  "appVersionCode": 3,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://guepardodelivery-entregador.com/manifest.webmanifest",
@@ -47,5 +47,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "3"
 }
