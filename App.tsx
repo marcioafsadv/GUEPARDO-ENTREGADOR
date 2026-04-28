@@ -2760,7 +2760,7 @@ const App: React.FC = () => {
 
     return (
       <div
-        className="min-h-full w-full flex flex-col relative overflow-hidden bg-transparent"
+        className="flex-1 w-full flex flex-col relative overflow-hidden bg-transparent"
       >
         {/* ── WATERMARK: logo 60% tela, canto superior direito, desfocado ── */}
         <div
@@ -2785,7 +2785,7 @@ const App: React.FC = () => {
         />
 
         {/* ── CONTEÚDO PRINCIPAL ── */}
-        <div className="relative z-10 flex flex-col h-full overflow-y-auto px-6">
+        <div className="relative z-10 flex flex-col flex-1 overflow-y-auto px-6 pb-12">
 
           {/* Hero Logo */}
           <div className="flex flex-col items-center pt-14 pb-5 shrink-0">
@@ -4649,8 +4649,8 @@ const App: React.FC = () => {
 
   if (onboardingScreen === 'WIZARD') {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
-        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
+      <div className="min-h-[100dvh] h-[100dvh] w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
+        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm flex flex-col">
           <WizardContainer
             onComplete={handleWizardComplete}
             onCancel={handleWizardCancel}
@@ -4664,10 +4664,10 @@ const App: React.FC = () => {
 
   if (!isAuthenticated || (currentUser.status === 'pending')) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
-        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm">
+      <div className="min-h-[100dvh] h-[100dvh] w-full flex items-center justify-center p-0 sm:p-4 bg-transparent">
+        <div className="w-full max-w-[480px] h-full sm:h-[90vh] sm:rounded-[40px] shadow-2xl overflow-hidden relative border border-white/5 bg-black/20 backdrop-blur-sm flex flex-col">
           {isAuthenticated && currentUser.status === 'pending' ? (
-            <div className="relative z-10 flex flex-col h-full overflow-y-auto px-6">
+            <div className="relative z-10 flex flex-col flex-1 overflow-y-auto px-6 pb-12">
               {/* Header Logo equivalent for the pending screen when logged in */}
               <div className="flex flex-col items-center pt-14 pb-5 shrink-0">
                 <img
