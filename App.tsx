@@ -597,6 +597,8 @@ const App: React.FC = () => {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [activeHelpOption, setActiveHelpOption] = useState<'central_support' | 'talk_to_store' | null>(null);
   const [centralMessage, setCentralMessage] = useState('');
+  const lastGpsUpdateRef = useRef<number>(Date.now());
+  const gpsRestartCounterRef = useRef<number>(0);
 
   const handleSendCentralMessage = () => {
     if (!mission) return;
@@ -1037,11 +1039,15 @@ const App: React.FC = () => {
       return;
     }
 
+    // 🚀 Warm-up silencioso para agilizar o fix inicial
+    navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: false, timeout: 3000 });
+
     navigator.geolocation.getCurrentPosition(
       () => {
         setGpsEnabled(true);
         setIsGpsLoading(false);
         setMapCenterKey(prev => prev + 1);
+        lastGpsUpdateRef.current = Date.now(); // Reset watchdog
       },
       (error) => {
         console.error("Erro GPS:", error);
@@ -1049,9 +1055,16 @@ const App: React.FC = () => {
         setGpsEnabled(false);
         if (error.code === error.PERMISSION_DENIED) {
           alert("Você precisa permitir o acesso à localização.");
+        } else {
+          // Tenta um fallback para baixa precisão se a alta falhar
+          navigator.geolocation.getCurrentPosition(
+            () => { setGpsEnabled(true); setIsGpsLoading(false); },
+            () => { setGpsEnabled(false); setIsGpsLoading(false); },
+            { enableHighAccuracy: false, timeout: 5000 }
+          );
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   };
 
@@ -1125,29 +1138,46 @@ const App: React.FC = () => {
   // --- REAL-TIME LOCATION TRACKING ---
   useEffect(() => {
     let watchId: number | null = null;
+    let watchdogTimer: any = null;
 
     if (status !== DriverStatus.OFFLINE && userId && gpsEnabled) {
-      console.log("Starting Location Tracking...");
+      console.log("🚀 [GPS] Inciando Rastreamento (Tentativa: " + (gpsRestartCounterRef.current + 1) + ")...");
 
-      // Initial Update
+      // 1. WARM-UP: Solicitação de baixa precisão (Kickstart no sensor/navegador)
+      // Isso ajuda a "destravar" o provedor de localização do Android/Chrome rapidamente.
+      navigator.geolocation.getCurrentPosition(
+        (pos) => console.log("✨ [GPS] Warm-up concluído:", pos.coords.latitude, pos.coords.longitude),
+        (err) => console.warn("⚠️ [GPS] Warm-up falhou:", err.message),
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      );
+
+      // 2. Initial High-Accuracy Update
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
+          lastGpsUpdateRef.current = Date.now();
           supabaseClient.updateProfile(userId, {
             current_lat: latitude,
             current_lng: longitude,
             is_online: true,
             last_location_update: new Date().toISOString()
           }).catch(e => console.error("Initial location update failed", e));
+          
+          setCurrentLocation({ 
+            lat: latitude, 
+            lng: longitude,
+            speed: pos.coords.speed
+          });
         },
-        (err) => console.error("Error getting initial location", err),
-        { enableHighAccuracy: true }
+        (err) => console.error("❌ [GPS] Error getting initial location", err),
+        { enableHighAccuracy: true, timeout: 10000 }
       );
 
-      // Continuous Watch
+      // 3. Continuous Watch
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
+          lastGpsUpdateRef.current = Date.now();
 
           // Update profile for real-time head-up display
           supabaseClient.updateProfile(userId, {
@@ -1185,13 +1215,28 @@ const App: React.FC = () => {
             speed: pos.coords.speed // m/s
           });
         },
-        (err) => console.error("Location watch error", err),
+        (err) => {
+          console.error("❌ [GPS] Location watch error", err);
+          // Se houver erro de timeout, forçamos um reset no próximo ciclo do watchdog
+        },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 0
         }
       );
+
+      // 4. WATCHDOG: Monitora se o GPS "congelou"
+      watchdogTimer = setInterval(() => {
+        const timeSinceLastUpdate = Date.now() - lastGpsUpdateRef.current;
+        // Se passarem mais de 25 segundos sem sinal, reiniciamos o rastreador
+        if (timeSinceLastUpdate > 25000) {
+          console.warn("❄️ [GPS] Possível congelamento detectado (" + (timeSinceLastUpdate/1000).toFixed(0) + "s). Reiniciando...");
+          gpsRestartCounterRef.current++;
+          setSyncId(prev => prev + 1); // Força re-execução deste effect
+        }
+      }, 10000);
+
     } else if (status === DriverStatus.OFFLINE && userId) {
       // Mark as offline in DB
       supabaseClient.updateProfile(userId, {
@@ -1202,10 +1247,13 @@ const App: React.FC = () => {
     return () => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
-        console.log("Location Tracking Stopped.");
       }
+      if (watchdogTimer) {
+        clearInterval(watchdogTimer);
+      }
+      console.log("🛑 [GPS] Rastreamento Parado.");
     };
-  }, [status, userId, gpsEnabled, currentUser.name, currentUser.vehicle]);
+  }, [status, userId, gpsEnabled, syncId]); // Removido name/vehicle para evitar restarts desnecessários
 
 
   const handleSOSAction = (type: 'police' | 'samu' | 'mechanic' | 'share') => {

@@ -10,7 +10,7 @@
   "navigationColorDark": "#000000",
   "navigationDividerColor": "#000000",
   "navigationDividerColorDark": "#000000",
-  "backgroundColor": "#1a0a05",
+  "backgroundColor": "#1A0A05",
   "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://guepardodelivery-entregador.com/logo-entregador.png",
@@ -20,8 +20,8 @@
     "path": "C:\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
     "alias": "android"
   },
-  "appVersionName": "4.1",
-  "appVersionCode": 5,
+  "appVersionName": "1.2",
+  "appVersionCode": 6,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://guepardodelivery-entregador.com/manifest.webmanifest",
@@ -47,5 +47,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "4.1"
+  "appVersion": "1.2"
 }
