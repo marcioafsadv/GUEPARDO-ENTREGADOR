@@ -3027,8 +3027,11 @@ const App: React.FC = () => {
             <p className="text-[10px] tracking-widest" style={{ color: 'rgba(255,255,255,0.15)' }}>
               © 2026 Guepardo Delivery · Todos os direitos reservados
             </p>
+          <div className="mt-auto pt-8 pb-2 text-center opacity-20">
+            <p className="text-[10px] font-black tracking-widest text-white">v4.1</p>
           </div>
         </div>
+      </div>
       </div>
     );
   };
