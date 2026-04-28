@@ -3104,7 +3104,7 @@ const App: React.FC = () => {
 
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
-              <div className={`absolute right-5 sm:right-6 bottom-24 z-[1020] flex flex-col space-y-3.5 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[21rem] sm:-translate-y-[24rem]' : '-translate-y-[12.5rem]'} animate-in fade-in slide-in-from-right-8`}>
+              <div className={`absolute right-5 sm:right-6 bottom-[10.5rem] sm:bottom-[11.5rem] z-[1020] flex flex-col space-y-3.5 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[18rem] sm:-translate-y-[26rem]' : 'translate-y-0'} animate-in fade-in slide-in-from-right-8`}>
                 {/* 1. Preferences Button */}
                 <button 
                   onClick={() => setShowFiltersModal(true)}
@@ -3136,7 +3136,7 @@ const App: React.FC = () => {
             )}
             {/* 4. Seus Ganhos Summary Drawer (Restored) */}
             {status !== DriverStatus.ALERTING && !mission && !isNavigating && (
-              <div className={`absolute bottom-[7.5rem] sm:bottom-24 left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
+              <div className={`absolute bottom-[5.5rem] sm:bottom-[6.5rem] left-0 right-0 z-[1010] transition-all duration-700 transform ${isResumoExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4rem)]'}`}>
                 <div className={`p-5 sm:p-8 pb-4 sm:pb-12 rounded-t-[42px] sm:rounded-t-[48px] shadow-[0_-30px_80px_rgba(0,0,0,0.98)] border-t border-[#D4AF37]/25 transition-all duration-500 bg-[#0A0503] backdrop-blur-2xl relative overflow-hidden group min-h-[340px] sm:min-h-[480px]`}>
                   
                   {/* Glassmorphism Background Glow */}
