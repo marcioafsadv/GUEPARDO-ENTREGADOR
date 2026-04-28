@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.guepardodelivery.entregador",
+      "sha256_cert_fingerprints": [
+        "6A:B6:FF:D4:1F:47:41:75:05:F5:F4:59:50:9C:0A:51:A7:03:EF:F7:51:8D:7A:54:3C:03:94:D2:1A:80:04:65"
+      ]
+    }
+  }
+]

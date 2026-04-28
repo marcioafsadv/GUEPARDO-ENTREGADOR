@@ -17,6 +17,7 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.png'],
       manifest: {
+        id: 'com.guepardodelivery.entregador',
         name: 'Guepardo Entregador',
         short_name: 'Guepardo',
         description: 'Aplicativo oficial para entregadores da Guepardo Delivery',

@@ -517,7 +517,7 @@ const App: React.FC = () => {
     }
   }, [currentScreen, status]);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string } | null>(null);
+  const [navMetrics, setNavMetrics] = useState<{ time: string; distance: string; distanceValue?: number } | null>(null);
 
 
 
@@ -1232,8 +1232,8 @@ const App: React.FC = () => {
     const isGoingToStore = status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP;
     
     // Prioritize coordinates for absolute accuracy
-    const lat = isGoingToStore ? mission?.storeLngLat?.lat || mission?.storeLat : mission?.destinationLat;
-    const lng = isGoingToStore ? mission?.storeLngLat?.lng || mission?.storeLng : mission?.destinationLng;
+    const lat = isGoingToStore ? mission?.storeLat : mission?.destinationLat;
+    const lng = isGoingToStore ? mission?.storeLng : mission?.destinationLng;
     const address = forcedAddress || (isGoingToStore ? mission?.storeAddress : mission?.customerAddress);
 
     if (lat && lng) {
@@ -1835,7 +1835,7 @@ const App: React.FC = () => {
     const channel = supabaseClient.supabase.channel('system-health');
     channel.subscribe((status) => {
         setRealtimeStatus(status as any);
-        if (status === 'CLOSED' || status === 'ERROR') {
+        if (String(status) === 'CLOSED' || String(status) === 'CHANNEL_ERROR' || String(status) === 'ERROR') {
             // Attempt to force a session refresh after a delay
             setTimeout(() => setSyncId(prev => prev + 1), 5000);
         }
