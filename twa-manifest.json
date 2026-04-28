@@ -13,8 +13,8 @@
   "backgroundColor": "#121212",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://guepardodelivery-entregador.com/GUEPARDO ENTREGADOR - LOGO.png",
-  "maskableIconUrl": "https://guepardodelivery-entregador.com/GUEPARDO ENTREGADOR - LOGO.png",
+  "iconUrl": "https://guepardodelivery-entregador.com/logo-entregador.png",
+  "maskableIconUrl": "https://guepardodelivery-entregador.com/logo-entregador.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
