@@ -2838,9 +2838,9 @@ const App: React.FC = () => {
           {/* Hero Logo */}
           <div className="flex flex-col items-center pt-14 pb-5 shrink-0">
             <img
-              src="/cheetah-icon.png"
+              src="/guepardo-entregador-logo.png"
               alt="Guepardo Delivery"
-              className="w-56 object-contain"
+              className="w-48 object-contain"
               style={{ filter: 'drop-shadow(0 16px 48px rgba(200,80,10,0.65)) drop-shadow(0 4px 12px rgba(0,0,0,0.7))' }}
             />
             <p className="mt-2 text-2xl font-black uppercase tracking-wider" style={{ color: 'white', textShadow: '0 2px 12px rgba(200,80,10,0.7)' }}>
