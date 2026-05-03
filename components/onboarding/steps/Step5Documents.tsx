@@ -68,14 +68,14 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
         if (!file) return;
 
         // Validate file type
-        if (!file.type.startsWith('image/')) {
-            setError('Por favor, selecione uma imagem válida');
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+            setError('Por favor, selecione uma imagem ou PDF válido');
             return;
         }
 
         // Validate file size (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            setError('A imagem deve ter no máximo 10MB');
+            setError('O arquivo deve ter no máximo 10MB');
             return;
         }
 
@@ -131,11 +131,19 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
 
                 {hasDocument ? (
                     <div className="relative">
-                        <img
-                            src={hasDocument}
-                            alt={doc.label}
-                            className="w-full h-32 object-cover rounded-lg"
-                        />
+                        {hasDocument.startsWith('data:application/pdf') || hasDocument.toLowerCase().endsWith('.pdf') ? (
+                            <div className="w-full h-32 bg-red-500/10 rounded-lg flex flex-col items-center justify-center border border-red-500/20">
+                                <i className="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span className="text-[10px] font-black uppercase text-red-500">Documento PDF</span>
+                                <span className={`text-[8px] font-bold ${textMuted} mt-1 truncate max-w-[80%]`}>Clique para alterar</span>
+                            </div>
+                        ) : (
+                            <img
+                                src={hasDocument}
+                                alt={doc.label}
+                                className="w-full h-32 object-cover rounded-lg"
+                            />
+                        )}
                         <button
                             onClick={() => fileInputRefs[docKey as keyof typeof fileInputRefs].current?.click()}
                             className="absolute bottom-2 right-2 w-10 h-10 bg-[#FF6B00] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
@@ -148,16 +156,18 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                         onClick={() => fileInputRefs[docKey as keyof typeof fileInputRefs].current?.click()}
                         className={`w-full h-32 border-2 border-dashed ${theme === 'dark' ? 'border-zinc-700' : 'border-zinc-300'} rounded-lg flex flex-col items-center justify-center space-y-2 hover:border-[#FF6B00] transition-colors`}
                     >
-                        <i className="fas fa-camera text-2xl text-[#FF6B00]"></i>
-                        <span className={`text-xs font-bold ${textMuted}`}>Adicionar Foto</span>
+                        <div className="flex space-x-3 text-[#FF6B00]">
+                            <i className="fas fa-camera text-2xl"></i>
+                            <i className="fas fa-file-pdf text-2xl"></i>
+                        </div>
+                        <span className={`text-xs font-bold ${textMuted}`}>Adicionar Foto ou PDF</span>
                     </button>
                 )}
 
                 <input
                     ref={fileInputRefs[docKey as keyof typeof fileInputRefs]}
                     type="file"
-                    accept="image/*"
-                    capture="environment"
+                    accept="image/*,application/pdf"
                     onChange={(e) => handleFileSelect(docKey, e)}
                     className="hidden"
                 />
@@ -169,18 +179,22 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
         <div className="flex flex-col h-full space-y-4">
             <div className="shrink-0">
                 <h2 className={`text-3xl font-black italic ${textPrimary} mb-2`}>Documentos</h2>
-                <p className={`text-sm ${textMuted}`}>Envie fotos dos documentos necessários</p>
+                <p className={`text-sm ${textMuted}`}>Envie fotos ou arquivos PDF dos documentos necessários</p>
             </div>
 
             {/* Instructions */}
             <div className={`shrink-0 p-4 rounded-xl ${innerBg} space-y-2`}>
                 <p className={`text-xs font-black uppercase tracking-widest ${textMuted}`}>
-                    Dicas para fotos de documentos:
+                    Dicas para documentos:
                 </p>
                 <ul className={`text-sm ${textMuted} space-y-1`}>
                     <li className="flex items-start space-x-2">
                         <i className="fas fa-check text-green-500 mt-1"></i>
-                        <span>Boa iluminação, sem reflexos ou sombras</span>
+                        <span>Fotos: boa iluminação, sem reflexos ou sombras</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                        <i className="fas fa-check text-green-500 mt-1"></i>
+                        <span>PDF: arquivos originais baixados de apps (CNH Digital, etc)</span>
                     </li>
                     <li className="flex items-start space-x-2">
                         <i className="fas fa-check text-green-500 mt-1"></i>

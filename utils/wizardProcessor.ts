@@ -17,6 +17,16 @@ const dataURLtoFile = (dataUrl: string, filename: string): File => {
 };
 
 /**
+ * Helper to get file extension from data URL
+ */
+const getExtension = (dataUrl: string): string => {
+    if (dataUrl.startsWith('data:application/pdf')) return 'pdf';
+    if (dataUrl.startsWith('data:image/png')) return 'png';
+    if (dataUrl.startsWith('data:image/webp')) return 'webp';
+    return 'jpg';
+};
+
+/**
  * Process complete courier registration wizard
  */
 export const processWizardRegistration = async (wizardData: WizardData): Promise<void> => {
@@ -42,16 +52,17 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
         // 2. Upload avatar photo
         let avatarUrl = '';
         if (wizardData.photoUrl) {
-            const photoFile = dataURLtoFile(wizardData.photoUrl, 'avatar.jpg');
+            const ext = getExtension(wizardData.photoUrl);
+            const photoFile = dataURLtoFile(wizardData.photoUrl, `avatar.${ext}`);
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('courier-documents')
-                .upload(`${userId}/avatar.jpg`, photoFile, { upsert: true });
+                .upload(`${userId}/avatar.${ext}`, photoFile, { upsert: true });
 
             if (uploadError) throw uploadError;
 
             const { data: urlData } = supabase.storage
                 .from('courier-documents')
-                .getPublicUrl(`${userId}/avatar.jpg`);
+                .getPublicUrl(`${userId}/avatar.${ext}`);
 
             avatarUrl = urlData.publicUrl;
         }
@@ -60,27 +71,32 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
         const documentUrls: Record<string, string> = {};
 
         if (wizardData.cnhFrontUrl) {
-            const file = dataURLtoFile(wizardData.cnhFrontUrl, 'cnh_front.jpg');
+            const ext = getExtension(wizardData.cnhFrontUrl);
+            const file = dataURLtoFile(wizardData.cnhFrontUrl, `cnh_front.${ext}`);
             documentUrls.cnhFront = await uploadDocument(userId, file, 'cnh_front');
         }
 
         if (wizardData.cnhBackUrl) {
-            const file = dataURLtoFile(wizardData.cnhBackUrl, 'cnh_back.jpg');
+            const ext = getExtension(wizardData.cnhBackUrl);
+            const file = dataURLtoFile(wizardData.cnhBackUrl, `cnh_back.${ext}`);
             documentUrls.cnhBack = await uploadDocument(userId, file, 'cnh_back');
         }
 
         if (wizardData.crlvUrl) {
-            const file = dataURLtoFile(wizardData.crlvUrl, 'crlv.jpg');
+            const ext = getExtension(wizardData.crlvUrl);
+            const file = dataURLtoFile(wizardData.crlvUrl, `crlv.${ext}`);
             documentUrls.crlv = await uploadDocument(userId, file, 'crlv');
         }
 
         if (wizardData.bikePhotoUrl) {
-            const file = dataURLtoFile(wizardData.bikePhotoUrl, 'bike_photo.jpg');
+            const ext = getExtension(wizardData.bikePhotoUrl);
+            const file = dataURLtoFile(wizardData.bikePhotoUrl, `bike_photo.${ext}`);
             documentUrls.bikePhoto = await uploadDocument(userId, file, 'bike_photo');
         }
 
         if (wizardData.proofOfResidenceUrl) {
-            const file = dataURLtoFile(wizardData.proofOfResidenceUrl, 'proof_residence.jpg');
+            const ext = getExtension(wizardData.proofOfResidenceUrl);
+            const file = dataURLtoFile(wizardData.proofOfResidenceUrl, `proof_residence.${ext}`);
             documentUrls.proofResidence = await uploadDocument(userId, file, 'proof_residence');
         }
 
