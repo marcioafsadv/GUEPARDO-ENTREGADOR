@@ -3472,77 +3472,7 @@ const App: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Order Details Modal (Requested by User) */}
-                      {showOrderDetails && (
-                        <div className="fixed inset-0 z-[9000] flex items-center justify-center p-6 animate-in fade-in duration-300 pointer-events-auto">
-                          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setShowOrderDetails(false)}></div>
-                          
-                          <div className="w-full max-w-sm chocolate-glass-card p-10 animate-in zoom-in-95 duration-300 relative z-10 border border-white/10 ring-1 ring-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)]">
-                            <div className="flex justify-between items-center mb-10">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.4em] mb-1">Detalhes</span>
-                                <h2 className={`text-3xl font-black italic tracking-tighter ${textPrimary} leading-none`}>Meu Pedido</h2>
-                              </div>
-                              <button onClick={() => setShowOrderDetails(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-all active:scale-90 border border-white/10">
-                                <i className="fas fa-times"></i>
-                              </button>
-                            </div>
 
-                            <div className="space-y-10">
-                              {/* Collection Section */}
-                              <div className="space-y-4">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center"><i className="fas fa-shop text-[#FF6B00] text-xs"></i></div>
-                                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Ponto de Coleta</span>
-                                </div>
-                                
-                                <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
-                                  <div className="flex flex-col">
-                                    <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
-                                    <span className={`text-sm font-black ${textPrimary}`}>{mission.storeName}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center pt-3 border-t border-white/5">
-                                    <div className="flex flex-col">
-                                       <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
-                                       <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                       <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
-                                       <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{mission.collectionCode}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Delivery Section */}
-                              <div className="space-y-4">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 rounded-xl bg-[#00FF94]/10 flex items-center justify-center"><i className="fas fa-house-chimney text-[#00FF94] text-xs"></i></div>
-                                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00FF94]">Ponto de Entrega</span>
-                                </div>
-                                
-                                <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
-                                  <div className="flex flex-col">
-                                    <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cliente:</span>
-                                    <span className={`text-sm font-black ${textPrimary}`}>{mission.customerName}</span>
-                                  </div>
-                                  <div className="flex flex-col space-y-2 pt-3 border-t border-white/5">
-                                    <span className={`text-[10px] font-bold uppercase ${textMuted} opacity-50`}>Endereço p/ Entrega:</span>
-                                    <span className={`text-xs font-medium leading-relaxed ${textPrimary} italic`}>{mission.customerAddress}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <button 
-                              onClick={() => setShowOrderDetails(false)}
-                              className="w-full h-16 bg-[#FF6B00] rounded-[24px] font-black text-white uppercase tracking-[0.3em] mt-12 shadow-2xl shadow-orange-900/40 active:scale-95 transition-all text-xs border-t border-white/20"
-                            >
-                              Voltar ao Mapa
-                            </button>
-                          </div>
-                        </div>
-                      )}
 
 
                     {/* Pickup Phase Card (Print 3 Style Overhaul) */}
@@ -3687,6 +3617,78 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Order Details Modal (Requested by User) */}
+        {showOrderDetails && mission && (
+          <div className="fixed inset-0 z-[9000] flex items-center justify-center p-6 animate-in fade-in duration-300 pointer-events-auto">
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setShowOrderDetails(false)}></div>
+            
+            <div className="w-full max-w-sm chocolate-glass-card p-6 sm:p-10 max-h-[85vh] overflow-y-auto no-scrollbar animate-in zoom-in-95 duration-300 relative z-10 border border-white/10 ring-1 ring-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+              <div className="flex justify-between items-center mb-6 sm:mb-10">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-[#FF6B00] uppercase tracking-[0.4em] mb-1">Detalhes</span>
+                  <h2 className={`text-3xl font-black italic tracking-tighter ${textPrimary} leading-none`}>Meu Pedido</h2>
+                </div>
+                <button onClick={() => setShowOrderDetails(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-all active:scale-90 border border-white/10">
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div className="space-y-6 sm:space-y-10">
+                {/* Collection Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center"><i className="fas fa-shop text-[#FF6B00] text-xs"></i></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Ponto de Coleta</span>
+                  </div>
+                  
+                  <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
+                    <div className="flex flex-col">
+                      <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
+                      <span className={`text-sm font-black ${textPrimary}`}>{mission.storeName}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                      <div className="flex flex-col">
+                          <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
+                          <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                          <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
+                          <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{mission.collectionCode}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#00FF94]/10 flex items-center justify-center"><i className="fas fa-house-chimney text-[#00FF94] text-xs"></i></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00FF94]">Ponto de Entrega</span>
+                  </div>
+                  
+                  <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
+                    <div className="flex flex-col">
+                      <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cliente:</span>
+                      <span className={`text-sm font-black ${textPrimary}`}>{mission.customerName}</span>
+                    </div>
+                    <div className="flex flex-col space-y-2 pt-3 border-t border-white/5">
+                      <span className={`text-[10px] font-bold uppercase ${textMuted} opacity-50`}>Endereço p/ Entrega:</span>
+                      <span className={`text-xs font-medium leading-relaxed ${textPrimary} italic`}>{mission.customerAddress}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setShowOrderDetails(false)}
+                className="w-full h-16 bg-[#FF6B00] rounded-[24px] font-black text-white uppercase tracking-[0.3em] mt-8 sm:mt-12 shadow-2xl shadow-orange-900/40 active:scale-95 transition-all text-xs border-t border-white/20"
+              >
+                Voltar ao Mapa
+              </button>
             </div>
           </div>
         )}
