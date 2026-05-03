@@ -51,10 +51,17 @@ const COLORS = {
 };
 
 // Icons
-const courierIcon = L.icon({
-    iconUrl: '/cheetah-icon.png',
-    iconSize: [60, 48],
-    className: 'courier-icon-transition'
+const courierIcon = L.divIcon({
+    html: `
+    <div class="courier-marker-wrapper">
+      <div class="courier-pulse"></div>
+      <div class="courier-icon-container">
+        <img src="/cheetah-icon.png" class="courier-icon-img" />
+      </div>
+    </div>`,
+    iconSize: [60, 60],
+    iconAnchor: [30, 30],
+    className: 'courier-custom-icon'
 });
 const storeIcon = L.icon({
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/3595/3595587.png',
