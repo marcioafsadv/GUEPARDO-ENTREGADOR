@@ -81,17 +81,7 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
 
         if (wizardData.proofOfResidenceUrl) {
             const file = dataURLtoFile(wizardData.proofOfResidenceUrl, 'proof_residence.jpg');
-            const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('courier-documents')
-                .upload(`${userId}/proof_residence.jpg`, file, { upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = supabase.storage
-                .from('courier-documents')
-                .getPublicUrl(`${userId}/proof_residence.jpg`);
-
-            documentUrls.proofResidence = urlData.publicUrl;
+            documentUrls.proofResidence = await uploadDocument(userId, file, 'proof_residence');
         }
 
         // 4. Create profile and related data

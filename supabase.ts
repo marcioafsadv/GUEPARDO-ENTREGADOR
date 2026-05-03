@@ -827,7 +827,8 @@ export const submitCompleteRegistration = async (
       cnh_front_url: registrationData.documentUrls.cnhFront,
       cnh_back_url: registrationData.documentUrls.cnhBack,
       crlv_url: registrationData.documentUrls.crlv,
-      bike_photo_url: registrationData.documentUrls.bikePhoto
+      bike_photo_url: registrationData.documentUrls.bikePhoto,
+      proof_of_residence_url: registrationData.documentUrls.proofResidence
     });
 
     return { success: true };
