@@ -2577,62 +2577,10 @@ const App: React.FC = () => {
       }
       setStatus(DriverStatus.PICKING_UP);
     }
-    else if (status === DriverStatus.PICKING_UP && isCodeValid()) {
-      // Update database status to in_transit when pickup code is validated
-      if (mission && userId) {
-        try {
-          await supabaseClient.supabase
-            .from('deliveries')
-            .update({ status: 'in_transit' })
-            .eq('id', mission.id)
-            .eq('driver_id', userId);
-          console.log('✅ Updated delivery status to in_transit after code validation');
-
-          // --- FIX BUG #2: BATCHING AGILITY & BULK TRANSIT ---
-          // Mark ALL missions of this batch from the same store as in_transit
-          const { data: batchItemsToUpdate } = await supabaseClient.supabase
-            .from('deliveries')
-            .select('id, status, store_name')
-            .eq('driver_id', userId)
-            .in('status', ['accepted', 'arrived_pickup', 'picking_up', 'ready_for_pickup']);
-          
-          const sameStoreItems = (batchItemsToUpdate || []).filter(m => m.store_name === mission.storeName);
-          const sameStoreIds = sameStoreItems.map(m => m.id);
-
-          if (sameStoreIds.length > 0) {
-            console.log(`📦 Marking ${sameStoreIds.length} batch items as in_transit...`);
-            await supabaseClient.supabase
-              .from('deliveries')
-              .update({ status: 'in_transit' })
-              .in('id', sameStoreIds);
-          }
-
-          const othersAtStore = sameStoreItems.filter(m => m.id !== mission.id);
-          
-          if (othersAtStore.length > 0) {
-            console.log(`📦 Still have ${othersAtStore.length} items to pick up at the same store. Staying in PICKING_UP.`);
-            // Update local state to next mission in batch
-            const nextMissionId = othersAtStore[0].id;
-            const updatedActive = activeMissions.map(m => m.id === mission.id ? { ...m, status: 'in_transit' } : m);
-            setActiveMissions(updatedActive);
-            const nextM = updatedActive.find(m => m.id === nextMissionId);
-            if (nextM) setMission(nextM);
-            // Stay in PICKING_UP, but reset code input
-            setTypedCode(['', '', '', '']);
-          } else {
-            console.log('🚀 All items for this store collected! Transitioning to GOING_TO_CUSTOMER.');
-            // Update local mission status before transitioning global state
-            const updatedActive = activeMissions.map(m => m.id === mission.id ? { ...m, status: 'in_transit' } : m);
-            setActiveMissions(updatedActive);
-            setStatus(DriverStatus.GOING_TO_CUSTOMER);
-          }
-        } catch (error) {
-          console.error('❌ Error updating delivery status:', error);
-          setStatus(DriverStatus.GOING_TO_CUSTOMER); // Fallback to avoid getting stuck
-        }
-      } else {
-        setStatus(DriverStatus.GOING_TO_CUSTOMER);
-      }
+    else if (status === DriverStatus.PICKING_UP) {
+      // O entregador não deve conseguir avançar manualmente nesta fase.
+      // Ele deve aguardar o lojista confirmar o código.
+      console.log('⏳ Aguardando confirmação da loja para o código:', mission?.collectionCode);
     }
     else if (status === DriverStatus.GOING_TO_CUSTOMER) {
       // PROXIMITY CHECK: Warning if too far from destination
@@ -3566,8 +3514,8 @@ const App: React.FC = () => {
                     {/* Action button: Always visible, but handleMainAction will perform proximity check */}
                     <button
                       onClick={handleMainAction}
-                        disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING}
-                        className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all ${status === DriverStatus.RETURNING ? 'opacity-50 cursor-not-allowed shadow-none' : 'active:scale-95 shadow-2xl'} relative overflow-hidden group animate-in fade-in zoom-in duration-300`}
+                        disabled={(status === DriverStatus.ARRIVED_AT_CUSTOMER && !isCodeValid()) || status === DriverStatus.RETURNING || status === DriverStatus.PICKING_UP}
+                        className={`w-full h-16 rounded-[24px] font-black text-white flex items-center justify-center space-x-3 transition-all ${status === DriverStatus.RETURNING || status === DriverStatus.PICKING_UP ? 'opacity-50 cursor-not-allowed shadow-none' : 'active:scale-95 shadow-2xl'} relative overflow-hidden group animate-in fade-in zoom-in duration-300`}
                         style={{ 
                           backgroundColor: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#FFD700' : '#FF6B00',
                           color: status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.ARRIVED_AT_CUSTOMER ? '#000' : '#fff'
@@ -3575,13 +3523,13 @@ const App: React.FC = () => {
                       >
                         <span className="uppercase tracking-widest text-sm italic">
                           {status === DriverStatus.GOING_TO_STORE ? 'Chegar na Loja' :
-                            status === DriverStatus.ARRIVED_AT_STORE ? (isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Iniciar Coleta' : 'Aguardando Preparo...') :
-                              (status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP) ? 'Confirmar Coleta' :
+                            (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP) ? (isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Iniciar Coleta' : 'Aguardando Preparo...') :
+                              status === DriverStatus.PICKING_UP ? 'Aguardando Loja...' :
                                 status === DriverStatus.GOING_TO_CUSTOMER ? 'Chegar no Cliente' :
                                   status === DriverStatus.RETURNING ? 'Aguardando Lojista...' :
                                     'Finalizar Entrega'}
                         </span>
-                        <i className={`fas ${status === DriverStatus.RETURNING ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
+                        <i className={`fas ${status === DriverStatus.RETURNING || status === DriverStatus.PICKING_UP ? 'fa-hourglass-half' : ((status === DriverStatus.ARRIVED_AT_CUSTOMER && isCodeValid()) ? 'fa-check' : 'fa-chevron-right')} text-xs opacity-50 ${status === DriverStatus.RETURNING || status === DriverStatus.PICKING_UP ? 'animate-pulse' : 'group-hover:translate-x-1 transition-transform'}`}></i>
                       </button>
                   </div>
                 </>
