@@ -44,60 +44,79 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
             }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+            console.error('❌ Auth SignUp Error:', authError);
+            throw authError;
+        }
         if (!authData.user) throw new Error('Failed to create user');
 
         const userId = authData.user.id;
+        console.log('👤 User created with ID:', userId);
 
         // 2. Upload avatar photo
         let avatarUrl = '';
         if (wizardData.photoUrl) {
+            console.log('📸 Uploading avatar...');
             const ext = getExtension(wizardData.photoUrl);
             const photoFile = dataURLtoFile(wizardData.photoUrl, `avatar.${ext}`);
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('courier-documents')
                 .upload(`${userId}/avatar.${ext}`, photoFile, { upsert: true });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('❌ Avatar Upload Error:', uploadError);
+                throw uploadError;
+            }
 
             const { data: urlData } = supabase.storage
                 .from('courier-documents')
                 .getPublicUrl(`${userId}/avatar.${ext}`);
 
             avatarUrl = urlData.publicUrl;
+            console.log('✅ Avatar uploaded:', avatarUrl);
         }
 
         // 3. Upload documents
         const documentUrls: Record<string, string> = {};
 
         if (wizardData.cnhFrontUrl) {
+            console.log('📄 Uploading CNH Front...');
             const ext = getExtension(wizardData.cnhFrontUrl);
             const file = dataURLtoFile(wizardData.cnhFrontUrl, `cnh_front.${ext}`);
             documentUrls.cnhFront = await uploadDocument(userId, file, 'cnh_front');
+            console.log('✅ CNH Front uploaded');
         }
 
         if (wizardData.cnhBackUrl) {
+            console.log('📄 Uploading CNH Back...');
             const ext = getExtension(wizardData.cnhBackUrl);
             const file = dataURLtoFile(wizardData.cnhBackUrl, `cnh_back.${ext}`);
             documentUrls.cnhBack = await uploadDocument(userId, file, 'cnh_back');
+            console.log('✅ CNH Back uploaded');
         }
 
         if (wizardData.crlvUrl) {
+            console.log('📄 Uploading CRLV...');
             const ext = getExtension(wizardData.crlvUrl);
             const file = dataURLtoFile(wizardData.crlvUrl, `crlv.${ext}`);
             documentUrls.crlv = await uploadDocument(userId, file, 'crlv');
+            console.log('✅ CRLV uploaded');
         }
 
         if (wizardData.bikePhotoUrl) {
+            console.log('📄 Uploading Bike Photo...');
             const ext = getExtension(wizardData.bikePhotoUrl);
             const file = dataURLtoFile(wizardData.bikePhotoUrl, `bike_photo.${ext}`);
             documentUrls.bikePhoto = await uploadDocument(userId, file, 'bike_photo');
+            console.log('✅ Bike Photo uploaded');
         }
 
         if (wizardData.proofOfResidenceUrl) {
+            console.log('📄 Uploading Proof of Residence...');
             const ext = getExtension(wizardData.proofOfResidenceUrl);
             const file = dataURLtoFile(wizardData.proofOfResidenceUrl, `proof_residence.${ext}`);
             documentUrls.proofResidence = await uploadDocument(userId, file, 'proof_residence');
+            console.log('✅ Proof of Residence uploaded');
         }
 
         // 4. Create profile and related data
@@ -143,6 +162,7 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
             documentUrls,
         };
 
+        console.log('📦 Submitting final registration data...', registrationData);
         await submitCompleteRegistration(userId, registrationData);
 
         console.log('✅ Registration completed successfully!');

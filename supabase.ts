@@ -681,13 +681,17 @@ export const uploadDocument = async (
       contentType: file.type
     });
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Storage Upload Error:', error);
+    throw error;
+  }
 
   // Return the public URL
   const { data: urlData } = supabase.storage
     .from('courier-documents')
     .getPublicUrl(fileName);
 
+  console.log(`✅ Document ${documentType} uploaded to:`, urlData.publicUrl);
   return urlData.publicUrl;
 };
 
@@ -812,7 +816,6 @@ export const submitCompleteRegistration = async (
       reference: registrationData.address.reference
     });
 
-    // 3. Create vehicle
     await upsertVehicle(userId, {
       cnh_number: registrationData.vehicle.cnhNumber,
       cnh_validity: registrationData.vehicle.cnhValidity,
@@ -831,6 +834,7 @@ export const submitCompleteRegistration = async (
       proof_of_residence_url: registrationData.documentUrls.proofResidence
     });
 
+    console.log('✅ All registration steps completed in DB');
     return { success: true };
   } catch (error: any) {
     console.error('Error submitting registration:', error);
