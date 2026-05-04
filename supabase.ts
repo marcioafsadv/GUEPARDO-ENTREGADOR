@@ -647,19 +647,41 @@ export const updateVehicle = async (userId: string, vehicleData: any) => {
 };
 
 export const upsertVehicle = async (userId: string, vehicleData: any) => {
-  const { data, error } = await supabase
+  // First check if this user already has a vehicle record.
+  // We do this explicitly instead of relying on .upsert() + onConflict:'user_id',
+  // because if the plate also has a UNIQUE constraint and already exists for a
+  // different row, Postgres throws 'vehicles_plate_key' before resolving the
+  // user_id conflict — crashing the entire registration flow.
+  const { data: existing, error: fetchError } = await supabase
     .from('vehicles')
-    .upsert({
-      user_id: userId,
-      ...vehicleData
-    }, {
-      onConflict: 'user_id'
-    })
-    .select()
-    .single();
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
 
-  if (error) throw error;
-  return data;
+  if (fetchError) throw fetchError;
+
+  if (existing) {
+    // UPDATE the existing record
+    const { data, error } = await supabase
+      .from('vehicles')
+      .update({ ...vehicleData, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } else {
+    // INSERT a new record
+    const { data, error } = await supabase
+      .from('vehicles')
+      .insert([{ user_id: userId, ...vehicleData }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
 };
 
 // ============================================

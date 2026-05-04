@@ -174,6 +174,10 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
             throw new Error('Este e-mail já está cadastrado. Por favor, faça login.');
         }
 
+        if (error.message?.includes('vehicles_plate_key') || (error.message?.includes('duplicate key') && error.message?.includes('plate'))) {
+            throw new Error('Esta placa já está cadastrada no sistema. Verifique os dados do veículo e tente novamente.');
+        }
+
         throw error;
     }
 };
