@@ -479,7 +479,18 @@ const App: React.FC = () => {
     else if (diffSeconds >= 60) maxRadius = 3.0;
     else if (diffSeconds >= 30) maxRadius = 2.0;
 
-    const isAllowed = dist <= maxRadius;
+    let isAllowed = dist <= maxRadius;
+
+    // ── BIKE DISTANCE LIMIT ────────────────────────────────────────────────
+    // If the courier is using a bike, only show routes up to 4km delivery distance
+    if (currentUser.vehicle === 'bike') {
+      const deliveryDist = dbMission.delivery_distance || 0;
+      if (deliveryDist > 4.0) {
+        console.log(`[Dispatch-Rule] Missão ${dbMission.id} bloqueada para BIKE: Distância de entrega ${deliveryDist.toFixed(2)}km > 4km`);
+        return false;
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     if (!isAllowed) {
       console.log(`[Dispatch-Rule] Missão ${dbMission.id} ocultada: Dist ${dist.toFixed(2)}km > Max ${maxRadius}km (Tempo: ${diffSeconds.toFixed(0)}s)`);
@@ -822,7 +833,7 @@ const App: React.FC = () => {
             // Prioriza avatar_url
             avatar: profile.avatar_url || profile.avatar || prev.avatar,
             region: profile.work_city || profile.region || 'Itu - SP',
-            vehicle: 'moto',
+            vehicle: vehicleData?.vehicle_type || 'moto',
             verified: profile.status === 'approved' || profile.verified || false,
             bank: {
               ...prev.bank,

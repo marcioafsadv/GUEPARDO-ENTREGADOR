@@ -132,6 +132,7 @@ export interface AddressData {
 }
 
 export interface VehicleData {
+  vehicleType: 'moto' | 'bike';
   cnhNumber: string;
   cnhValidity: string;
   plate: string;

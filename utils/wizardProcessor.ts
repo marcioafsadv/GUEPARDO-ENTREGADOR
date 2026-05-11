@@ -148,6 +148,7 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
                 state: wizardData.state,
             },
             vehicle: {
+                vehicleType: wizardData.vehicleType,
                 cnhNumber: wizardData.cnhNumber.replace(/\D/g, ''),
                 cnhValidity: wizardData.cnhValidity,
                 plate: wizardData.plate.toUpperCase(),

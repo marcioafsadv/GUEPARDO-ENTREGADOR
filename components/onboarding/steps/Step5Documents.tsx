@@ -9,6 +9,7 @@ interface DocumentUpload {
 
 interface Step5DocumentsProps {
     data: {
+        vehicleType: 'moto' | 'bike';
         cnhFrontUrl: string | null;
         cnhBackUrl: string | null;
         crlvUrl: string | null;
@@ -30,29 +31,31 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
         proofOfResidence: useRef<HTMLInputElement>(null),
     };
 
+    const isMoto = data.vehicleType === 'moto';
+
     const documents: Record<string, DocumentUpload> = {
         cnhFront: {
             file: null,
             url: data.cnhFrontUrl,
             label: 'CNH - Frente',
-            required: true
+            required: isMoto
         },
         cnhBack: {
             file: null,
             url: data.cnhBackUrl,
             label: 'CNH - Verso',
-            required: true
+            required: isMoto
         },
         crlv: {
             file: null,
             url: data.crlvUrl,
             label: 'CRLV (Documento do Veículo)',
-            required: true
+            required: isMoto
         },
         bikePhoto: {
             file: null,
             url: data.bikePhotoUrl,
-            label: 'Foto da Moto (Lateral Direita)',
+            label: isMoto ? 'Foto da Moto (Lateral Direita)' : 'Foto da Bicicleta (Lateral)',
             required: true
         },
         proofOfResidence: {
@@ -93,10 +96,13 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
     const validateAndNext = () => {
         const missingDocs: string[] = [];
 
-        if (!data.cnhFrontUrl) missingDocs.push('CNH - Frente');
-        if (!data.cnhBackUrl) missingDocs.push('CNH - Verso');
-        if (!data.crlvUrl) missingDocs.push('CRLV');
-        if (!data.bikePhotoUrl) missingDocs.push('Foto da Moto');
+        if (isMoto) {
+            if (!data.cnhFrontUrl) missingDocs.push('CNH - Frente');
+            if (!data.cnhBackUrl) missingDocs.push('CNH - Verso');
+            if (!data.crlvUrl) missingDocs.push('CRLV');
+        }
+        
+        if (!data.bikePhotoUrl) missingDocs.push(isMoto ? 'Foto da Moto' : 'Foto da Bicicleta');
         if (!data.proofOfResidenceUrl) missingDocs.push('Comprovante de Residência');
 
         if (missingDocs.length > 0) {
@@ -112,6 +118,11 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
     const renderDocumentUpload = (docKey: string, doc: DocumentUpload) => {
+        // Skip CNH/CRLV if not moto
+        if (!isMoto && (docKey === 'cnhFront' || docKey === 'cnhBack' || docKey === 'crlv')) {
+            return null;
+        }
+
         const urlKey = `${docKey}Url` as keyof typeof data;
         const hasDocument = data[urlKey];
 
@@ -131,7 +142,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
 
                 {hasDocument ? (
                     <div className="relative">
-                        {hasDocument.startsWith('data:application/pdf') || hasDocument.toLowerCase().endsWith('.pdf') ? (
+                        {typeof hasDocument === 'string' && (hasDocument.startsWith('data:application/pdf') || hasDocument.toLowerCase().endsWith('.pdf')) ? (
                             <div className="w-full h-32 bg-red-500/10 rounded-lg flex flex-col items-center justify-center border border-red-500/20">
                                 <i className="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
                                 <span className="text-[10px] font-black uppercase text-red-500">Documento PDF</span>
@@ -139,7 +150,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                             </div>
                         ) : (
                             <img
-                                src={hasDocument}
+                                src={hasDocument as string}
                                 alt={doc.label}
                                 className="w-full h-32 object-cover rounded-lg"
                             />

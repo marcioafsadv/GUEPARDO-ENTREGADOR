@@ -839,6 +839,7 @@ export const submitCompleteRegistration = async (
     });
 
     await upsertVehicle(userId, {
+      vehicle_type: registrationData.vehicle.vehicleType,
       cnh_number: registrationData.vehicle.cnhNumber,
       cnh_validity: registrationData.vehicle.cnhValidity,
       plate: registrationData.vehicle.plate,

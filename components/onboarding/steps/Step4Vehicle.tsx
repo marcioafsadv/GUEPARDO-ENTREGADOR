@@ -3,6 +3,7 @@ import { maskPlate, maskCNH, maskRENAVAM, maskYear } from '../../../utils/masks'
 
 interface Step4VehicleProps {
     data: {
+        vehicleType: 'moto' | 'bike';
         cnhNumber: string;
         cnhValidity: string;
         plate: string;
@@ -24,31 +25,38 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
 
     const validateAndNext = () => {
         const newErrors: Record<string, string> = {};
+        const isMoto = data.vehicleType === 'moto';
 
-        if (!data.cnhNumber || data.cnhNumber.length < 11) {
-            newErrors.cnhNumber = 'CNH inválida';
-        }
-
-        if (!data.cnhValidity) {
-            newErrors.cnhValidity = 'Data de validade é obrigatória';
-        } else {
-            const validityDate = new Date(data.cnhValidity);
-            const today = new Date();
-            if (validityDate < today) {
-                newErrors.cnhValidity = 'CNH vencida';
+        if (isMoto) {
+            if (!data.cnhNumber || data.cnhNumber.length < 11) {
+                newErrors.cnhNumber = 'CNH inválida';
             }
-        }
 
-        if (!data.plate || data.plate.length < 7) {
-            newErrors.plate = 'Placa inválida';
-        }
+            if (!data.cnhValidity) {
+                newErrors.cnhValidity = 'Data de validade é obrigatória';
+            } else {
+                const validityDate = new Date(data.cnhValidity);
+                const today = new Date();
+                if (validityDate < today) {
+                    newErrors.cnhValidity = 'CNH vencida';
+                }
+            }
 
-        if (!data.plateState) {
-            newErrors.plateState = 'UF da placa é obrigatória';
-        }
+            if (!data.plate || data.plate.length < 7) {
+                newErrors.plate = 'Placa inválida';
+            }
 
-        if (!data.plateCity) {
-            newErrors.plateCity = 'Cidade da placa é obrigatória';
+            if (!data.plateState) {
+                newErrors.plateState = 'UF da placa é obrigatória';
+            }
+
+            if (!data.plateCity) {
+                newErrors.plateCity = 'Cidade da placa é obrigatória';
+            }
+
+            if (!data.renavam || data.renavam.length < 9) {
+                newErrors.renavam = 'RENAVAM inválido';
+            }
         }
 
         if (!data.model) {
@@ -63,10 +71,6 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
             newErrors.color = 'Cor é obrigatória';
         }
 
-        if (!data.renavam || data.renavam.length < 9) {
-            newErrors.renavam = 'RENAVAM inválido';
-        }
-
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
@@ -78,102 +82,126 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
     const textPrimary = theme === 'dark' ? 'text-white' : 'text-zinc-900';
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
+    const isMoto = data.vehicleType === 'moto';
+
     return (
         <div className="flex flex-col h-full space-y-4">
             <div className="shrink-0">
                 <h2 className={`text-3xl font-black italic ${textPrimary} mb-2`}>Dados do Veículo</h2>
-                <p className={`text-sm ${textMuted}`}>Informações da sua moto e CNH</p>
+                <p className={`text-sm ${textMuted}`}>Selecione seu veículo e informe os dados</p>
             </div>
 
             <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
-                {/* CNH Number */}
-                <div>
-                    <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Número da CNH *
-                    </label>
-                    <input
-                        type="text"
-                        value={data.cnhNumber}
-                        onChange={(e) => onUpdate({ cnhNumber: maskCNH(e.target.value) })}
-                        placeholder="00000000000"
-                        maxLength={11}
-                        className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.cnhNumber ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
-                    />
-                    {errors.cnhNumber && <p className="text-xs text-red-500 mt-1 ml-2">{errors.cnhNumber}</p>}
+                {/* Vehicle Type Toggle */}
+                <div className="flex p-1.5 rounded-2xl bg-black/20 gap-1.5">
+                    <button
+                        onClick={() => onUpdate({ vehicleType: 'moto' })}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center space-x-2 transition-all ${isMoto ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                    >
+                        <i className="fas fa-motorcycle"></i>
+                        <span className="text-xs font-black uppercase">Moto</span>
+                    </button>
+                    <button
+                        onClick={() => onUpdate({ vehicleType: 'bike' })}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center space-x-2 transition-all ${!isMoto ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                    >
+                        <i className="fas fa-bicycle"></i>
+                        <span className="text-xs font-black uppercase">Bicicleta</span>
+                    </button>
                 </div>
 
-                {/* CNH Validity */}
-                <div>
-                    <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Validade da CNH *
-                    </label>
-                    <input
-                        type="date"
-                        value={data.cnhValidity}
-                        onChange={(e) => onUpdate({ cnhValidity: e.target.value })}
-                        className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.cnhValidity ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold`}
-                    />
-                    {errors.cnhValidity && <p className="text-xs text-red-500 mt-1 ml-2">{errors.cnhValidity}</p>}
-                </div>
+                {isMoto && (
+                    <>
+                        {/* CNH Number */}
+                        <div>
+                            <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                Número da CNH *
+                            </label>
+                            <input
+                                type="text"
+                                value={data.cnhNumber}
+                                onChange={(e) => onUpdate({ cnhNumber: maskCNH(e.target.value) })}
+                                placeholder="00000000000"
+                                maxLength={11}
+                                className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.cnhNumber ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
+                            />
+                            {errors.cnhNumber && <p className="text-xs text-red-500 mt-1 ml-2">{errors.cnhNumber}</p>}
+                        </div>
 
-                {/* Plate */}
-                <div>
-                    <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Placa *
-                    </label>
-                    <input
-                        type="text"
-                        value={data.plate}
-                        onChange={(e) => onUpdate({ plate: maskPlate(e.target.value) })}
-                        placeholder="ABC1D23 ou ABC-1234"
-                        maxLength={8}
-                        className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plate ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600 uppercase`}
-                    />
-                    {errors.plate && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plate}</p>}
-                    <p className={`text-xs ${textMuted} mt-1 ml-2`}>Formato Mercosul (ABC1D23) ou antigo (ABC-1234)</p>
-                </div>
+                        {/* CNH Validity */}
+                        <div>
+                            <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                Validade da CNH *
+                            </label>
+                            <input
+                                type="date"
+                                value={data.cnhValidity}
+                                onChange={(e) => onUpdate({ cnhValidity: e.target.value })}
+                                className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.cnhValidity ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold`}
+                            />
+                            {errors.cnhValidity && <p className="text-xs text-red-500 mt-1 ml-2">{errors.cnhValidity}</p>}
+                        </div>
 
-                {/* Plate State and City */}
-                <div className="flex space-x-3">
-                    <div className="w-24">
-                        <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                            UF Placa *
-                        </label>
-                        <input
-                            type="text"
-                            value={data.plateState}
-                            onChange={(e) => onUpdate({ plateState: e.target.value.toUpperCase() })}
-                            placeholder="SP"
-                            maxLength={2}
-                            className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plateState ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600 text-center uppercase`}
-                        />
-                        {errors.plateState && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plateState}</p>}
-                    </div>
-                    <div className="flex-1">
-                        <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                            Cidade da Placa *
-                        </label>
-                        <input
-                            type="text"
-                            value={data.plateCity}
-                            onChange={(e) => onUpdate({ plateCity: e.target.value })}
-                            placeholder="Nome da cidade"
-                            className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plateCity ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
-                        />
-                        {errors.plateCity && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plateCity}</p>}
-                    </div>
-                </div>
+                        {/* Plate */}
+                        <div>
+                            <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                Placa *
+                            </label>
+                            <input
+                                type="text"
+                                value={data.plate}
+                                onChange={(e) => onUpdate({ plate: maskPlate(e.target.value) })}
+                                placeholder="ABC1D23 ou ABC-1234"
+                                maxLength={8}
+                                className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plate ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600 uppercase`}
+                            />
+                            {errors.plate && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plate}</p>}
+                            <p className={`text-xs ${textMuted} mt-1 ml-2`}>Formato Mercosul (ABC1D23) ou antigo (ABC-1234)</p>
+                        </div>
+
+                        {/* Plate State and City */}
+                        <div className="flex space-x-3">
+                            <div className="w-24">
+                                <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                    UF Placa *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.plateState}
+                                    onChange={(e) => onUpdate({ plateState: e.target.value.toUpperCase() })}
+                                    placeholder="SP"
+                                    maxLength={2}
+                                    className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plateState ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600 text-center uppercase`}
+                                />
+                                {errors.plateState && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plateState}</p>}
+                            </div>
+                            <div className="flex-1">
+                                <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                    Cidade da Placa *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.plateCity}
+                                    onChange={(e) => onUpdate({ plateCity: e.target.value })}
+                                    placeholder="Nome da cidade"
+                                    className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.plateCity ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
+                                />
+                                {errors.plateCity && <p className="text-xs text-red-500 mt-1 ml-2">{errors.plateCity}</p>}
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* Model */}
                 <div>
                     <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Modelo da Moto *
+                        {isMoto ? 'Modelo da Moto *' : 'Modelo da Bicicleta *'}
                     </label>
                     <input
                         type="text"
                         value={data.model}
                         onChange={(e) => onUpdate({ model: e.target.value })}
-                        placeholder="Ex: Honda CG 160"
+                        placeholder={isMoto ? 'Ex: Honda CG 160' : 'Ex: Bicicleta Elétrica Oggi'}
                         className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.model ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
                     />
                     {errors.model && <p className="text-xs text-red-500 mt-1 ml-2">{errors.model}</p>}
@@ -210,21 +238,25 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                     </div>
                 </div>
 
-                {/* RENAVAM */}
-                <div>
-                    <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        Código RENAVAM *
-                    </label>
-                    <input
-                        type="text"
-                        value={data.renavam}
-                        onChange={(e) => onUpdate({ renavam: maskRENAVAM(e.target.value) })}
-                        placeholder="00000000000"
-                        maxLength={11}
-                        className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.renavam ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
-                    />
-                    {errors.renavam && <p className="text-xs text-red-500 mt-1 ml-2">{errors.renavam}</p>}
-                </div>
+                {isMoto && (
+                    <>
+                        {/* RENAVAM */}
+                        <div>
+                            <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
+                                Código RENAVAM *
+                            </label>
+                            <input
+                                type="text"
+                                value={data.renavam}
+                                onChange={(e) => onUpdate({ renavam: maskRENAVAM(e.target.value) })}
+                                placeholder="00000000000"
+                                maxLength={11}
+                                className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.renavam ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
+                            />
+                            {errors.renavam && <p className="text-xs text-red-500 mt-1 ml-2">{errors.renavam}</p>}
+                        </div>
+                    </>
+                )}
 
                 {/* Is Owner */}
                 <div className={`p-4 rounded-xl ${innerBg}`}>
@@ -237,7 +269,7 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                         />
                         <div>
                             <span className={`text-sm font-bold ${textPrimary} block`}>Veículo Próprio</span>
-                            <span className={`text-xs ${textMuted}`}>Marque se a moto é sua</span>
+                            <span className={`text-xs ${textMuted}`}>{isMoto ? 'Marque se a moto é sua' : 'Marque se a bicicleta é sua'}</span>
                         </div>
                     </label>
                 </div>

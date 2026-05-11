@@ -42,6 +42,7 @@ export interface WizardData {
     state: string;
 
     // Step 5: Vehicle
+    vehicleType: 'moto' | 'bike';
     cnhNumber: string;
     cnhValidity: string;
     plate: string;
@@ -96,6 +97,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
         district: '',
         city: '',
         state: '',
+        vehicleType: 'moto',
         cnhNumber: '',
         cnhValidity: '',
         plate: '',
@@ -230,6 +232,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                 {currentStep === 5 && (
                     <Step5Vehicle
                         data={{
+                            vehicleType: wizardData.vehicleType,
                             cnhNumber: wizardData.cnhNumber,
                             cnhValidity: wizardData.cnhValidity,
                             plate: wizardData.plate,
@@ -249,6 +252,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                 {currentStep === 6 && (
                     <Step6Documents
                         data={{
+                            vehicleType: wizardData.vehicleType,
                             cnhFrontUrl: wizardData.cnhFrontUrl,
                             cnhBackUrl: wizardData.cnhBackUrl,
                             crlvUrl: wizardData.crlvUrl,
