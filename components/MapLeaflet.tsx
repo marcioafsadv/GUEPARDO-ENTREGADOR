@@ -41,6 +41,7 @@ interface MapLeafletProps {
     missions?: any[] | null;
     currentLocation?: { lat: number; lng: number; speed?: number | null } | null;
     isMissionOverlayExpanded?: boolean;
+    onUpdateMetrics?: (metrics: any) => void;
 }
 
 const COLORS = {
@@ -147,7 +148,8 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     reCenterTrigger,
     missions = [],
     currentLocation: propLocation,
-    isMissionOverlayExpanded = false
+    isMissionOverlayExpanded = false,
+    onUpdateMetrics
 }) => {
     const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);

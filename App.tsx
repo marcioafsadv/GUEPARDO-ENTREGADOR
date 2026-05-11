@@ -3106,7 +3106,7 @@ const App: React.FC = () => {
                   showHeatMap={showHeatMap}
                   mapMode={mapMode}
                   showTraffic={showTraffic}
-                  onUpdateMetrics={(metrics) => setNavMetrics(metrics)}
+                  onUpdateMetrics={(metrics: any) => setNavMetrics(metrics)}
                   isMissionOverlayExpanded={isMissionOverlayExpanded}
                   currentLocation={currentLocation}
                 />
@@ -3483,7 +3483,7 @@ const App: React.FC = () => {
                         {['DINHEIRO', 'CASH', 'CARTÃO', 'CARD'].includes(mission?.paymentMethod?.toUpperCase() || '') && (
                           <div className="bg-[#FF6B00] rounded-[32px] p-6 mb-6 flex items-center space-x-5 shadow-[0_15px_40px_rgba(255,107,0,0.4)] border border-white/20 animate-in zoom-in-95 duration-300">
                             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white text-3xl shrink-0">
-                              <i className={`fas ${['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase()) ? 'fa-money-bill-1' : 'fa-credit-card'}`}></i>
+                              <i className={`fas ${['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase() || '') ? 'fa-money-bill-1' : 'fa-credit-card'}`}></i>
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-white/80 text-[10px] font-black uppercase tracking-widest mb-1 italic">Atenção: Cobrar do Cliente</p>
@@ -3491,7 +3491,7 @@ const App: React.FC = () => {
                                 {formatCurrency(mission.deliveryValue || 0)}
                               </p>
                               <p className="text-white/60 text-[9px] font-black uppercase tracking-wider">
-                                {['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase()) ? '• Confira o troco e o dinheiro!' : '(CARTÃO)'}
+                                {['DINHEIRO', 'CASH'].includes(mission.paymentMethod?.toUpperCase() || '') ? '• Confira o troco e o dinheiro!' : '(CARTÃO)'}
                               </p>
                             </div>
                           </div>
@@ -3765,7 +3765,7 @@ const App: React.FC = () => {
                                return;
                             }
                             try {
-                              const accepted = await supabaseClient.acceptMission(m.id, userId);
+                              const accepted = await supabaseClient.acceptMission(m.id || '', userId || '');
                               if (accepted) {
                                 if (playAccept) playAccept();
                                 const dynamicMission = mapDbDeliveryToMission(accepted);
