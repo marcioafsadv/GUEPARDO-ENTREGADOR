@@ -427,6 +427,64 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const isDraggingRef = useRef(false);
+  const [unreadMessages, setUnreadMessages] = useState<Record<string, Partial<Record<ChatRoomType, number>>>>({});
+
+  // --- CHAT REALTIME NOTIFICATIONS ---
+  useEffect(() => {
+    if (!userId) return;
+
+    const messageChannel = supabaseClient.supabase
+      .channel(`unread-messages-courier-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_messages'
+        },
+        (payload) => {
+          const orderId = payload.new.order_id;
+          const senderType = payload.new.sender_type;
+          
+          // Ignore our own messages
+          if (senderType === 'COURIER') return;
+
+          // Only track if it's for an active mission
+          const isActive = activeMissions.some(m => String(m.id) === String(orderId));
+          if (!isActive) return;
+
+          // Fallback for room_type
+          let roomType = payload.new.room_type as ChatRoomType;
+          if (!roomType) {
+              if (senderType === 'CENTRAL') roomType = 'COURIER_CENTRAL';
+              else roomType = 'STORE_COURIER';
+          }
+
+          setUnreadMessages(prev => {
+            const orderUnread = prev[orderId] || {};
+            return {
+              ...prev,
+              [orderId]: {
+                ...orderUnread,
+                [roomType]: (orderUnread[roomType] || 0) + 1
+              }
+            };
+          });
+
+          // Play notification sound (one-shot)
+          const beep = new Howl({
+            src: ['/sounds/beep-notification.mp3'],
+            volume: 0.5
+          });
+          beep.play();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.supabase.removeChannel(messageChannel);
+    };
+  }, [userId, activeMissions]);
 
   // Pre-geocoded coords for instant route switching (store → customer)
   const [preloadedCoords, setPreloadedCoords] = useState<{
@@ -3059,6 +3117,8 @@ const App: React.FC = () => {
                   onShowSOS={() => setShowSOSModal(true)}
                   onShowFilters={() => setShowFiltersModal(true)}
                   delivererName={currentUser?.name || 'Entregador'}
+                  unreadCount={Object.values(unreadMessages[mission?.id || ''] || {}).reduce((a, b) => a + (b || 0), 0)}
+                  onChatClick={() => setShowChatModal(true)}
                   destinationAddress={
                     (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
                       ? mission?.storeAddress || null
@@ -5416,6 +5476,8 @@ const App: React.FC = () => {
           currentUser={currentUser}
           initialTab={chatTab}
           theme={theme}
+          unreadMessages={unreadMessages[(historicalOrder || mission)?.id || '']}
+          setUnreadMessages={setUnreadMessages}
         />
       )}
       {/* Card de Notificação Premium para Cancelamentos (Toast) */}

@@ -8,9 +8,14 @@ interface ChatMultilateralModalProps {
   currentUser: { name: string };
   initialTab?: ChatRoomType;
   theme?: string;
+  unreadMessages?: Partial<Record<ChatRoomType, number>>;
+  setUnreadMessages?: React.Dispatch<React.SetStateAction<Record<string, Partial<Record<ChatRoomType, number>>>>>;
 }
 
-export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ onClose, order, currentUser, initialTab = 'STORE_COURIER', theme = 'dark' }) => {
+export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ 
+  onClose, order, currentUser, initialTab = 'STORE_COURIER', theme = 'dark',
+  unreadMessages = {}, setUnreadMessages 
+}) => {
   const isOpen = !!order;
   // Inicia na aba solicitada (padrão Loja para o Entregador)
   const [activeTab, setActiveTab] = useState<ChatRoomType>(initialTab);
@@ -85,12 +90,27 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
     };
   }, [order, isOpen]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages & Clear unread for active tab
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, activeTab]);
+
+    if (setUnreadMessages && order && unreadMessages[activeTab]) {
+      setUnreadMessages(prev => {
+        const orderUnread = prev[order.id] || {};
+        if (!orderUnread[activeTab]) return prev;
+        
+        const nextOrderUnread = { ...orderUnread };
+        delete nextOrderUnread[activeTab];
+        
+        return {
+          ...prev,
+          [order.id]: nextOrderUnread
+        };
+      });
+    }
+  }, [messages, activeTab, setUnreadMessages, order?.id]);
 
   const handleSend = async () => {
     if (!message.trim() || !order) return;
@@ -151,23 +171,29 @@ export const ChatMultilateralModal: React.FC<ChatMultilateralModalProps> = ({ on
         <div className="px-6 py-4 bg-[#0f0502] flex gap-3 relative z-10">
           <button
             onClick={() => setActiveTab('STORE_COURIER')}
-            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border ${
+            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border relative ${
               activeTab === 'STORE_COURIER' 
               ? 'bg-[#FF6B00] border-[#FF6B00] text-white shadow-[0_15px_30px_rgba(255,107,0,0.3)]' 
               : 'bg-white/5 border-white/5 text-[#FFC099]/40 hover:text-[#FFC099] hover:bg-white/10'
             }`}
           >
             <i className="fas fa-store text-xs" /> Loja
+            {activeTab !== 'STORE_COURIER' && unreadMessages['STORE_COURIER'] && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-ping"></span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('COURIER_CENTRAL')}
-            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border ${
+            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 border relative ${
               activeTab === 'COURIER_CENTRAL' 
               ? 'bg-white/10 border-white/20 text-white shadow-xl' 
               : 'bg-white/5 border-white/5 text-[#FFC099]/40 hover:text-[#FFC099] hover:bg-white/10'
             }`}
           >
             <i className="fas fa-headset text-xs" /> Central
+            {activeTab !== 'COURIER_CENTRAL' && unreadMessages['COURIER_CENTRAL'] && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-[#FF6B00] rounded-full animate-ping"></span>
+            )}
           </button>
         </div>
 

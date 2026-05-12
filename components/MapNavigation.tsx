@@ -32,6 +32,8 @@ interface MapNavigationProps {
     onShowSOS?: () => void;
     onShowFilters?: () => void;
     delivererName?: string;
+    unreadCount?: number;
+    onChatClick?: () => void;
 }
 
 export const MapNavigation: React.FC<MapNavigationProps> = ({
@@ -45,7 +47,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     theme = 'dark',
     onShowSOS,
     onShowFilters,
-    delivererName = 'Entregador'
+    delivererName = 'Entregador',
+    unreadCount = 0,
+    onChatClick
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -740,6 +744,19 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5"
                 >
                     <i className="fas fa-route text-xl group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                {/* BOTÃO DE CHAT COM NOTIFICAÇÃO */}
+                <button 
+                    onClick={onChatClick}
+                    className={`w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-white backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5 relative ${unreadCount > 0 ? 'animate-pulse-subtle border-[#FF6B00]/40' : ''}`}
+                >
+                    <i className="fas fa-comments text-xl group-hover:scale-110 transition-transform"></i>
+                    {unreadCount > 0 && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF6B00] rounded-full border-2 border-[#0D0502] flex items-center justify-center animate-bounce">
+                            <span className="text-[10px] font-black text-white">{unreadCount}</span>
+                        </div>
+                    )}
                 </button>
             </div>
 
