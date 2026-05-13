@@ -380,7 +380,7 @@ const App: React.FC = () => {
   const [cancellationToast, setCancellationToast] = useState({ show: false, message: '' });
   // Ref to always have the latest status inside realtime callbacks (avoids stale closure)
   const statusRef = useRef<DriverStatus>(DriverStatus.OFFLINE);
-  useEffect(() => { statusRef.current = status; }, [status]);
+
   const [activeMissions, setActiveMissions] = useState<DeliveryMission[]>([]);
   const missionRef = useRef<DeliveryMission | null>(null);
   const mission = React.useMemo(() => {
@@ -1219,11 +1219,12 @@ const App: React.FC = () => {
     let watchId: number | null = null;
     let watchdogTimer: any = null;
 
-    if (status !== DriverStatus.OFFLINE && userId && gpsEnabled) {
-      console.log("🚀 [GPS] Inciando Rastreamento (Tentativa: " + (gpsRestartCounterRef.current + 1) + ")...");
+    const isOffline = status === DriverStatus.OFFLINE;
 
-      // 1. WARM-UP: Solicitação de baixa precisão (Kickstart no sensor/navegador)
-      // Isso ajuda a "destravar" o provedor de localização do Android/Chrome rapidamente.
+    if (!isOffline && userId && gpsEnabled) {
+      console.log("🚀 [GPS] Inciando Rastreamento Estabilizado (Tentativa: " + (gpsRestartCounterRef.current + 1) + ")...");
+
+      // 1. WARM-UP: Kickstart no sensor
       navigator.geolocation.getCurrentPosition(
         (pos) => console.log("✨ [GPS] Warm-up concluído:", pos.coords.latitude, pos.coords.longitude),
         (err) => console.warn("⚠️ [GPS] Warm-up falhou:", err.message),
@@ -1231,26 +1232,29 @@ const App: React.FC = () => {
       );
 
       // 2. Initial High-Accuracy Update
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          lastGpsUpdateRef.current = Date.now();
-          supabaseClient.updateProfile(userId, {
-            current_lat: latitude,
-            current_lng: longitude,
-            is_online: true,
-            last_location_update: new Date().toISOString()
-          }).catch(e => console.error("Initial location update failed", e));
-          
-          setCurrentLocation({ 
-            lat: latitude, 
-            lng: longitude,
-            speed: pos.coords.speed
-          });
-        },
-        (err) => console.error("❌ [GPS] Error getting initial location", err),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+      const getInitialLocation = () => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            lastGpsUpdateRef.current = Date.now();
+            supabaseClient.updateProfile(userId, {
+              current_lat: latitude,
+              current_lng: longitude,
+              is_online: true,
+              last_location_update: new Date().toISOString()
+            }).catch(e => console.error("Initial location update failed", e));
+            
+            setCurrentLocation({ 
+              lat: latitude, 
+              lng: longitude,
+              speed: pos.coords.speed
+            });
+          },
+          (err) => console.error("❌ [GPS] Error getting initial location", err),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      };
+      getInitialLocation();
 
       // 3. Continuous Watch
       watchId = navigator.geolocation.watchPosition(
@@ -1265,7 +1269,10 @@ const App: React.FC = () => {
             last_location_update: new Date().toISOString()
           }).catch(e => console.error("Location update failed", e));
 
-          // LOG HISTORY: If there's an active mission, log the percurso
+          // LOG HISTORY: Use Refs to avoid closure staleness without restarting watch
+          const currentStatus = statusRef.current;
+          const currentMission = missionRef.current;
+
           const activeStates = [
             DriverStatus.GOING_TO_STORE,
             DriverStatus.ARRIVED_AT_STORE,
@@ -1275,11 +1282,11 @@ const App: React.FC = () => {
             DriverStatus.RETURNING
           ];
 
-          if (mission && activeStates.includes(status)) {
+          if (currentMission && activeStates.includes(currentStatus)) {
             supabaseClient.supabase
               .from('delivery_tracking')
               .insert([{
-                delivery_id: mission.id,
+                delivery_id: currentMission.id,
                 latitude,
                 longitude
               }])
@@ -1296,7 +1303,6 @@ const App: React.FC = () => {
         },
         (err) => {
           console.error("❌ [GPS] Location watch error", err);
-          // Se houver erro de timeout, forçamos um reset no próximo ciclo do watchdog
         },
         {
           enableHighAccuracy: true,
@@ -1305,18 +1311,33 @@ const App: React.FC = () => {
         }
       );
 
-      // 4. WATCHDOG: Monitora se o GPS "congelou"
+      // 4. WATCHDOG & NUDGE: Monitora se o GPS "congelou"
       watchdogTimer = setInterval(() => {
         const timeSinceLastUpdate = Date.now() - lastGpsUpdateRef.current;
-        // Se passarem mais de 25 segundos sem sinal, reiniciamos o rastreador
-        if (timeSinceLastUpdate > 25000) {
+        
+        // NUDGE: Se passarem 12 segundos sem sinal, tentamos um fix manual para acordar o sensor
+        if (timeSinceLastUpdate > 12000 && timeSinceLastUpdate <= 22000) {
+            console.log("🔔 [GPS] Nudge: Solicitando posição manual para acordar sensor...");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    lastGpsUpdateRef.current = Date.now();
+                    setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed });
+                },
+                null,
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
+
+        // RESTART: Se passarem mais de 22 segundos sem sinal, reiniciamos o rastreador
+        if (timeSinceLastUpdate > 22000) {
           console.warn("❄️ [GPS] Possível congelamento detectado (" + (timeSinceLastUpdate/1000).toFixed(0) + "s). Reiniciando...");
           gpsRestartCounterRef.current++;
           setSyncId(prev => prev + 1); // Força re-execução deste effect
         }
-      }, 10000);
+      }, 7000);
 
-    } else if (status === DriverStatus.OFFLINE && userId) {
+    } else if (isOffline && userId) {
       // Mark as offline in DB
       supabaseClient.updateProfile(userId, {
         is_online: false
@@ -1332,7 +1353,7 @@ const App: React.FC = () => {
       }
       console.log("🛑 [GPS] Rastreamento Parado.");
     };
-  }, [status, userId, gpsEnabled, syncId]); // Removido name/vehicle para evitar restarts desnecessários
+  }, [status === DriverStatus.OFFLINE, userId, gpsEnabled, syncId]); // Removido name/vehicle para evitar restarts desnecessários
 
 
   const handleSOSAction = (type: 'police' | 'samu' | 'mechanic' | 'share') => {
@@ -2010,7 +2031,27 @@ const App: React.FC = () => {
   // Keep statusRef always up to date so realtime callbacks never read stale closures
   useEffect(() => {
     statusRef.current = status;
-  }, [status]);
+    
+    // Explicit GPS Nudge on important transitions to avoid "cold start" freezing
+    const activeStates = [
+        DriverStatus.GOING_TO_STORE, 
+        DriverStatus.GOING_TO_CUSTOMER, 
+        DriverStatus.RETURNING
+    ];
+    
+    if (activeStates.includes(status) && gpsEnabled) {
+        console.log(`🚀 [GPS] Status changed to ${status}. Triggering sensor wake-up...`);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                lastGpsUpdateRef.current = Date.now();
+                setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed });
+            },
+            null,
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
+    }
+  }, [status, gpsEnabled]);
 
   // ─── FAST POLLING: Dedicated watcher for PICKING_UP → in_transit ───────────
   // When the courier is showing the collection code, poll the DB every 3 seconds.
