@@ -428,6 +428,11 @@ const App: React.FC = () => {
   const dragStartY = useRef(0);
   const isDraggingRef = useRef(false);
   const [unreadMessages, setUnreadMessages] = useState<Record<string, Partial<Record<ChatRoomType, number>>>>({});
+  const activeMissionsRef = useRef<DeliveryMission[]>([]);
+
+  useEffect(() => {
+    activeMissionsRef.current = activeMissions;
+  }, [activeMissions]);
 
   // --- CHAT REALTIME NOTIFICATIONS ---
   useEffect(() => {
@@ -446,11 +451,16 @@ const App: React.FC = () => {
           const orderId = payload.new.order_id;
           const senderType = payload.new.sender_type;
           
+          console.log("💬 [CHAT_REALTIME] Courier received message for order:", orderId, "from", senderType);
+
           // Ignore our own messages
           if (senderType === 'COURIER') return;
 
           // Only track if it's for an active mission
-          const isActive = activeMissions.some(m => String(m.id) === String(orderId));
+          const currentMissions = activeMissionsRef.current;
+          const isActive = currentMissions.some(m => String(m.id) === String(orderId));
+          console.log("💬 [CHAT_REALTIME] Is mission active?", isActive, "Active missions in Ref:", currentMissions.map(m => m.id));
+
           if (!isActive) return;
 
           // Fallback for room_type
@@ -484,7 +494,7 @@ const App: React.FC = () => {
     return () => {
       supabaseClient.supabase.removeChannel(messageChannel);
     };
-  }, [userId, activeMissions]);
+  }, [userId]); // Minimal dependencies
 
   // Pre-geocoded coords for instant route switching (store → customer)
   const [preloadedCoords, setPreloadedCoords] = useState<{
