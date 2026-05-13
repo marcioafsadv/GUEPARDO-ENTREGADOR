@@ -4231,23 +4231,23 @@ const App: React.FC = () => {
         if (settingsView === 'MAIN') {
           return (
             <div className={`h-full w-full p-8 overflow-y-auto pb-40 transition-colors duration-300 bg-[#0D0502]`}>
-              <h1 className={`text-5xl font-[900] italic mb-10 text-[#F5E6D3] tracking-tighter transform -skew-x-6`}>Meu Perfil</h1>
+              <h1 className={`text-4xl sm:text-5xl font-[900] italic mb-8 sm:mb-10 text-[#F5E6D3] tracking-tighter transform -skew-x-6`}>Meu Perfil</h1>
               
-              <div className={`flex items-center space-x-6 mb-12 p-8 rounded-[40px] border border-[#D4AF37]/20 bg-[#1A0C06] shadow-2xl`}>
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full p-1.5 border-2 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.25)] bg-black">
+              <div className={`flex items-center space-x-4 sm:space-x-6 mb-10 sm:mb-12 p-5 sm:p-8 rounded-[32px] sm:rounded-[40px] border border-[#D4AF37]/20 bg-[#1A0C06] shadow-2xl transition-all`}>
+                <div className="relative shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 sm:p-1.5 border-2 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.25)] bg-black">
                     <img src={currentUser.avatar} onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }} className="w-full h-full object-cover rounded-full" alt="Perfil" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 rounded-full border-4 border-[#1a0c06] flex items-center justify-center text-white text-[10px]">
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 bg-emerald-500 rounded-full border-4 border-[#1a0c06] flex items-center justify-center text-white text-[9px] sm:text-[10px]">
                     <i className="fas fa-check"></i>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className={`text-2xl font-black text-white truncate tracking-tight`}>{currentUser.name || 'Entregador'}</h2>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className={`text-[#FFD700] text-[10px] font-black uppercase tracking-[0.2em]`}>Nível {currentUser.level}</span>
-                    <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                    <span className="text-chocolate-muted text-[10px] font-bold uppercase tracking-widest leading-none pt-0.5">Top Parceiro</span>
+                  <h2 className={`text-xl sm:text-2xl font-black text-white truncate tracking-tight mb-0.5`}>{currentUser.name || 'Entregador'}</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+                    <span className={`text-[#FFD700] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] leading-tight`}>Nível {currentUser.level}</span>
+                    <span className="hidden sm:block w-1 h-1 rounded-full bg-white/20"></span>
+                    <span className="text-chocolate-muted text-[9px] sm:text-[10px] font-bold uppercase tracking-widest leading-none">Top Parceiro</span>
                   </div>
                 </div>
               </div>
