@@ -91,7 +91,7 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                 <p className={`text-sm ${textMuted}`}>Selecione seu veículo e informe os dados</p>
             </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
+            <div className="space-y-4 flex-1 pr-2 pb-4">
                 {/* Vehicle Type Toggle */}
                 <div className="flex p-1.5 rounded-2xl bg-black/20 gap-1.5">
                     <button

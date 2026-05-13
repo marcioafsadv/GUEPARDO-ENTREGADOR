@@ -160,7 +160,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
             </div>
 
             {/* Step content */}
-            <div className={`flex-1 w-full rounded-3xl border p-5 sm:p-8 ${cardBg} flex flex-col overflow-hidden relative`}>
+            <div className={`flex-1 w-full rounded-3xl border p-5 sm:p-8 ${cardBg} flex flex-col overflow-y-auto relative custom-scrollbar`}>
                 {currentStep === 1 && (
                     <Step1PersonalData
                         data={{

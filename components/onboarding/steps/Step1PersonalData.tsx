@@ -79,7 +79,7 @@ const Step1PersonalData: React.FC<Step1PersonalDataProps> = ({ data, onUpdate, o
                 <p className={`text-sm ${textMuted}`}>Preencha seus dados para começar</p>
             </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
+            <div className="space-y-4 flex-1 pr-2 pb-4">
                 {/* Nome Completo */}
                 <div>
                     <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>

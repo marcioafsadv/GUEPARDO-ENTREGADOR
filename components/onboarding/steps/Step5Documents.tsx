@@ -218,7 +218,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                 </ul>
             </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 custom-scrollbar">
+            <div className="space-y-4 flex-1 pr-2 pb-4">
                 {Object.entries(documents).map(([key, doc]) => renderDocumentUpload(key, doc))}
             </div>
 
