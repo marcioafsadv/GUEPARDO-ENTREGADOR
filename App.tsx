@@ -285,7 +285,7 @@ const App: React.FC = () => {
         level: 'Guepardo PRO',
         avatar: DEFAULT_AVATAR,
         region: 'Itu - SP',
-        vehicle: 'moto',
+        vehicle: 'moto' as 'moto' | 'bike' | 'carro',
         verified: false,
         bank: {
           name: "Banco Digital",
@@ -341,7 +341,7 @@ const App: React.FC = () => {
     level: 'Guepardo PRO', // Nível fixo solicitado
     avatar: DEFAULT_AVATAR,
     region: 'Itu - SP',
-    vehicle: 'moto',
+    vehicle: 'moto' as 'moto' | 'bike' | 'carro',
     verified: false,
     bank: {
       name: "Banco Digital", // Default placeholder
@@ -716,7 +716,7 @@ const App: React.FC = () => {
   };
 
   const [emergencyContact, setEmergencyContact] = useState({ name: '', phone: '', relation: '', isBeneficiary: false });
-  const [selectedVehicle, setSelectedVehicle] = useState<'moto' | 'car' | 'bike'>('moto');
+  const [selectedVehicle, setSelectedVehicle] = useState<'moto' | 'carro' | 'bike'>('moto');
 
   // GPS
   const [gpsEnabled, setGpsEnabled] = useState(false);
@@ -4663,7 +4663,7 @@ const App: React.FC = () => {
                           {[
                             { id: 'moto', icon: 'fa-motorcycle', label: 'Moto' },
                             { id: 'bike', icon: 'fa-bicycle', label: 'Bike' },
-                            { id: 'car', icon: 'fa-car', label: 'Carro' }
+                            { id: 'carro', icon: 'fa-car', label: 'Carro' }
                           ].map((v) => (
                             <button
                               key={v.id}

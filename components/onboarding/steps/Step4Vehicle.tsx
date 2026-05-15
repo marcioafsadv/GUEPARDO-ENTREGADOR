@@ -3,7 +3,7 @@ import { maskPlate, maskCNH, maskRENAVAM, maskYear } from '../../../utils/masks'
 
 interface Step4VehicleProps {
     data: {
-        vehicleType: 'moto' | 'bike';
+        vehicleType: 'moto' | 'bike' | 'carro';
         cnhNumber: string;
         cnhValidity: string;
         plate: string;
@@ -25,9 +25,10 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
 
     const validateAndNext = () => {
         const newErrors: Record<string, string> = {};
+        const isMotorized = data.vehicleType === 'moto' || data.vehicleType === 'carro';
         const isMoto = data.vehicleType === 'moto';
 
-        if (isMoto) {
+        if (isMotorized) {
             if (!data.cnhNumber || data.cnhNumber.length < 11) {
                 newErrors.cnhNumber = 'CNH inválida';
             }
@@ -103,14 +104,21 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                     </button>
                     <button
                         onClick={() => onUpdate({ vehicleType: 'bike' })}
-                        className={`flex-1 h-12 rounded-xl flex items-center justify-center space-x-2 transition-all ${!isMoto ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center space-x-2 transition-all ${data.vehicleType === 'bike' ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
                     >
                         <i className="fas fa-bicycle"></i>
                         <span className="text-xs font-black uppercase">Bicicleta</span>
                     </button>
+                    <button
+                        onClick={() => onUpdate({ vehicleType: 'carro' })}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center space-x-2 transition-all ${data.vehicleType === 'carro' ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                    >
+                        <i className="fas fa-car"></i>
+                        <span className="text-xs font-black uppercase">Carro</span>
+                    </button>
                 </div>
 
-                {isMoto && (
+                {isMotorized && (
                     <>
                         {/* CNH Number */}
                         <div>
@@ -195,13 +203,13 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                 {/* Model */}
                 <div>
                     <label className={`text-xs font-black uppercase tracking-widest ml-2 mb-1 block ${textMuted}`}>
-                        {isMoto ? 'Modelo da Moto *' : 'Modelo da Bicicleta *'}
+                        {data.vehicleType === 'moto' ? 'Modelo da Moto *' : data.vehicleType === 'carro' ? 'Modelo do Carro *' : 'Modelo da Bicicleta *'}
                     </label>
                     <input
                         type="text"
                         value={data.model}
                         onChange={(e) => onUpdate({ model: e.target.value })}
-                        placeholder={isMoto ? 'Ex: Honda CG 160' : 'Ex: Bicicleta Elétrica Oggi'}
+                        placeholder={data.vehicleType === 'moto' ? 'Ex: Honda CG 160' : data.vehicleType === 'carro' ? 'Ex: Toyota Corolla' : 'Ex: Bicicleta Elétrica Oggi'}
                         className={`w-full h-12 rounded-xl px-4 ${innerBg} ${textPrimary} outline-none border ${errors.model ? 'border-red-500' : 'border-white/5'} focus:border-[#FF6B00] font-bold placeholder:text-zinc-600`}
                     />
                     {errors.model && <p className="text-xs text-red-500 mt-1 ml-2">{errors.model}</p>}
@@ -238,7 +246,7 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                     </div>
                 </div>
 
-                {isMoto && (
+                {isMotorized && (
                     <>
                         {/* RENAVAM */}
                         <div>
@@ -269,7 +277,7 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
                         />
                         <div>
                             <span className={`text-sm font-bold ${textPrimary} block`}>Veículo Próprio</span>
-                            <span className={`text-xs ${textMuted}`}>{isMoto ? 'Marque se a moto é sua' : 'Marque se a bicicleta é sua'}</span>
+                            <span className={`text-xs ${textMuted}`}>{data.vehicleType === 'moto' ? 'Marque se a moto é sua' : data.vehicleType === 'carro' ? 'Marque se o carro é seu' : 'Marque se a bicicleta é sua'}</span>
                         </div>
                     </label>
                 </div>

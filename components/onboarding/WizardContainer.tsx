@@ -42,7 +42,7 @@ export interface WizardData {
     state: string;
 
     // Step 5: Vehicle
-    vehicleType: 'moto' | 'bike';
+    vehicleType: 'moto' | 'bike' | 'carro';
     cnhNumber: string;
     cnhValidity: string;
     plate: string;

@@ -9,7 +9,7 @@ interface DocumentUpload {
 
 interface Step5DocumentsProps {
     data: {
-        vehicleType: 'moto' | 'bike';
+        vehicleType: 'moto' | 'bike' | 'carro';
         cnhFrontUrl: string | null;
         cnhBackUrl: string | null;
         crlvUrl: string | null;
@@ -31,6 +31,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
         proofOfResidence: useRef<HTMLInputElement>(null),
     };
 
+    const isMotorized = data.vehicleType === 'moto' || data.vehicleType === 'carro';
     const isMoto = data.vehicleType === 'moto';
 
     const documents: Record<string, DocumentUpload> = {
@@ -38,24 +39,24 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
             file: null,
             url: data.cnhFrontUrl,
             label: 'CNH - Frente',
-            required: isMoto
+            required: isMotorized
         },
         cnhBack: {
             file: null,
             url: data.cnhBackUrl,
             label: 'CNH - Verso',
-            required: isMoto
+            required: isMotorized
         },
         crlv: {
             file: null,
             url: data.crlvUrl,
             label: 'CRLV (Documento do Veículo)',
-            required: isMoto
+            required: isMotorized
         },
         bikePhoto: {
             file: null,
             url: data.bikePhotoUrl,
-            label: isMoto ? 'Foto da Moto (Lateral Direita)' : 'Foto da Bicicleta (Lateral)',
+            label: data.vehicleType === 'moto' ? 'Foto da Moto (Lateral Direita)' : data.vehicleType === 'carro' ? 'Foto do Carro (Lateral)' : 'Foto da Bicicleta (Lateral)',
             required: true
         },
         proofOfResidence: {
@@ -96,13 +97,13 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
     const validateAndNext = () => {
         const missingDocs: string[] = [];
 
-        if (isMoto) {
+        if (isMotorized) {
             if (!data.cnhFrontUrl) missingDocs.push('CNH - Frente');
             if (!data.cnhBackUrl) missingDocs.push('CNH - Verso');
             if (!data.crlvUrl) missingDocs.push('CRLV');
         }
         
-        if (!data.bikePhotoUrl) missingDocs.push(isMoto ? 'Foto da Moto' : 'Foto da Bicicleta');
+        if (!data.bikePhotoUrl) missingDocs.push(data.vehicleType === 'moto' ? 'Foto da Moto' : data.vehicleType === 'carro' ? 'Foto do Carro' : 'Foto da Bicicleta');
         if (!data.proofOfResidenceUrl) missingDocs.push('Comprovante de Residência');
 
         if (missingDocs.length > 0) {
@@ -119,7 +120,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
 
     const renderDocumentUpload = (docKey: string, doc: DocumentUpload) => {
         // Skip CNH/CRLV if not moto
-        if (!isMoto && (docKey === 'cnhFront' || docKey === 'cnhBack' || docKey === 'crlv')) {
+        if (!isMotorized && (docKey === 'cnhFront' || docKey === 'cnhBack' || docKey === 'crlv')) {
             return null;
         }
 
