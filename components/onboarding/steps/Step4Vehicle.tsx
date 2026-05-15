@@ -25,7 +25,6 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
 
     const validateAndNext = () => {
         const newErrors: Record<string, string> = {};
-        const isMotorized = data.vehicleType === 'moto' || data.vehicleType === 'carro';
         const isMoto = data.vehicleType === 'moto';
 
         if (isMotorized) {
@@ -83,6 +82,7 @@ const Step4Vehicle: React.FC<Step4VehicleProps> = ({ data, onUpdate, onNext, the
     const textPrimary = theme === 'dark' ? 'text-white' : 'text-zinc-900';
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
+    const isMotorized = data.vehicleType === 'moto' || data.vehicleType === 'carro';
     const isMoto = data.vehicleType === 'moto';
 
     return (
