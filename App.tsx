@@ -1149,13 +1149,21 @@ const App: React.FC = () => {
 
   const toggleOnlineStatus = () => {
     // Priority Check: Verification
-
-
-    if (status === DriverStatus.ONLINE) {
+    if (status !== DriverStatus.OFFLINE) {
       setStatus(DriverStatus.OFFLINE);
       setMission(null);
       setIsNavigating(false);
     } else {
+      if (currentUser.status === 'rejected') {
+          alert('Seu cadastro tem pendências! Vá em Meu Perfil para revisar seus dados e reenviar para análise.');
+          setCurrentScreen('SETTINGS');
+          return;
+      }
+      if (currentUser.status === 'blocked') {
+          alert('Sua conta está suspensa. Entre em contato com o suporte.');
+          return;
+      }
+
       if (!gpsEnabled) {
         handleActivateGPS();
       } else {
@@ -4294,6 +4302,34 @@ const App: React.FC = () => {
               </div>
 
               <div className="space-y-8">
+                {currentUser.status === 'rejected' && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-[28px] p-6 text-center animate-in zoom-in duration-500">
+                    <h3 className="text-red-500 font-black uppercase text-[11px] tracking-[0.2em] mb-2 flex items-center justify-center gap-2">
+                      <i className="fas fa-triangle-exclamation"></i> Pendências no Cadastro
+                    </h3>
+                    <p className="text-red-400/80 text-[11px] leading-relaxed mb-5 font-medium">
+                      Por favor, atualize seus dados ou documentos incorretos abaixo. Quando terminar, reenvie para análise.
+                    </p>
+                    <button 
+                      onClick={async () => {
+                        if (!userId) return;
+                        if(window.confirm('Tem certeza que deseja enviar o cadastro atualizado para análise?')) {
+                            try {
+                                await supabaseClient.supabase.from('profiles').update({ status: 'pending' }).eq('id', userId);
+                                alert('Cadastro enviado para análise com sucesso!');
+                                setCurrentUser(prev => ({ ...prev, status: 'pending' }));
+                                window.location.reload();
+                            } catch (e) {
+                                alert('Erro ao reenviar cadastro.');
+                            }
+                        }
+                      }}
+                      className="w-full h-12 bg-red-500 hover:bg-red-600 rounded-xl text-white font-black uppercase tracking-[0.2em] transition-colors shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95 text-[10px]"
+                    >
+                      REENVIAR PARA ANÁLISE
+                    </button>
+                  </div>
+                )}
                 <section>
                   <h3 className={`text-chocolate-muted font-black uppercase text-[10px] tracking-[0.25em] mb-4 flex items-center gap-2`}>
                     <i className="fas fa-user-circle text-[#FF6B00] text-[8px]"></i>
