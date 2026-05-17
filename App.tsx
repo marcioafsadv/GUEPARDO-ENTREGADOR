@@ -3182,9 +3182,9 @@ const App: React.FC = () => {
                         </div>
                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0A0503] via-[#0A0503]/80 to-transparent"></div>
                         
-                        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center translate-y-1/2">
+                        <div className="absolute bottom-8 sm:bottom-0 left-0 right-0 flex flex-col items-center translate-y-0 sm:translate-y-1/2 z-10">
                            {/* Logo da Loja Dinâmica */}
-                           <div className="w-28 h-28 rounded-3xl bg-white border-4 border-[#1A0C06] shadow-[0_10px_40px_rgba(255,107,0,0.3)] flex items-center justify-center overflow-hidden relative p-1">
+                           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white border-4 border-[#1A0C06] shadow-[0_10px_40px_rgba(255,107,0,0.3)] flex items-center justify-center overflow-hidden relative p-1">
                               <div className="absolute inset-0 bg-[#FF6B00]/5"></div>
                               <img 
                                  src={mission?.storeName?.toLowerCase().includes('pamonha') ? '/images/logo-pamonha.jpg' : '/logo-guepardo.jpg'} 
@@ -3192,10 +3192,10 @@ const App: React.FC = () => {
                                  alt="Logo Loja" 
                               />
                            </div>
-                           <h2 className="text-3xl font-[900] italic text-white tracking-tight mt-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] text-center px-6">
+                           <h2 className="text-2xl sm:text-3xl font-[900] italic text-white tracking-tight mt-3 sm:mt-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] text-center px-6">
                               {mission?.storeName || 'Guepardo Delivery'}
                            </h2>
-                           <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-[0.3em] mt-2 drop-shadow-md">
+                           <p className="text-[#FF6B00] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 sm:mt-2 drop-shadow-md">
                               {isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Pedido Pronto' : 'Aguardando Pedido'}
                            </p>
                         </div>
