@@ -3173,10 +3173,10 @@ const App: React.FC = () => {
                      <div className="relative w-full h-[55vh] sm:h-[65vh]">
                         {/* Imagem da Fachada (Imagem Real) */}
                         <div className="absolute inset-0 overflow-hidden">
-                           <img src="/images/fachada-guepardo.jpg" className="w-full h-full object-cover opacity-60" alt="Fachada Guepardo" />
-                           <div className="absolute inset-0 bg-zinc-900/60 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#FF6B00]/10 via-[#1A0C06]/80 to-[#0A0503]"></div>
+                           <img src="/images/fachada-guepardo.jpg" className="w-full h-full object-cover" alt="Fachada Guepardo" />
+                           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#0A0503]/30 to-[#0A0503]/80"></div>
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0503] via-[#0A0503]/50 to-transparent"></div>
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0A0503] via-[#0A0503]/80 to-transparent"></div>
                         
                         <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center translate-y-1/2">
                            {/* Logo da Loja */}
