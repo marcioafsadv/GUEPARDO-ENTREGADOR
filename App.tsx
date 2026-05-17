@@ -3171,18 +3171,26 @@ const App: React.FC = () => {
                 (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.PICKING_UP) ? (
                   <div className="absolute inset-0 w-full h-full bg-[#0A0503] flex flex-col justify-start">
                      <div className="relative w-full h-[55vh] sm:h-[65vh]">
-                        {/* Imagem da Fachada (Imagem Real) */}
+                        {/* Imagem da Fachada (Imagem Real Dinâmica) */}
                         <div className="absolute inset-0 overflow-hidden">
-                           <img src="/images/fachada-guepardo.jpg" className="w-full h-full object-cover" alt="Fachada Guepardo" />
+                           <img 
+                              src={mission?.storeName?.toLowerCase().includes('pamonha') ? '/images/fachada-pamonha.jpg' : '/images/fachada-guepardo.jpg'} 
+                              className="w-full h-full object-cover" 
+                              alt="Fachada Loja" 
+                           />
                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#0A0503]/30 to-[#0A0503]/80"></div>
                         </div>
                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0A0503] via-[#0A0503]/80 to-transparent"></div>
                         
                         <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center translate-y-1/2">
-                           {/* Logo da Loja */}
+                           {/* Logo da Loja Dinâmica */}
                            <div className="w-28 h-28 rounded-3xl bg-white border-4 border-[#1A0C06] shadow-[0_10px_40px_rgba(255,107,0,0.3)] flex items-center justify-center overflow-hidden relative p-1">
                               <div className="absolute inset-0 bg-[#FF6B00]/5"></div>
-                              <img src="/logo-guepardo.jpg" className="w-full h-full object-contain rounded-2xl relative z-10" alt="Logo Guepardo" />
+                              <img 
+                                 src={mission?.storeName?.toLowerCase().includes('pamonha') ? '/images/logo-pamonha.jpg' : '/logo-guepardo.jpg'} 
+                                 className="w-full h-full object-contain rounded-2xl relative z-10" 
+                                 alt="Logo Loja" 
+                              />
                            </div>
                            <h2 className="text-3xl font-[900] italic text-white tracking-tight mt-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] text-center px-6">
                               {mission?.storeName || 'Guepardo Delivery'}
