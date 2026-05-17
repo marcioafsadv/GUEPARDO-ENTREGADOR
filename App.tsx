@@ -356,7 +356,7 @@ const App: React.FC = () => {
       expiry: ""
     },
     preferredMap: 'internal' as 'internal' | 'google' | 'waze' | 'choose',
-    status: null as 'pending' | 'approved' | 'rejected' | null
+    status: null as 'pending' | 'approved' | 'rejected' | 'blocked' | null
   });
 
   // Simulação de Banco de Dados de Usuários
@@ -3213,13 +3213,13 @@ const App: React.FC = () => {
                     unreadCount={Object.values(unreadMessages[mission?.id || ''] || {}).reduce((a, b) => a + (b || 0), 0)}
                     onChatClick={() => setShowChatModal(true)}
                     destinationAddress={
-                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
+                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.RETURNING)
                         ? mission?.storeAddress || null
                         : mission?.customerAddress || null
                     }
                     currentLocation={currentLocation}
                     preloadedDestination={
-                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
+                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.RETURNING)
                         ? preloadedCoords.store
                         : preloadedCoords.customer
                     }
@@ -3921,7 +3921,6 @@ const App: React.FC = () => {
                             try {
                               const accepted = await supabaseClient.acceptMission(m.id || '', userId || '');
                               if (accepted) {
-                                if (playAccept) playAccept();
                                 const dynamicMission = mapDbDeliveryToMission(accepted);
                                 setMission(dynamicMission);
                                 setActiveMissions([dynamicMission]);
