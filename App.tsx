@@ -3168,28 +3168,55 @@ const App: React.FC = () => {
           <div className="flex flex-col h-full relative overflow-hidden">
             <div className="flex-1 relative">
               {isNavigating ? (
-                <MapNavigation
-                  status={status}
-                  theme={mapTheme}
-                  onUpdateMetrics={(m) => setNavMetrics(m)}
-                  isMissionOverlayExpanded={isMissionOverlayExpanded}
-                  onShowSOS={() => setShowSOSModal(true)}
-                  onShowFilters={() => setShowFiltersModal(true)}
-                  delivererName={currentUser?.name || 'Entregador'}
-                  unreadCount={Object.values(unreadMessages[mission?.id || ''] || {}).reduce((a, b) => a + (b || 0), 0)}
-                  onChatClick={() => setShowChatModal(true)}
-                  destinationAddress={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
-                      ? mission?.storeAddress || null
-                      : mission?.customerAddress || null
-                  }
-                  currentLocation={currentLocation}
-                  preloadedDestination={
-                    (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
-                      ? preloadedCoords.store
-                      : preloadedCoords.customer
-                  }
-                />
+                (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.PICKING_UP) ? (
+                  <div className="absolute inset-0 w-full h-full bg-[#0A0503] flex flex-col justify-start">
+                     <div className="relative w-full h-[55vh] sm:h-[65vh]">
+                        {/* Imagem da Fachada (Imagem Real) */}
+                        <div className="absolute inset-0 overflow-hidden">
+                           <img src="/images/fachada-guepardo.jpg" className="w-full h-full object-cover opacity-60" alt="Fachada Guepardo" />
+                           <div className="absolute inset-0 bg-zinc-900/60 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#FF6B00]/10 via-[#1A0C06]/80 to-[#0A0503]"></div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0503] via-[#0A0503]/50 to-transparent"></div>
+                        
+                        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center translate-y-1/2">
+                           {/* Logo da Loja */}
+                           <div className="w-28 h-28 rounded-3xl bg-white border-4 border-[#1A0C06] shadow-[0_10px_40px_rgba(255,107,0,0.3)] flex items-center justify-center overflow-hidden relative p-1">
+                              <div className="absolute inset-0 bg-[#FF6B00]/5"></div>
+                              <img src="/logo-guepardo.jpg" className="w-full h-full object-contain rounded-2xl relative z-10" alt="Logo Guepardo" />
+                           </div>
+                           <h2 className="text-3xl font-[900] italic text-white tracking-tight mt-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] text-center px-6">
+                              {mission?.storeName || 'Guepardo Delivery'}
+                           </h2>
+                           <p className="text-[#FF6B00] text-[10px] font-black uppercase tracking-[0.3em] mt-2 drop-shadow-md">
+                              {isOrderReady || status === DriverStatus.READY_FOR_PICKUP ? 'Pedido Pronto' : 'Aguardando Pedido'}
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+                ) : (
+                  <MapNavigation
+                    status={status}
+                    theme={mapTheme}
+                    onUpdateMetrics={(m) => setNavMetrics(m)}
+                    isMissionOverlayExpanded={isMissionOverlayExpanded}
+                    onShowSOS={() => setShowSOSModal(true)}
+                    onShowFilters={() => setShowFiltersModal(true)}
+                    delivererName={currentUser?.name || 'Entregador'}
+                    unreadCount={Object.values(unreadMessages[mission?.id || ''] || {}).reduce((a, b) => a + (b || 0), 0)}
+                    onChatClick={() => setShowChatModal(true)}
+                    destinationAddress={
+                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
+                        ? mission?.storeAddress || null
+                        : mission?.customerAddress || null
+                    }
+                    currentLocation={currentLocation}
+                    preloadedDestination={
+                      (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.RETURNING)
+                        ? preloadedCoords.store
+                        : preloadedCoords.customer
+                    }
+                  />
+                )
               ) : (
                 <MapLeaflet
                   key={mapCenterKey}
