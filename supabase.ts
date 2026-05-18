@@ -180,7 +180,7 @@ export const getDeliveries = async (userId: string) => {
 export const getActiveDelivery = async (driverId: string) => {
   const { data, error } = await supabase
     .from('deliveries')
-    .select('*, stores(lat, lng)')
+    .select('*, stores(lat, lng, logo_url, location_photo_url)')
     .eq('driver_id', driverId)
     .in('status', ['accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning'])
     .order('created_at', { ascending: false })

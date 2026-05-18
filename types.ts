@@ -39,6 +39,8 @@ export interface DeliveryMission {
   stopNumber?: number;
   deliveryValue?: number;
   paymentMethod?: string;
+  storeLogoUrl?: string;
+  storeFacadeUrl?: string;
 }
 
 export interface DailySummary {

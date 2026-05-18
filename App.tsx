@@ -240,7 +240,9 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     storePhone: d.store_phone || '',
     customerPhone: d.customer_phone || '',
     deliveryValue: parseFloat(d.delivery_value || '0'),
-    paymentMethod: d.payment_method || 'PIX'
+    paymentMethod: d.payment_method || 'PIX',
+    storeLogoUrl: d.stores?.logo_url || null,
+    storeFacadeUrl: d.stores?.location_photo_url || null
   };
 };
 
@@ -1003,7 +1005,7 @@ const App: React.FC = () => {
             // Se for parte de um lote, busca todos os pedidos do lote que não foram concluídos
             const { data: batchData } = await supabaseClient.supabase
               .from('deliveries')
-              .select('*')
+              .select('*, stores(logo_url, location_photo_url)')
               .eq('batch_id', activeDbDelivery.batch_id)
               .not('status', 'in', '("completed","cancelled")')
               .order('stop_number', { ascending: true });
@@ -1546,7 +1548,7 @@ const App: React.FC = () => {
           console.log("🔍 Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
           const { data: allPending, error } = await supabaseClient.supabase
             .from('deliveries')
-            .select('*')
+            .select('*, stores(logo_url, location_photo_url)')
             .eq('status', 'pending')
             .order('created_at', { ascending: true })
             .limit(20);
@@ -1577,7 +1579,7 @@ const App: React.FC = () => {
                 console.log("📦 Initial fetch detected batch:", firstPending.batch_id);
                 const { data: batchData } = await supabaseClient.supabase
                   .from('deliveries')
-                  .select('*')
+                  .select('*, stores(logo_url, location_photo_url)')
                   .eq('batch_id', firstPending.batch_id)
                   .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
                 
@@ -3174,7 +3176,7 @@ const App: React.FC = () => {
                         {/* Imagem da Fachada (Imagem Real Dinâmica) */}
                         <div className="absolute inset-0 overflow-hidden">
                            <img 
-                              src={mission?.storeName?.toLowerCase().includes('pamonha') ? '/images/fachada-pamonha.jpg' : '/images/fachada-guepardo.jpg'} 
+                              src={mission?.storeFacadeUrl || '/images/fachada-guepardo.jpg'} 
                               className="w-full h-full object-cover" 
                               alt="Fachada Loja" 
                            />
@@ -3187,7 +3189,7 @@ const App: React.FC = () => {
                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white border-4 border-[#1A0C06] shadow-[0_10px_40px_rgba(255,107,0,0.3)] flex items-center justify-center overflow-hidden relative p-1">
                               <div className="absolute inset-0 bg-[#FF6B00]/5"></div>
                               <img 
-                                 src={mission?.storeName?.toLowerCase().includes('pamonha') ? '/images/logo-pamonha.jpg' : '/logo-guepardo.jpg'} 
+                                 src={mission?.storeLogoUrl || '/logo-guepardo.jpg'} 
                                  className="w-full h-full object-contain rounded-2xl relative z-10" 
                                  alt="Logo Loja" 
                               />
