@@ -3420,33 +3420,33 @@ const App: React.FC = () => {
                            </div>
 
                            {/* Main Customer Detail Card - Premium Style */}
-                           <div className={`p-8 rounded-[48px] border border-[#D4AF37]/20 shadow-2xl relative overflow-hidden bg-[#1A0C06] ring-1 ring-white/5`}>
-                              <div className="flex justify-between items-start relative z-10">
-                                <div className="flex-1 min-w-0 pr-8">
+                           <div className="p-5 sm:p-8 rounded-[32px] sm:rounded-[48px] border border-[#D4AF37]/20 shadow-2xl relative overflow-hidden bg-[#1A0C06] ring-1 ring-white/5">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start relative z-10 gap-5">
+                                <div className="flex-1 min-w-0 sm:pr-4">
                                   <p className="text-[10px] font-black uppercase text-[#D4AF37] tracking-[0.4em] mb-3 opacity-80">CLIENTE</p>
                                   <h2 className={`text-4xl font-[900] italic tracking-tighter text-[#F5E6D3] truncate mb-4 drop-shadow-lg transform -skew-x-6`}>{mission.customerName}</h2>
                                   <div className="flex items-start space-x-3 bg-black/20 p-4 rounded-2xl border border-white/5">
                                     <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center shrink-0">
                                       <i className="fas fa-location-dot text-[#FF6B00] text-sm"></i>
                                     </div>
-                                    <p className={`${textMuted} text-xs font-bold leading-relaxed italic`}>{mission.customerAddress}</p>
+                                    <p className="text-white text-xs font-bold leading-relaxed italic">{mission.customerAddress}</p>
                                   </div>
                                 </div>
                                 
-                                {/* Action Buttons Column */}
-                                <div className="flex flex-col space-y-4">
+                                {/* Action Buttons Column / Row */}
+                                <div className="flex flex-row sm:flex-col justify-end space-x-3 sm:space-x-0 sm:space-y-4">
                                   <button 
                                     onClick={() => setShowMissionMapPicker(!showMissionMapPicker)} 
-                                    className={`w-16 h-16 rounded-[24px] flex flex-col items-center justify-center transition-all ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_15px_30px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center transition-all ${showMissionMapPicker ? 'bg-[#33CCFF] text-white shadow-[0_15px_30px_rgba(51,204,255,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
                                   >
-                                    <i className="fas fa-location-arrow text-xl mb-1"></i>
+                                    <i className="fas fa-location-arrow text-lg sm:text-xl mb-0.5 sm:mb-1"></i>
                                     <span className="text-[8px] font-black uppercase tracking-widest">MAPAS</span>
                                   </button>
                                   <button 
                                     onClick={() => setShowDeliveryHelpModal(!showDeliveryHelpModal)} 
-                                    className={`w-16 h-16 rounded-[24px] flex flex-col items-center justify-center transition-all ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white shadow-[0_15px_30px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center transition-all ${showDeliveryHelpModal ? 'bg-[#FF6B00] text-white shadow-[0_15px_30px_rgba(255,107,0,0.4)]' : 'bg-white/5 text-white/40 border border-white/5'}`}
                                   >
-                                    <i className="fas fa-circle-question text-xl mb-1"></i>
+                                    <i className="fas fa-circle-question text-lg sm:text-xl mb-0.5 sm:mb-1"></i>
                                     <span className="text-[8px] font-black uppercase tracking-widest">AJUDA</span>
                                   </button>
                                 </div>
