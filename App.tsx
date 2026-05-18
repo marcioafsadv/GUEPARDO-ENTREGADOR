@@ -1234,14 +1234,24 @@ const App: React.FC = () => {
     if (!isOffline && userId && gpsEnabled) {
       console.log("🚀 [GPS] Inciando Rastreamento Estabilizado (Tentativa: " + (gpsRestartCounterRef.current + 1) + ")...");
 
-      // 1. WARM-UP: Kickstart no sensor
+      // 1. FAST BOOT: Pede posição de baixa precisão IMEDIATAMENTE para popular o mapa
+      // maximumAge: 30000 aceita cache recente; timeout curto para não bloquear
       navigator.geolocation.getCurrentPosition(
-        (pos) => console.log("✨ [GPS] Warm-up concluído:", pos.coords.latitude, pos.coords.longitude),
-        (err) => console.warn("⚠️ [GPS] Warm-up falhou:", err.message),
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+        (pos) => {
+          console.log("⚡ [GPS] Fast-boot posição obtida:", pos.coords.latitude, pos.coords.longitude);
+          lastGpsUpdateRef.current = Date.now();
+          // Só atualiza se ainda não temos localização (não sobrescreve fix de alta precisão)
+          setCurrentLocation(prev => prev ?? {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            speed: pos.coords.speed
+          });
+        },
+        (err) => console.warn("⚠️ [GPS] Fast-boot falhou:", err.message),
+        { enableHighAccuracy: false, timeout: 3000, maximumAge: 30000 }
       );
 
-      // 2. Initial High-Accuracy Update
+      // 2. Initial High-Accuracy Update — acorda o sensor de GPS de alta precisão
       const getInitialLocation = () => {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -1254,14 +1264,31 @@ const App: React.FC = () => {
               last_location_update: new Date().toISOString()
             }).catch(e => console.error("Initial location update failed", e));
             
+            // Sobrescreve o fast-boot com o fix de alta precisão
             setCurrentLocation({ 
               lat: latitude, 
               lng: longitude,
               speed: pos.coords.speed
             });
+            console.log("✅ [GPS] Fix de alta precisão obtido:", latitude, longitude);
           },
-          (err) => console.error("❌ [GPS] Error getting initial location", err),
-          { enableHighAccuracy: true, timeout: 10000 }
+          (err) => {
+            console.error("❌ [GPS] Error getting initial location", err);
+            // Tenta uma segunda vez com precisão baixa como fallback
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                lastGpsUpdateRef.current = Date.now();
+                setCurrentLocation(prev => prev ?? {
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                  speed: pos.coords.speed
+                });
+              },
+              null,
+              { enableHighAccuracy: false, timeout: 8000, maximumAge: 10000 }
+            );
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
         );
       };
       getInitialLocation();
@@ -2581,20 +2608,47 @@ const App: React.FC = () => {
         alertAudioRef.current.stop();
       }
 
+      // ⚡ Ativa a navegação IMEDIATAMENTE — o mapa começa a renderizar enquanto o geocode acontece em paralelo
+      setIsNavigating(true);
+
       // Pre-geocode both addresses in parallel for instant route switching
       if (mappedActive.length > 0) {
         const targetMission = mappedActive[0];
-        const [storeCoords, customerCoords] = await Promise.all([
-          (targetMission.storeLat && targetMission.storeLng)
-            ? Promise.resolve({ lat: targetMission.storeLat, lng: targetMission.storeLng })
-            : (targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null)),
-          (targetMission.destinationLat && targetMission.destinationLng)
-            ? Promise.resolve({ lat: targetMission.destinationLat, lng: targetMission.destinationLng })
-            : (targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null))
-        ]);
-        console.log('📍 Precise/Geocoded store:', storeCoords, '| customer:', customerCoords);
-        setPreloadedCoords({ store: storeCoords, customer: customerCoords });
-        setIsNavigating(true);
+
+        // Se já temos coordenadas precisas salvas no DB, usa imediatamente sem esperar geocode
+        const hasStoreCoords = !!(targetMission.storeLat && targetMission.storeLng);
+        const hasCustomerCoords = !!(targetMission.destinationLat && targetMission.destinationLng);
+
+        if (hasStoreCoords) {
+          // Coordenadas precisas disponíveis — aplica imediatamente
+          setPreloadedCoords(prev => ({
+            ...prev,
+            store: { lat: targetMission.storeLat!, lng: targetMission.storeLng! }
+          }));
+        }
+        if (hasCustomerCoords) {
+          setPreloadedCoords(prev => ({
+            ...prev,
+            customer: { lat: targetMission.destinationLat!, lng: targetMission.destinationLng! }
+          }));
+        }
+
+        // Se precisar geocodificar, faz em background (não bloqueia o mapa)
+        if (!hasStoreCoords || !hasCustomerCoords) {
+          Promise.all([
+            hasStoreCoords
+              ? Promise.resolve({ lat: targetMission.storeLat!, lng: targetMission.storeLng! })
+              : (targetMission.storeAddress ? geocodeAddress(targetMission.storeAddress) : Promise.resolve(null)),
+            hasCustomerCoords
+              ? Promise.resolve({ lat: targetMission.destinationLat!, lng: targetMission.destinationLng! })
+              : (targetMission.customerAddress ? geocodeAddress(targetMission.customerAddress) : Promise.resolve(null))
+          ]).then(([storeCoords, customerCoords]) => {
+            console.log('📍 Geocode background concluído — store:', storeCoords, '| customer:', customerCoords);
+            setPreloadedCoords({ store: storeCoords, customer: customerCoords });
+          });
+        } else {
+          console.log('📍 Coordenadas precisas do DB usadas instantaneamente');
+        }
 
         // Auto-open external map if preferred
         if (currentUser.preferredMap === 'google') {

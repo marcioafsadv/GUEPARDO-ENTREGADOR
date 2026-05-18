@@ -72,6 +72,45 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const lastBearingPos = useRef<{ lat: number; lng: number } | null>(null);
     const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
     const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+    // Internal fallback location used only when App.tsx hasn't delivered currentLocation yet
+    const [selfLocation, setSelfLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
+    // Effective location: prefer prop (updated by App.tsx watchPosition), fallback to self-fetched
+    const effectiveLocation = currentLocation ?? selfLocation;
+
+    // Self-bootstrap GPS: when the component mounts without a location, grab one immediately.
+    // This prevents the map from being blank/frozen while App.tsx's watchPosition is still waking up.
+    useEffect(() => {
+        if (currentLocation) return; // Already have a location from the parent — no need to self-fetch
+        if (!navigator.geolocation) return;
+
+        // Step 1: Fast low-accuracy fetch (accepts cache up to 30s) — should resolve in < 1s
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                console.log('⚡ [MapNavigation] Self-bootstrap fast fix:', pos.coords.latitude, pos.coords.longitude);
+                setSelfLocation({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    speed: pos.coords.speed
+                });
+            },
+            (err) => {
+                console.warn('[MapNavigation] Fast self-fetch failed, trying high-accuracy...', err.message);
+                // Step 2: High-accuracy fallback if cache miss
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        setSelfLocation({
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            speed: pos.coords.speed
+                        });
+                    },
+                    (err2) => console.error('[MapNavigation] Self-bootstrap failed entirely:', err2.message),
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            },
+            { enableHighAccuracy: false, timeout: 3000, maximumAge: 30000 }
+        );
+    }, []); // Run once on mount
 
     // Voice Discovery - Select the best pt-BR voice
     useEffect(() => {
@@ -224,7 +263,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12',
-            center: currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
+            center: effectiveLocation ? [effectiveLocation.lng, effectiveLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]),
             zoom: 18,
             pitch: 55,
             bearing: 0,
@@ -322,7 +361,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             rotationAlignment: 'viewport', 
             pitchAlignment: 'viewport'
         })
-            .setLngLat(currentLocation ? [currentLocation.lng, currentLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]))
+            .setLngLat(effectiveLocation ? [effectiveLocation.lng, effectiveLocation.lat] : (destinationCoords ? [destinationCoords.lng, destinationCoords.lat] : [-46.6333, -23.5505]))
             .addTo(map.current);
 
         // Create Destination Marker
@@ -369,10 +408,10 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
     // Update location, bearing and route
     useEffect(() => {
-        if (!map.current || !currentLocation || !destinationCoords) return;
+        if (!map.current || !effectiveLocation || !destinationCoords) return;
 
         // Update markers
-        marker.current?.setLngLat([currentLocation.lng, currentLocation.lat]);
+        marker.current?.setLngLat([effectiveLocation.lng, effectiveLocation.lat]);
         destinationMarker.current?.setLngLat([destinationCoords.lng, destinationCoords.lat]);
         
         // Add destination marker if it's not on the map yet
@@ -384,18 +423,18 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         if (lastLocation.current) {
             const distMoved = getDistance(
                 lastLocation.current.lat, lastLocation.current.lng,
-                currentLocation.lat, currentLocation.lng
+                effectiveLocation.lat, effectiveLocation.lng
             ) * 1000; // in meters
 
             // Speed in km/h
-            const speedKmh = currentLocation.speed != null ? currentLocation.speed * 3.6 : (distMoved / 1) * 3.6;
+            const speedKmh = effectiveLocation.speed != null ? effectiveLocation.speed * 3.6 : (distMoved / 1) * 3.6;
 
             // Only update bearing if we moved significantly (e.g. > 1.5m) or are moving at decent speed
             // This prevents "dancing" while stopped or moving very slowly with GPS jitter
             if (distMoved > 1.5 && speedKmh > 1.5) {
                 const rawBearing = getBearing(
                     lastLocation.current.lat, lastLocation.current.lng,
-                    currentLocation.lat, currentLocation.lng
+                    effectiveLocation.lat, effectiveLocation.lng
                 );
                 
                 let targetBearing = rawBearing;
@@ -420,7 +459,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
                 // Rotate MAP and center on location with dynamic padding
                 map.current.easeTo({
-                    center: [currentLocation.lng, currentLocation.lat],
+                    center: [effectiveLocation.lng, effectiveLocation.lat],
                     bearing: targetBearing,
                     duration: 500, // Reduced from 1200ms to eliminate rotation lag
                     padding: { top: dynamicTopPadding, bottom: 80 }, 
@@ -433,7 +472,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
                 // If not moving fast enough to change bearing, just update center smoothly
                 map.current.easeTo({
-                    center: [currentLocation.lng, currentLocation.lat],
+                    center: [effectiveLocation.lng, effectiveLocation.lat],
                     padding: { top: dynamicTopPadding, bottom: 80 },
                     pitch: isArriving ? 0 : 55,
                     duration: 1000,
@@ -441,33 +480,33 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 });
             }
         } else {
-             map.current.setCenter([currentLocation.lng, currentLocation.lat]);
+             map.current.setCenter([effectiveLocation.lng, effectiveLocation.lat]);
         }
         
-        lastLocation.current = currentLocation;
+        lastLocation.current = effectiveLocation;
         
         // Update Speedometer (convert m/s to km/h)
-        if (currentLocation.speed != null) {
-            setCurrentSpeed(Math.round(currentLocation.speed * 3.6));
+        if (effectiveLocation.speed != null) {
+            setCurrentSpeed(Math.round(effectiveLocation.speed * 3.6));
         } else if (lastLocation.current) {
             // Fallback: Calculate speed from distance if native speed is null
-            const dist = getDistance(lastLocation.current.lat, lastLocation.current.lng, currentLocation.lat, currentLocation.lng);
+            const dist = getDistance(lastLocation.current.lat, lastLocation.current.lng, effectiveLocation.lat, effectiveLocation.lng);
             if (dist > 0.001) { // Only if moved enough
                 setCurrentSpeed(Math.round((dist / 1) * 3600)); // assumes 1s interval
             }
         }
 
         // Fetch Route & Instructions
-        fetchRoute(currentLocation, destinationCoords);
+        fetchRoute(effectiveLocation, destinationCoords);
 
         // Calculate progress if we have the total distance tracked
         if (totalRouteDistance > 0 && map.current?.getSource('route')) {
-             const currentDist = getDistance(currentLocation.lat, currentLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
+             const currentDist = getDistance(effectiveLocation.lat, effectiveLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
              const rawPct = ((totalRouteDistance - currentDist) / totalRouteDistance) * 100;
              setProgressPct(Math.min(100, Math.max(0, rawPct)));
         }
 
-    }, [currentLocation, destinationCoords]);
+    }, [effectiveLocation, destinationCoords]);
 
     const simplifyInstruction = (text: string) => {
         if (!text) return '';
