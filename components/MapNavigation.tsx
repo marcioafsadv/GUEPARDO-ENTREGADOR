@@ -120,20 +120,40 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         }, 300);
     };
 
-    // NLP Helper for natural phrasing
-    const getNaturalPhrase = (distValue: number, action: string, street: string) => {
-        let naturalDist = "";
+    // Convert Mapbox modifier (English) to Portuguese action label
+    const getActionLabel = (modifier: string): string => {
+        switch (modifier) {
+            case 'left':         return 'Vire à esquerda';
+            case 'right':        return 'Vire à direita';
+            case 'sharp left':   return 'Vire acentuadamente à esquerda';
+            case 'sharp right':  return 'Vire acentuadamente à direita';
+            case 'slight left':  return 'Mantenha-se à esquerda';
+            case 'slight right': return 'Mantenha-se à direita';
+            case 'uturn':        return 'Faça o retorno';
+            case 'straight':     return 'Siga em frente';
+            default:             return 'Siga em frente';
+        }
+    };
+
+    // NLP Helper for natural phrasing — uses modifier directly to avoid wrong directions
+    const getNaturalPhrase = (distValue: number, modifier: string, street: string): string => {
+        const action = getActionLabel(modifier);
+        const hasStreet = street && street.trim().length > 0
+            && !street.toLowerCase().startsWith('vire')
+            && !street.toLowerCase().startsWith('siga')
+            && !street.toLowerCase().startsWith('mantenha');
+
+        const streetSuffix = hasStreet ? ` na ${street}` : '';
+
         if (distValue < 50) {
-            return `Vire agora à ${action.includes('esquerda') ? 'esquerda' : 'direita'} na ${street}`;
+            return `${action}${streetSuffix} agora`;
         } else if (distValue < 1000) {
-            naturalDist = `Em ${Math.round(distValue / 10) * 10} metros`;
+            const roundedM = Math.round(distValue / 10) * 10;
+            return `Em ${roundedM} metros, ${action.toLowerCase()}${streetSuffix}`;
         } else {
             const km = (distValue / 1000).toFixed(1).replace('.', ',');
-            naturalDist = `Em ${km} quilômetros`;
+            return `Em ${km} quilômetros, ${action.toLowerCase()}${streetSuffix}`;
         }
-
-        const cleanAction = action.replace('Vire à ', '').replace('Siga em ', '');
-        return `${naturalDist}, ${action} na ${street}`;
     };
 
     // Inject custom styles for the map marker
@@ -534,47 +554,54 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 // Next Step Instruction
                 if (route.legs[0].steps.length > 0) {
                     const nextStep = route.legs[0].steps[0];
-                    const distText = nextStep.distance < 1000 ? `${Math.round(nextStep.distance)}m` : `${(nextStep.distance / 1000).toFixed(1)}km`;
-                    
-                    const simplified = simplifyInstruction(nextStep.maneuver.instruction);
-                    const fullText = `A ${distText}, ${simplified}`;
-                    
-                    const modifier = nextStep.maneuver.modifier || 'straight'; // e.g. "left", "right", "straight", "sharp right"
-                    const roadName = nextStep.name || simplified;
+                    const distText = nextStep.distance < 1000
+                        ? `${Math.round(nextStep.distance)}m`
+                        : `${(nextStep.distance / 1000).toFixed(1)}km`;
 
-                    // Update current street based on the first step of the leg
-                    if (route.legs[0].steps[0]?.name) {
-                        setCurrentStreet(route.legs[0].steps[0].name.toUpperCase());
+                    // Use modifier (English) from Mapbox — source of truth for direction
+                    const modifier = nextStep.maneuver.modifier || 'straight';
+                    const actionLabel = getActionLabel(modifier);
+
+                    // Road name: prefer the step name, but never use the instruction text as name
+                    const rawName = nextStep.name?.trim() || '';
+                    const roadName = rawName.length > 0 ? rawName : '';
+
+                    const fullText = roadName.length > 0
+                        ? `A ${distText}, ${actionLabel} na ${roadName}`
+                        : `A ${distText}, ${actionLabel}`;
+
+                    // Update current street pill on the map marker
+                    if (rawName.length > 0) {
+                        setCurrentStreet(rawName.toUpperCase());
                     }
 
                     const nextNextStep = route.legs[0].steps[1];
-                    const secondaryRoad = nextNextStep?.name || '';
-                    
+                    const secondaryRoad = nextNextStep?.name?.trim() || '';
+
                     setInstruction({
                         fullText: fullText,
                         distance: nextStep.distance,
                         distanceText: distText.replace('m', ' m').replace('km', ' km'),
                         modifier: modifier,
-                        roadName: roadName,
+                        roadName: roadName || actionLabel,
                         nextRoadName: secondaryRoad
                     });
 
-                    // Voice Guidance: Refined checkpoints (500m, 200m, 50m)
-                    const normalizedSimplified = simplified.toLowerCase();
-                    const checkKey = `${normalizedSimplified}-${distText}`;
-                    
-                    if (nextStep.distance <= 500 && nextStep.distance > 450 && lastCheckPoint.current !== 500) {
-                         lastCheckPoint.current = 500;
-                         const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
-                         speak(phrase);
+                    // Voice Guidance checkpoints: 400m, 200m, 50m (like Waze/Maps)
+                    if (nextStep.distance <= 400 && nextStep.distance > 350 && lastCheckPoint.current !== 400) {
+                        lastCheckPoint.current = 400;
+                        speak(getNaturalPhrase(nextStep.distance, modifier, roadName));
                     } else if (nextStep.distance <= 200 && nextStep.distance > 150 && lastCheckPoint.current !== 200) {
                         lastCheckPoint.current = 200;
-                        const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
-                        speak(phrase);
+                        speak(getNaturalPhrase(nextStep.distance, modifier, roadName));
                     } else if (nextStep.distance <= 50 && lastCheckPoint.current !== 50) {
                         lastCheckPoint.current = 50;
-                        const phrase = getNaturalPhrase(nextStep.distance, simplified, roadName);
-                        speak(phrase);
+                        speak(getNaturalPhrase(nextStep.distance, modifier, roadName));
+                    }
+
+                    // Reset checkpoint counter when moving to a new step
+                    if (nextStep.distance > 450) {
+                        lastCheckPoint.current = 0;
                     }
                 }
 
