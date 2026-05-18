@@ -3668,7 +3668,7 @@ const App: React.FC = () => {
                               value={typedCode[i] || ''}
                               onChange={(e) => handleCodeChange(i, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(i, e)}
-                              className={`w-14 h-18 rounded-2xl text-center text-3xl font-black transition-all outline-none border-2 shadow-inner ${isCodeValid() ? 'bg-green-500/20 border-green-500 text-green-500' : `${innerBg} border-white/10 text-white focus:border-[#FF6B00]`}`}
+                              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-center text-3xl sm:text-4xl font-black transition-all outline-none border-2 shadow-inner ${isCodeValid() ? 'bg-green-500/20 border-green-500 text-green-500' : `${innerBg} border-white/10 text-white focus:border-[#FF6B00]`}`}
                             />
                           ))}
                           </div>
