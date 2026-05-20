@@ -1392,6 +1392,59 @@ const App: React.FC = () => {
     };
   }, [status === DriverStatus.OFFLINE, userId, gpsEnabled, syncId]); // Removido name/vehicle para evitar restarts desnecessários
 
+  // --- GPS KEEP-ALIVE / ENGINE WAKEUP LOOP ---
+  // When active navigation is running, periodically query the GPS hardware with high accuracy.
+  // This keeps the browser/device GPS engine awake and prevents cold-start freezing.
+  useEffect(() => {
+    if (!isNavigating || !gpsEnabled || !userId) return;
+
+    console.log("🔥 [GPS Keep-Alive] Active navigation detected. Starting engine keep-alive loop...");
+
+    const keepAliveInterval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          lastGpsUpdateRef.current = Date.now();
+          
+          setCurrentLocation({
+            lat: latitude,
+            lng: longitude,
+            speed: pos.coords.speed
+          });
+
+          // Also update DB in case watchPosition missed it
+          supabaseClient.updateProfile(userId, {
+            current_lat: latitude,
+            current_lng: longitude,
+            last_location_update: new Date().toISOString()
+          }).catch(e => console.error("[GPS Keep-Alive] DB update failed", e));
+        },
+        (err) => {
+          console.warn("⚠️ [GPS Keep-Alive] Keep-alive getCurrentPosition failed:", err.message);
+          // Fallback: try low accuracy to keep the sensor somewhat warm
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setCurrentLocation(prev => prev ?? {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                speed: pos.coords.speed
+              });
+            },
+            null,
+            { enableHighAccuracy: false, timeout: 3000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+      );
+    }, 4000);
+
+    return () => {
+      clearInterval(keepAliveInterval);
+      console.log("🛑 [GPS Keep-Alive] Stopped.");
+    };
+  }, [isNavigating, gpsEnabled, userId]);
+
+
 
   const handleSOSAction = (type: 'police' | 'samu' | 'mechanic' | 'share') => {
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
