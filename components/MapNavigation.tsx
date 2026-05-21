@@ -167,12 +167,25 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 let preferred: SpeechSynthesisVoice | undefined;
 
                 if (voiceGender === 'male') {
-                    // Prioriza vozes masculinas pt-BR comuns
+                    // Prioriza vozes masculinas pt-BR conhecidas
                     preferred = ptVoices.find(v => v.name.toLowerCase().includes('daniel')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('felipe')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('helio')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('ricardo')) ||
-                                ptVoices.find(v => v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('maria') && !v.name.toLowerCase().includes('luciana')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('male')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('masculino')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('homem')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('i-local')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('gft-local')) ||
+                                // Se não achar nenhuma explicitamente masculina, pega qualquer uma que NÃO seja explicitamente feminina
+                                ptVoices.find(v => !v.name.toLowerCase().includes('maria') && 
+                                                   !v.name.toLowerCase().includes('luciana') && 
+                                                   !v.name.toLowerCase().includes('gabriela') &&
+                                                   !v.name.toLowerCase().includes('heloisa') &&
+                                                   !v.name.toLowerCase().includes('female') &&
+                                                   !v.name.toLowerCase().includes('mulher') &&
+                                                   !v.name.toLowerCase().includes('afs-local') &&
+                                                   !v.name.toLowerCase().includes('d-local')) ||
                                 ptVoices[0];
                 } else {
                     // Prioriza vozes femininas pt-BR comuns
@@ -180,6 +193,10 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 ptVoices.find(v => v.name.toLowerCase().includes('maria')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('luciana')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('heloisa')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('afs-local')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('d-local')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('female')) ||
+                                ptVoices.find(v => v.name.toLowerCase().includes('mulher')) ||
                                 ptVoices.find(v => v.name.toLowerCase().includes('google')) ||
                                 ptVoices[0];
                 }
@@ -193,6 +210,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             window.speechSynthesis.onvoiceschanged = loadVoices;
         }
     }, [voiceGender]);
+
 
     const playNotificationSound = () => {
         const audio = new Audio('/sounds/beep-notification.mp3');
@@ -264,7 +282,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             if (selectedVoice) utterance.voice = selectedVoice;
             utterance.lang = 'pt-BR';
             utterance.rate = 1.0;
-            utterance.pitch = 1.1;
+            utterance.pitch = voiceGender === 'male' ? 0.82 : 1.05;
 
             utterance.onend = () => {
                 isSpeaking.current = false;

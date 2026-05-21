@@ -1046,6 +1046,7 @@ const App: React.FC = () => {
             }
             
             setIsNavigating(true);
+            forceGpsWakeUp();
 
             // Prioritize existing coordinates to ensure consistency with Lojista
             const destAddr = (recoveredStatus === DriverStatus.GOING_TO_STORE || recoveredStatus === DriverStatus.ARRIVED_AT_STORE || recoveredStatus === DriverStatus.PICKING_UP || recoveredStatus === DriverStatus.RETURNING)
@@ -1111,6 +1112,36 @@ const App: React.FC = () => {
   }, [isAuthenticated, userId]);
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
+  const forceGpsWakeUp = () => {
+    setGpsEnabled(true);
+    console.log("🚀 [GPS] Forçando ativação e wake-up do GPS...");
+    
+    // Silent warm up
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: false, timeout: 2000 });
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          lastGpsUpdateRef.current = Date.now();
+          setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed || 0 });
+          console.log("✅ [GPS] Sucesso no wake-up:", latitude, longitude);
+        },
+        (err) => {
+          console.warn("⚠️ [GPS] Wake-up falhou, tentando precisão baixa...", err.message);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, speed: pos.coords.speed || 0 });
+            },
+            null,
+            { enableHighAccuracy: false, timeout: 3000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 4000 }
+      );
+    }
+  };
 
   const handleActivateGPS = () => {
     setIsGpsLoading(true);
@@ -2663,6 +2694,7 @@ const App: React.FC = () => {
 
       // ⚡ Ativa a navegação IMEDIATAMENTE — o mapa começa a renderizar enquanto o geocode acontece em paralelo
       setIsNavigating(true);
+      forceGpsWakeUp();
 
       // Pre-geocode both addresses in parallel for instant route switching
       if (mappedActive.length > 0) {
@@ -4030,12 +4062,13 @@ const App: React.FC = () => {
                             try {
                               const accepted = await supabaseClient.acceptMission(m.id || '', userId || '');
                               if (accepted) {
-                                const dynamicMission = mapDbDeliveryToMission(accepted);
-                                setMission(dynamicMission);
-                                setActiveMissions([dynamicMission]);
-                                setStatus(DriverStatus.GOING_TO_STORE);
-                                setIsNavigating(true);
-                                setCurrentScreen('HOME');
+                                 const dynamicMission = mapDbDeliveryToMission(accepted);
+                                 setMission(dynamicMission);
+                                 setActiveMissions([dynamicMission]);
+                                 setStatus(DriverStatus.GOING_TO_STORE);
+                                 setIsNavigating(true);
+                                 forceGpsWakeUp();
+                                 setCurrentScreen('HOME');
                               }
                             } catch (err: any) {
                               if (err?.message === 'ALREADY_ACCEPTED_BY_OTHER') {
