@@ -680,6 +680,67 @@ const App: React.FC = () => {
   const [centralMessage, setCentralMessage] = useState('');
   const lastGpsUpdateRef = useRef<number>(Date.now());
   const gpsRestartCounterRef = useRef<number>(0);
+  const activeGpsQueryRef = useRef<boolean>(false);
+
+  const safeGetCurrentPosition = (
+    successCallback: (position: GeolocationPosition) => void,
+    errorCallback?: ((error: GeolocationPositionError) => void) | null,
+    options?: PositionOptions
+  ) => {
+    if (!navigator.geolocation) {
+      if (errorCallback) {
+        errorCallback({
+          code: 2, // POSITION_UNAVAILABLE
+          message: "Geolocalização não é suportada por este navegador.",
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3
+        } as GeolocationPositionError);
+      }
+      return;
+    }
+
+    if (activeGpsQueryRef.current) {
+      console.log("⏳ [GPS] safeGetCurrentPosition: Chamada concorrente ignorada para evitar travamento.");
+      if (errorCallback) {
+        errorCallback({
+          code: 3, // TIMEOUT
+          message: "Chamada concorrente ignorada pelo controle de fluxo.",
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3
+        } as GeolocationPositionError);
+      }
+      return;
+    }
+
+    activeGpsQueryRef.current = true;
+
+    // Definição de um timeout de segurança para destravar a flag caso o navegador trave
+    const queryTimeout = options?.timeout ?? 10000;
+    const safetyTimer = setTimeout(() => {
+      if (activeGpsQueryRef.current) {
+        console.warn("⚠️ [GPS] safeGetCurrentPosition: Limite de tempo de segurança atingido. Destravando flag.");
+        activeGpsQueryRef.current = false;
+      }
+    }, queryTimeout + 1000);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(safetyTimer);
+        activeGpsQueryRef.current = false;
+        successCallback(pos);
+      },
+      (err) => {
+        clearTimeout(safetyTimer);
+        activeGpsQueryRef.current = false;
+        if (errorCallback) {
+          errorCallback(err);
+        }
+      },
+      options
+    );
+  };
 
   const handleSendCentralMessage = () => {
     if (!mission) return;
@@ -1117,30 +1178,32 @@ const App: React.FC = () => {
     setGpsEnabled(true);
     console.log("🚀 [GPS] Forçando ativação e wake-up do GPS...");
     
-    // Silent warm up
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: false, timeout: 2000 });
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          lastGpsUpdateRef.current = Date.now();
-          setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed || 0 });
-          console.log("✅ [GPS] Sucesso no wake-up:", latitude, longitude);
-        },
-        (err) => {
-          console.warn("⚠️ [GPS] Wake-up falhou, tentando precisão baixa...", err.message);
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, speed: pos.coords.speed || 0 });
-            },
-            null,
-            { enableHighAccuracy: false, timeout: 3000 }
-          );
-        },
-        { enableHighAccuracy: true, timeout: 4000 }
-      );
-    }
+    // Query high-accuracy GPS with a sensible timeout. The wrapper handles collision protection.
+    safeGetCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        lastGpsUpdateRef.current = Date.now();
+        setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed || 0 });
+        console.log("✅ [GPS] Sucesso no wake-up:", latitude, longitude);
+      },
+      (err) => {
+        console.warn("⚠️ [GPS] Wake-up falhou com alta precisão, tentando precisão baixa...", err.message);
+        // Try fallback to cellular/wifi
+        safeGetCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            lastGpsUpdateRef.current = Date.now();
+            setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed || 0 });
+            console.log("✅ [GPS] Sucesso no wake-up (precisão baixa):", latitude, longitude);
+          },
+          (err2) => {
+            console.warn("❌ [GPS] Wake-up falhou completamente:", err2.message);
+          },
+          { enableHighAccuracy: false, timeout: 4000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
   };
 
   const handleActivateGPS = () => {
@@ -1151,32 +1214,51 @@ const App: React.FC = () => {
       return;
     }
 
-    // 🚀 Warm-up silencioso para agilizar o fix inicial
-    navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: false, timeout: 3000 });
+    console.log("🚀 [GPS] Ativando GPS via safeGetCurrentPosition...");
 
-    navigator.geolocation.getCurrentPosition(
-      () => {
+    safeGetCurrentPosition(
+      (pos) => {
         setGpsEnabled(true);
         setIsGpsLoading(false);
         setMapCenterKey(prev => prev + 1);
         lastGpsUpdateRef.current = Date.now(); // Reset watchdog
+        setCurrentLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          speed: pos.coords.speed
+        });
+        console.log("✅ [GPS] GPS ativado com sucesso.");
       },
       (error) => {
         console.error("Erro GPS:", error);
-        setIsGpsLoading(false);
-        setGpsEnabled(false);
         if (error.code === error.PERMISSION_DENIED) {
           alert("Você precisa permitir o acesso à localização.");
+          setIsGpsLoading(false);
+          setGpsEnabled(false);
         } else {
-          // Tenta um fallback para baixa precisão se a alta falhar
-          navigator.geolocation.getCurrentPosition(
-            () => { setGpsEnabled(true); setIsGpsLoading(false); },
-            () => { setGpsEnabled(false); setIsGpsLoading(false); },
-            { enableHighAccuracy: false, timeout: 5000 }
+          // Fallback to low accuracy
+          safeGetCurrentPosition(
+            (pos) => {
+              setGpsEnabled(true);
+              setIsGpsLoading(false);
+              lastGpsUpdateRef.current = Date.now();
+              setCurrentLocation({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                speed: pos.coords.speed
+              });
+              console.log("✅ [GPS] GPS ativado com precisão baixa.");
+            },
+            () => {
+              setGpsEnabled(false);
+              setIsGpsLoading(false);
+              alert("Não foi possível obter sinal de GPS. Por favor, verifique se a localização está ativa.");
+            },
+            { enableHighAccuracy: false, timeout: 6000 }
           );
         }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -1267,7 +1349,7 @@ const App: React.FC = () => {
 
       // 1. FAST BOOT: Pede posição de baixa precisão IMEDIATAMENTE para popular o mapa
       // maximumAge: 30000 aceita cache recente; timeout curto para não bloquear
-      navigator.geolocation.getCurrentPosition(
+      safeGetCurrentPosition(
         (pos) => {
           console.log("⚡ [GPS] Fast-boot posição obtida:", pos.coords.latitude, pos.coords.longitude);
           lastGpsUpdateRef.current = Date.now();
@@ -1284,7 +1366,7 @@ const App: React.FC = () => {
 
       // 2. Initial High-Accuracy Update — acorda o sensor de GPS de alta precisão
       const getInitialLocation = () => {
-        navigator.geolocation.getCurrentPosition(
+        safeGetCurrentPosition(
           (pos) => {
             const { latitude, longitude } = pos.coords;
             lastGpsUpdateRef.current = Date.now();
@@ -1306,7 +1388,7 @@ const App: React.FC = () => {
           (err) => {
             console.error("❌ [GPS] Error getting initial location", err);
             // Tenta uma segunda vez com precisão baixa como fallback
-            navigator.geolocation.getCurrentPosition(
+            safeGetCurrentPosition(
               (pos) => {
                 lastGpsUpdateRef.current = Date.now();
                 setCurrentLocation(prev => prev ?? {
@@ -1386,7 +1468,7 @@ const App: React.FC = () => {
         // NUDGE: Se passarem 12 segundos sem sinal, tentamos um fix manual para acordar o sensor
         if (timeSinceLastUpdate > 12000 && timeSinceLastUpdate <= 22000) {
             console.log("🔔 [GPS] Nudge: Solicitando posição manual para acordar sensor...");
-            navigator.geolocation.getCurrentPosition(
+            safeGetCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     lastGpsUpdateRef.current = Date.now();
@@ -1432,7 +1514,16 @@ const App: React.FC = () => {
     console.log("🔥 [GPS Keep-Alive] Active navigation detected. Starting engine keep-alive loop...");
 
     const keepAliveInterval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
+      const timeSinceLastUpdate = Date.now() - lastGpsUpdateRef.current;
+      
+      // Smart Keep-Alive: skip polling if we've received an update within the last 15 seconds
+      if (timeSinceLastUpdate < 15000) {
+        console.log("🟢 [GPS Keep-Alive] Watch is active. Skipping keep-alive poll.");
+        return;
+      }
+
+      console.log("⚡ [GPS Keep-Alive] Keep-alive nudge triggered.");
+      safeGetCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           lastGpsUpdateRef.current = Date.now();
@@ -1453,7 +1544,7 @@ const App: React.FC = () => {
         (err) => {
           console.warn("⚠️ [GPS Keep-Alive] Keep-alive getCurrentPosition failed:", err.message);
           // Fallback: try low accuracy to keep the sensor somewhat warm
-          navigator.geolocation.getCurrentPosition(
+          safeGetCurrentPosition(
             (pos) => {
               setCurrentLocation(prev => prev ?? {
                 lat: pos.coords.latitude,
@@ -1467,7 +1558,7 @@ const App: React.FC = () => {
         },
         { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
       );
-    }, 4000);
+    }, 25000);
 
     return () => {
       clearInterval(keepAliveInterval);
@@ -2162,7 +2253,7 @@ const App: React.FC = () => {
     
     if (activeStates.includes(status) && gpsEnabled) {
         console.log(`🚀 [GPS] Status changed to ${status}. Triggering sensor wake-up...`);
-        navigator.geolocation.getCurrentPosition(
+        safeGetCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords;
                 lastGpsUpdateRef.current = Date.now();

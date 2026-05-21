@@ -73,10 +73,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
     const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
     
-    // Internal fallback location used only when App.tsx hasn't delivered currentLocation yet
-    const [selfLocation, setSelfLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
-    // Effective location: prefer prop (updated by App.tsx watchPosition), fallback to self-fetched
-    const effectiveLocation = currentLocation ?? selfLocation;
+    // Effective location: prefer prop (updated by App.tsx watchPosition)
+    const effectiveLocation = currentLocation;
 
     // --- CONFIGURAÇÃO DO MOTOR DE NAVEGAÇÃO (PARÂMETROS RIGOROSOS) ---
     const [navigationMode, setNavigationMode] = useState<'heading_up' | 'north_up'>('heading_up');
@@ -126,37 +124,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const lastFetchTime = useRef<number>(0);
     const lastFetchLocation = useRef<{ lat: number; lng: number } | null>(null);
 
-    // Self-bootstrap GPS: when the component mounts without a location, grab one immediately.
-    useEffect(() => {
-        if (currentLocation) return;
-        if (!navigator.geolocation) return;
 
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                console.log('⚡ [MapNavigation] Self-bootstrap fast fix:', pos.coords.latitude, pos.coords.longitude);
-                setSelfLocation({
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    speed: pos.coords.speed
-                });
-            },
-            (err) => {
-                console.warn('[MapNavigation] Fast self-fetch failed, trying high-accuracy...', err.message);
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        setSelfLocation({
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            speed: pos.coords.speed
-                        });
-                    },
-                    (err2) => console.error('[MapNavigation] Self-bootstrap failed entirely:', err2.message),
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            },
-            { enableHighAccuracy: false, timeout: 3000, maximumAge: 30000 }
-        );
-    }, []);
 
     // Descobrir voz pt-BR baseado no gênero selecionado
     useEffect(() => {
