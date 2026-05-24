@@ -2749,6 +2749,9 @@ const App: React.FC = () => {
     try {
       const sourceMission = mission || activeMissions[0];
       let idsToAccept = activeMissions.map(m => m.id);
+      if (idsToAccept.length === 0 && sourceMission) {
+        idsToAccept = [sourceMission.id];
+      }
 
       // --- SHIELDED ACCEPT: Fetch ALL siblings from DB if it's a batch ---
       if (sourceMission.batch_id) {
@@ -2786,8 +2789,16 @@ const App: React.FC = () => {
         .select('*')
         .in('id', idsToAccept);
       
-      const mappedActive: DeliveryMission[] = (freshBatch || []).map(mapDbDeliveryToMission)
-        .sort((a, b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+      let mappedActive: DeliveryMission[] = [];
+      if (freshBatch && freshBatch.length > 0) {
+        mappedActive = freshBatch.map(mapDbDeliveryToMission)
+          .sort((a, b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+      } else {
+        console.log('⚠️ [handleAcceptMission] freshBatch select returned nothing, falling back to local memory state');
+        mappedActive = activeMissions.length > 0
+          ? activeMissions.map(m => ({ ...m, status: 'accepted' }))
+          : sourceMission ? [{ ...sourceMission, status: 'accepted' }] : [];
+      }
 
       setActiveMissions(mappedActive);
       setMission(mappedActive[0]);
