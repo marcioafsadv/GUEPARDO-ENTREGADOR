@@ -117,6 +117,24 @@ const destIcon = L.divIcon({
 
 const MapUpdater: React.FC<{ points: [number, number][], reCenterTrigger?: number }> = ({ points, reCenterTrigger }) => {
     const map = useMap();
+
+    // Fix for Leaflet grey map in animated modals/containers
+    useEffect(() => {
+        map.invalidateSize();
+        const t1 = setTimeout(() => {
+            console.log("🗺️ [MapLeaflet] Invalidating size (250ms)...");
+            map.invalidateSize();
+        }, 250);
+        const t2 = setTimeout(() => {
+            console.log("🗺️ [MapLeaflet] Invalidating size (800ms)...");
+            map.invalidateSize();
+        }, 800);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [map]);
+
     useEffect(() => {
         if (points.length > 0) {
             if (points.length === 1) {
