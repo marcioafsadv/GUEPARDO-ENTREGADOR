@@ -436,6 +436,23 @@ const App: React.FC = () => {
     activeMissionsRef.current = activeMissions;
   }, [activeMissions]);
 
+  // --- REDIRECT TO HOME WHEN NAVIGATING / IN ACTIVE RUN ---
+  useEffect(() => {
+    const activeStates = [
+      DriverStatus.GOING_TO_STORE,
+      DriverStatus.ARRIVED_AT_STORE,
+      DriverStatus.READY_FOR_PICKUP,
+      DriverStatus.PICKING_UP,
+      DriverStatus.GOING_TO_CUSTOMER,
+      DriverStatus.ARRIVED_AT_CUSTOMER,
+      DriverStatus.RETURNING
+    ];
+    if ((isNavigating || activeStates.includes(status)) && currentScreen !== 'HOME') {
+      console.log('🔄 Routing safeguard: forcing currentScreen to HOME due to active navigation');
+      setCurrentScreen('HOME');
+    }
+  }, [isNavigating, status, currentScreen]);
+
   // --- CHAT REALTIME NOTIFICATIONS ---
   useEffect(() => {
     if (!userId) return;
@@ -1107,6 +1124,7 @@ const App: React.FC = () => {
             }
             
             setIsNavigating(true);
+            setCurrentScreen('HOME');
             forceGpsWakeUp();
 
             // Prioritize existing coordinates to ensure consistency with Lojista
@@ -2785,6 +2803,7 @@ const App: React.FC = () => {
 
       // ⚡ Ativa a navegação IMEDIATAMENTE — o mapa começa a renderizar enquanto o geocode acontece em paralelo
       setIsNavigating(true);
+      setCurrentScreen('HOME');
       forceGpsWakeUp();
 
       // Pre-geocode both addresses in parallel for instant route switching
