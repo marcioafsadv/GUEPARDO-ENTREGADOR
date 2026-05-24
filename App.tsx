@@ -436,23 +436,6 @@ const App: React.FC = () => {
     activeMissionsRef.current = activeMissions;
   }, [activeMissions]);
 
-  // --- REDIRECT TO HOME WHEN NAVIGATING / IN ACTIVE RUN ---
-  useEffect(() => {
-    const activeStates = [
-      DriverStatus.GOING_TO_STORE,
-      DriverStatus.ARRIVED_AT_STORE,
-      DriverStatus.READY_FOR_PICKUP,
-      DriverStatus.PICKING_UP,
-      DriverStatus.GOING_TO_CUSTOMER,
-      DriverStatus.ARRIVED_AT_CUSTOMER,
-      DriverStatus.RETURNING
-    ];
-    if ((isNavigating || activeStates.includes(status)) && currentScreen !== 'HOME') {
-      console.log('🔄 Routing safeguard: forcing currentScreen to HOME due to active navigation');
-      setCurrentScreen('HOME');
-    }
-  }, [isNavigating, status, currentScreen]);
-
   // --- CHAT REALTIME NOTIFICATIONS ---
   useEffect(() => {
     if (!userId) return;
@@ -698,6 +681,23 @@ const App: React.FC = () => {
   const lastGpsUpdateRef = useRef<number>(Date.now());
   const gpsRestartCounterRef = useRef<number>(0);
   const activeGpsQueryRef = useRef<boolean>(false);
+
+  // --- REDIRECT TO HOME WHEN NAVIGATING / IN ACTIVE RUN ---
+  useEffect(() => {
+    const activeStates = [
+      DriverStatus.GOING_TO_STORE,
+      DriverStatus.ARRIVED_AT_STORE,
+      DriverStatus.READY_FOR_PICKUP,
+      DriverStatus.PICKING_UP,
+      DriverStatus.GOING_TO_CUSTOMER,
+      DriverStatus.ARRIVED_AT_CUSTOMER,
+      DriverStatus.RETURNING
+    ];
+    if ((isNavigating || activeStates.includes(status)) && currentScreen !== 'HOME') {
+      console.log('🔄 Routing safeguard: forcing currentScreen to HOME due to active navigation');
+      setCurrentScreen('HOME');
+    }
+  }, [isNavigating, status, currentScreen]);
 
   const safeGetCurrentPosition = (
     successCallback: (position: GeolocationPosition) => void,
