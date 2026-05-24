@@ -5681,152 +5681,185 @@ const App: React.FC = () => {
       )}
 
       {status === DriverStatus.ALERTING && mission && (
-        <div className="absolute inset-0 z-[8000] flex items-end justify-center pb-12 p-6 bg-[#0D0502]/95 backdrop-blur-3xl overflow-hidden">
+        <div className="absolute inset-0 z-[8000] flex items-center justify-center p-6 bg-[#0D0502]/95 backdrop-blur-3xl overflow-hidden">
           
           <div className="absolute top-0 left-0 w-full h-[30%] bg-gradient-to-b from-[#FF6B00]/20 to-transparent pointer-events-none"></div>
 
-          <div className={`w-full max-w-md chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto shadow-[0_30px_100px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-20 duration-700`}>
+          <div className="w-full max-w-md max-h-[92vh] chocolate-glass-card relative overflow-hidden flex flex-col pointer-events-auto shadow-[0_30px_100px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-20 duration-700">
             
             {/* Guepardo Watermark */}
             <div className="absolute inset-0 guepardo-watermark pointer-events-none opacity-[0.03]"></div>
 
-            {/* Header: Neomorphic Price Display */}
-            <div className="p-10 pb-4 sm:p-14 sm:pb-8 text-center relative z-10">
-              {(() => {
-                const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
-                const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
-                const distToStore = mToShow[0]?.distanceToStore || 0;
-                const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
-                const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
-                const totalStops = mToShow.length;
+            {(() => {
+              const mToShow = activeMissions.length > 0 ? activeMissions : [mission];
+              const totalE = mToShow.reduce((acc, m) => acc + (m?.earnings || 0), 0);
+              const distToStore = mToShow[0]?.distanceToStore || 0;
+              const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
+              const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
+              const totalStops = mToShow.length;
+              const currentVehicleType = currentUser?.vehicle?.vehicleType || 'moto';
 
-                return (
-                  <div className="flex flex-col items-center">
-                    <div className="mb-6 sm:mb-10 relative">
-                      {/* Sub-label */}
-                      <span className="text-[11px] font-black uppercase text-[#D4AF37] tracking-[0.45em] mb-4 block opacity-90 drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]">Ganhos Estimados</span>
-                      <h2 className="text-[64px] sm:text-[80px] font-[900] text-white drop-shadow-[0_0_25px_rgba(255,107,0,0.6)] leading-none tracking-tighter italic transform -skew-x-6">
-                         {formatCurrency(totalE)}
-                      </h2>
-                    </div>
+              return (
+                <>
+                  {/* Header: Estimated Earnings banner */}
+                  <div className="p-6 pb-3 text-center relative z-10 border-b border-white/5 shrink-0 bg-black/10">
+                    <span className="text-[10px] font-black uppercase text-[#D4AF37] tracking-[0.3em] mb-1 block opacity-95 drop-shadow-[0_0_8px_rgba(212,175,55,0.35)]">Ganhos Estimados</span>
+                    <h2 className="text-5xl font-[900] text-white drop-shadow-[0_0_20px_rgba(255,107,0,0.5)] leading-none tracking-tighter italic transform -skew-x-6">
+                       {formatCurrency(totalE)}
+                    </h2>
+                  </div>
+
+                  {/* Scrollable container for modal elements */}
+                  <div className="p-6 flex-1 flex flex-col overflow-y-auto no-scrollbar relative z-10">
                     
-                    <div className="flex items-center space-x-4">
-                      <div className="metric-badge-chocolate flex items-center space-x-2 border border-[#D4AF37]/20 bg-[#1A0C06]/60">
-                        <i className="fas fa-motorcycle text-[#FF6B00] text-sm"></i>
-                        <span className="text-sm font-black tracking-tight text-[#F5E6D3]">{totalD.toFixed(2).replace('.', ',')} km</span>
+                    {/* 1. Top Section: Points of Collection and Destination/Stops */}
+                    <div className="flex items-start space-x-3 mb-4 shrink-0">
+                      <div className="flex flex-col items-center justify-between h-20 py-1.5 shrink-0">
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#FF6B00] border-2 border-white shadow-[0_0_8px_#FF6B00]"></div>
+                        <div className="w-0.5 flex-1 border-l-2 border-dashed border-white/20 my-1"></div>
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#D4AF37] border-2 border-white shadow-[0_0_8px_#D4AF37]"></div>
                       </div>
-                      <div className="metric-badge-chocolate flex items-center space-x-2 border border-[#D4AF37]/20 bg-[#1A0C06]/60">
-                        <i className="fas fa-map-pin text-[#D4AF37] text-sm"></i>
-                        <span className="text-sm font-black tracking-tight text-[#F5E6D3]">{totalStops} {totalStops === 1 ? 'Parada' : 'Paradas'}</span>
+                      <div className="flex-1 space-y-2 min-w-0">
+                        {/* Top Pill - Coleta */}
+                        <div className="bg-[#1A0C06]/80 border border-white/5 rounded-2xl p-3 flex items-center space-x-3 shadow-inner">
+                          <i className="fas fa-store text-[#FF6B00] text-sm shrink-0"></i>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[8px] font-black uppercase text-[#FF6B00] tracking-widest leading-none mb-1">Coleta</p>
+                            <p className="text-xs font-black text-white truncate leading-none">{mission.storeName}</p>
+                          </div>
+                        </div>
+                        {/* Bottom Pill - Destino */}
+                        <div className="bg-[#1A0C06]/80 border border-white/5 rounded-2xl p-3 flex items-center space-x-3 shadow-inner">
+                          <i className="fas fa-location-dot text-[#D4AF37] text-sm shrink-0"></i>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[8px] font-black uppercase text-[#D4AF37] tracking-widest leading-none mb-1">
+                              Destino {totalStops > 1 ? `(${totalStops} Paradas)` : ''}
+                            </p>
+                            <p className="text-xs font-black text-white truncate leading-none">{mission.customerAddress}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
-            </div>
 
-            {/* Route Lava Path Section */}
-            <div className="px-10 py-6 sm:px-14 sm:py-8 relative flex-1">
-              <div className="liquid-lava-path overflow-hidden rounded-3xl opacity-30"></div>
-              
-              <div className="space-y-8 sm:space-y-12">
-                {/* Loja Origin */}
-                <div className="flex items-start space-x-6 relative group">
-                  <div className="w-12 h-12 rounded-2xl bg-[#1a0a05] border-2 border-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.4)] flex items-center justify-center z-20 shrink-0 transform group-hover:scale-110 transition-transform">
-                    <i className="fas fa-store text-[#FF6B00] text-sm"></i>
-                  </div>
-                  <div className="flex flex-col min-w-0 pt-1">
-                    <div className="flex items-center space-x-2">
-                       <span className="text-[15px] font-black text-white uppercase tracking-tight">{mission.storeName}</span>
-                       <span className="w-2 h-2 rounded-full bg-[#FF6B00] animate-pulse"></span>
+                    {/* 2. Merchant & Metrics Row */}
+                    <div className="bg-[#1A0C06]/40 border border-white/5 rounded-3xl p-4 mb-4 shrink-0">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center space-x-2">
+                          <i className="fas fa-shop text-[#FF6B00] text-xs"></i>
+                          <h3 className="text-xs font-black text-white uppercase tracking-wider">{mission.storeName}</h3>
+                        </div>
+                        <span className="text-[8px] font-black uppercase text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20">
+                          #{mission.displayId || mission.id.slice(-4).toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 text-center border-t border-white/5 pt-3">
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Dist. Coleta</span>
+                          <span className="text-xs font-black text-[#FF6B00]">{distToStore.toFixed(1).replace('.', ',')} km</span>
+                        </div>
+                        <div className="flex flex-col border-x border-white/5">
+                          <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Dist. Entrega</span>
+                          <span className="text-xs font-black text-white">{totalDeliveryDist.toFixed(1).replace('.', ',')} km</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Dist. Total</span>
+                          <span className="text-xs font-black text-[#D4AF37]">{totalD.toFixed(1).replace('.', ',')} km</span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Coleta Expressa</span>
-                    <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-1 mt-1 opacity-70 italic">{mission.storeAddress}</span>
-                  </div>
-                </div>
 
-                {/* Delivery Stops */}
-                {(activeMissions.length > 0 ? activeMissions : [mission]).map((m, idx) => (
-                  <div key={m.id} className="flex items-start space-x-6 relative group">
-                    <div className="w-12 h-12 rounded-2xl bg-[#1a0a05] border-2 border-white/10 shadow-[0_10px_20px_rgba(0,0,0,0.3)] flex items-center justify-center z-20 shrink-0 group-hover:border-[#FF6B00]/50 transition-all">
-                      <i className="fas fa-location-dot text-white/30 group-hover:text-[#FF6B00] transition-colors text-sm"></i>
+                    {/* 3. Vehicle Modality Indicators (Motocicleta, Bicicleta, Carro) */}
+                    <div className="grid grid-cols-3 gap-2 mb-4 bg-[#1A0C06]/35 border border-white/5 rounded-3xl p-3 shrink-0">
+                      {/* Motorcycle */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${currentVehicleType === 'moto' ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'border border-white/5 text-white/30 bg-black/20'}`}>
+                          <i className="fas fa-motorcycle text-sm"></i>
+                        </div>
+                        <span className={`text-[7px] font-black uppercase tracking-widest mt-1.5 ${currentVehicleType === 'moto' ? 'text-[#FF6B00]' : 'text-white/30'}`}>Motocicleta</span>
+                      </div>
+
+                      {/* Bike */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${currentVehicleType === 'bike' ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'border border-white/5 text-white/30 bg-black/20'}`}>
+                          <i className="fas fa-bicycle text-sm"></i>
+                        </div>
+                        <span className={`text-[7px] font-black uppercase tracking-widest mt-1.5 ${currentVehicleType === 'bike' ? 'text-[#FF6B00]' : 'text-white/30'}`}>Bicicleta</span>
+                      </div>
+
+                      {/* Car */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${currentVehicleType === 'carro' ? 'bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]' : 'border border-white/5 text-white/30 bg-black/20'}`}>
+                          <i className="fas fa-car text-sm"></i>
+                        </div>
+                        <span className={`text-[7px] font-black uppercase tracking-widest mt-1.5 ${currentVehicleType === 'carro' ? 'text-[#FF6B00]' : 'text-white/30'}`}>Carro</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col min-w-0 pt-1">
-                      <span className="text-[15px] font-black text-white uppercase tracking-tight italic">{idx + 1}ª Entrega</span>
-                      <span className="text-xs text-zinc-400 font-medium leading-relaxed line-clamp-1 mt-1 opacity-70 italic">{m.customerAddress}</span>
+
+                    {/* 4. Mini Leaflet Map Preview */}
+                    <div className="w-full h-44 rounded-[24px] overflow-hidden border border-white/10 shadow-inner relative z-10 mb-6 bg-black/45 shrink-0">
+                      <MapLeaflet
+                        status={status}
+                        showRoute={true}
+                        theme="dark"
+                        currentLocation={currentLocation}
+                        missions={activeMissions.length > 0 ? activeMissions : [mission]}
+                      />
                     </div>
-                  </div>
-                ))}
 
-                {/* Return trip */}
-                {mission.isReturnRequired && (
-                  <div className="flex items-start space-x-6 relative">
-                    <div className="w-10 h-10 rounded-full bg-[#0a0402] border-2 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] flex items-center justify-center z-20 shrink-0">
-                      <i className="fas fa-undo-alt text-red-500 text-xs text-red-400"></i>
+                    {/* 5. Footer Actions with Circular Timer */}
+                    <div className="w-full bg-[#1A0C06] border border-white/5 rounded-[28px] p-3 flex items-center justify-between relative shadow-2xl shrink-0 mt-auto">
+                      {/* Left: Decline Button */}
+                      <button 
+                        onClick={handleRejectMission}
+                        className="flex-1 h-12 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 rounded-2xl font-black text-red-500 uppercase text-[10px] tracking-widest transition-all active:scale-95 mr-5 flex items-center justify-center space-x-1.5"
+                      >
+                        <i className="fas fa-times text-xs"></i>
+                        <span>Recusar</span>
+                      </button>
+
+                      {/* Center: Floating Timer Gauge */}
+                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-[#1A0C06] border-4 border-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.5),inset_0_0_8px_rgba(255,107,0,0.3)] flex items-center justify-center relative">
+                          <svg className="absolute inset-0 w-full h-full rotate-[-90deg]" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,107,0,0.05)" strokeWidth="4" />
+                            <circle 
+                              cx="50" cy="50" r="44" 
+                              fill="none" 
+                              stroke="#D4AF37" 
+                              strokeWidth="4" 
+                              strokeLinecap="round"
+                              style={{ 
+                                strokeDasharray: 276, 
+                                strokeDashoffset: 276 - (alertCountdown / 30) * 276,
+                                transition: 'stroke-dashoffset 1s linear'
+                              }}
+                            />
+                          </svg>
+                          <div className="flex flex-col items-center z-10">
+                            <span className="text-lg font-black text-white leading-none tracking-tighter">{alertCountdown}</span>
+                            <span className="text-[6px] font-black text-[#D4AF37] tracking-widest mt-0.5">SEG</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Space holder for the center timer */}
+                      <div className="w-12"></div>
+
+                      {/* Right: Accept Button */}
+                      <button 
+                        onClick={handleAcceptMission}
+                        className="flex-1 h-12 bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] hover:brightness-110 shadow-[0_4px_15px_rgba(255,107,0,0.3)] rounded-2xl font-black text-white uppercase text-[10px] tracking-widest transition-all active:scale-95 ml-5 flex items-center justify-center space-x-1.5 animate-pulse"
+                      >
+                        <i className="fas fa-check-double text-xs"></i>
+                        <span>Aceitar</span>
+                      </button>
                     </div>
-                    <div className="flex flex-col min-w-0 pt-1">
-                      <span className="text-[14px] font-black text-red-400 uppercase tracking-wider">Retorno Obrigatório</span>
-                      <span className="text-xs text-[#8b7d77] font-medium leading-relaxed line-clamp-2 mt-1 italic">Devolução na Loja</span>
-                    </div>
+
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Premium Interaction Footer */}
-            <div className="p-8 pt-6 sm:p-12 sm:pt-8 bg-black/40 border-t border-white/5 flex flex-col items-center relative z-20">
-              
-              {/* Luxury Circular Timer */}
-              <div className="flex items-center justify-center space-x-12 mb-6 sm:mb-10">
-                <div className="flex space-x-2 opacity-10 text-[#FF6B00]">
-                  <i className="fas fa-chevron-left text-xs"></i>
-                  <i className="fas fa-chevron-left text-xs"></i>
-                </div>
-
-                <div className="relative flex items-center justify-center circular-gauge-chocolate">
-                  <svg width="80" height="80" viewBox="0 0 100 100" className="rotate-[-90deg]">
-                    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,107,0,0.05)" strokeWidth="4" />
-                    <circle 
-                      cx="50" cy="50" r="46" 
-                      fill="none" 
-                      stroke="#D4AF37" 
-                      strokeWidth="3" 
-                      strokeLinecap="round"
-                      style={{ 
-                        strokeDasharray: 289, 
-                        strokeDashoffset: 289 - (alertCountdown / 30) * 289,
-                        transition: 'stroke-dashoffset 1s linear'
-                      }}
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <span className="text-3xl font-[900] text-white tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{alertCountdown}</span>
-                    <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.3em] mt-[-2px] opacity-80">SEG</span>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2 opacity-20 text-[#D4AF37]">
-                  <i className="fas fa-chevron-right text-xs"></i>
-                  <i className="fas fa-chevron-right text-xs"></i>
-                </div>
-              </div>
-
-              {/* Ultra Action Stack */}
-              <button 
-                onClick={handleAcceptMission}
-                className="w-full h-18 sm:h-22 btn-lava-accept heartbeat-pulse rounded-[32px] font-black text-xl sm:text-2xl text-white uppercase tracking-[0.2em] active:scale-95 flex items-center justify-center space-x-4 mb-4 sm:mb-8"
-              >
-                <i className="fas fa-check-double text-xl sm:text-2xl"></i>
-                <span>Aceitar</span>
-              </button>
-              
-              <button 
-                onClick={handleRejectMission}
-                className="text-zinc-600 font-black text-[11px] uppercase tracking-[0.3em] hover:text-red-500/80 transition-colors py-2 active:scale-90"
-              >
-                Ignorar Chamada
-              </button>
-            </div>
+                </>
+              );
+            })()}
 
           </div>
         </div>
