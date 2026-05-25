@@ -576,6 +576,113 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         return getBearing(p1[1], p1[0], p2[1], p2[0]);
     };
 
+    const getManeuverArrowCoords = (routeCoords: [number, number][], maneuverPt: { lat: number; lng: number }) => {
+        if (routeCoords.length < 3) return null;
+        
+        let closestIdx = -1;
+        let minD = Infinity;
+        for (let i = 0; i < routeCoords.length; i++) {
+            const d = getDistance(maneuverPt.lat, maneuverPt.lng, routeCoords[i][1], routeCoords[i][0]);
+            if (d < minD) {
+                minD = d;
+                closestIdx = i;
+            }
+        }
+        
+        if (closestIdx === -1) return null;
+        
+        let startIdx = closestIdx;
+        let dBefore = 0;
+        while (startIdx > 0 && dBefore < 0.035) { // ~35 meters
+            dBefore += getDistance(routeCoords[startIdx][1], routeCoords[startIdx][0], routeCoords[startIdx - 1][1], routeCoords[startIdx - 1][0]);
+            startIdx--;
+        }
+        
+        let endIdx = closestIdx;
+        let dAfter = 0;
+        while (endIdx < routeCoords.length - 1 && dAfter < 0.02) { // ~20 meters
+            dAfter += getDistance(routeCoords[endIdx][1], routeCoords[endIdx][0], routeCoords[endIdx + 1][1], routeCoords[endIdx + 1][0]);
+            endIdx++;
+        }
+        
+        const segment = routeCoords.slice(startIdx, endIdx + 1);
+        if (segment.length < 2) return null;
+        return segment;
+    };
+
+    const setManeuverArrowVisibility = (visibility: 'visible' | 'none') => {
+        if (!map.current) return;
+        const layers = ['maneuver-arrow-shadow', 'maneuver-arrow-outline', 'maneuver-arrow-line', 'maneuver-arrow-head'];
+        layers.forEach(layerId => {
+            if (map.current?.getLayer(layerId)) {
+                map.current.setLayoutProperty(layerId, 'visibility', visibility);
+            }
+        });
+    };
+
+    const hideManeuverArrow = () => {
+        setManeuverArrowVisibility('none');
+    };
+
+    const updateManeuverArrow = (
+        start: { lat: number; lng: number },
+        maneuverPt: { lat: number; lng: number } | null,
+        routeCoords: [number, number][]
+    ) => {
+        if (!map.current || !maneuverPt || routeCoords.length < 3) {
+            hideManeuverArrow();
+            return;
+        }
+
+        const distToManeuver = getDistance(start.lat, start.lng, maneuverPt.lat, maneuverPt.lng) * 1000; // meters
+
+        // Only show maneuver arrow if within 250 meters of the turn
+        if (distToManeuver > 250) {
+            hideManeuverArrow();
+            return;
+        }
+
+        const segment = getManeuverArrowCoords(routeCoords, maneuverPt);
+        if (!segment || segment.length < 2) {
+            hideManeuverArrow();
+            return;
+        }
+
+        const lastPt = segment[segment.length - 1];
+        const prevPt = segment[segment.length - 2];
+        const headBearing = getBearing(prevPt[1], prevPt[0], lastPt[1], lastPt[0]);
+
+        // Update maneuver line source data
+        const sourceLine = map.current.getSource('maneuver-arrow') as mapboxgl.GeoJSONSource;
+        if (sourceLine) {
+            sourceLine.setData({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: segment
+                }
+            });
+        }
+
+        // Update maneuver arrowhead source data
+        const sourceHead = map.current.getSource('maneuver-arrow-head') as mapboxgl.GeoJSONSource;
+        if (sourceHead) {
+            sourceHead.setData({
+                type: 'Feature',
+                properties: {
+                    bearing: headBearing
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: lastPt
+                }
+            });
+        }
+
+        setManeuverArrowVisibility('visible');
+    };
+
     // Off-route detection with 45 degrees instruction tolerance and API throttle
     const shouldRecalculateRoute = (lat: number, lng: number, bearing: number) => {
         const now = Date.now();
@@ -768,6 +875,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 setCurrentSpeed(Math.round((dist / 1) * 3600)); // assumes 1s interval
             }
         }
+
+        // Update Maneuver Turn Arrow on curves
+        updateManeuverArrow(effectiveLocation, nextManeuverCoords.current, routeCoordinates.current);
 
         lastLocation.current = effectiveLocation;
 
@@ -987,6 +1097,124 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 'text-opacity': 0.9,
                                 'text-halo-color': '#FF6B00',
                                 'text-halo-width': 0.75
+                            }
+                        });
+
+                        // Maneuver Turn Arrow Sources
+                        map.current.addSource('maneuver-arrow', {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                properties: {},
+                                geometry: { type: 'LineString', coordinates: [] }
+                            }
+                        });
+
+                        map.current.addSource('maneuver-arrow-head', {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                properties: { bearing: 0 },
+                                geometry: { type: 'Point', coordinates: [0, 0] }
+                            }
+                        });
+
+                        // Maneuver Turn Arrow Shadow Layer
+                        map.current.addLayer({
+                            id: 'maneuver-arrow-shadow',
+                            type: 'line',
+                            source: 'maneuver-arrow',
+                            layout: {
+                                'line-join': 'round',
+                                'line-cap': 'round',
+                                'visibility': 'none'
+                            },
+                            paint: {
+                                'line-color': '#000000',
+                                'line-width': [
+                                    'interpolate',
+                                    ['linear'],
+                                    ['zoom'],
+                                    12, 14,
+                                    18, 22
+                                ],
+                                'line-opacity': 0.35,
+                                'line-translate': [2.5, 2.5]
+                            }
+                        });
+
+                        // Maneuver Turn Arrow Outline Layer (creates a beautiful orange outline)
+                        map.current.addLayer({
+                            id: 'maneuver-arrow-outline',
+                            type: 'line',
+                            source: 'maneuver-arrow',
+                            layout: {
+                                'line-join': 'round',
+                                'line-cap': 'round',
+                                'visibility': 'none'
+                            },
+                            paint: {
+                                'line-color': '#FF6B00',
+                                'line-width': [
+                                    'interpolate',
+                                    ['linear'],
+                                    ['zoom'],
+                                    12, 15,
+                                    18, 21
+                                ],
+                                'line-opacity': 1.0
+                            }
+                        });
+
+                        // Maneuver Turn Arrow White Line Layer
+                        map.current.addLayer({
+                            id: 'maneuver-arrow-line',
+                            type: 'line',
+                            source: 'maneuver-arrow',
+                            layout: {
+                                'line-join': 'round',
+                                'line-cap': 'round',
+                                'visibility': 'none'
+                            },
+                            paint: {
+                                'line-color': '#FFFFFF',
+                                'line-width': [
+                                    'interpolate',
+                                    ['linear'],
+                                    ['zoom'],
+                                    12, 11,
+                                    18, 15
+                                ],
+                                'line-opacity': 1.0
+                            }
+                        });
+
+                        // Maneuver Turn Arrow Head Layer (glowing triangle pointing along route)
+                        map.current.addLayer({
+                            id: 'maneuver-arrow-head',
+                            type: 'symbol',
+                            source: 'maneuver-arrow-head',
+                            layout: {
+                                'text-field': '▲', // solid up pointing triangle
+                                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+                                'text-size': [
+                                    'interpolate',
+                                    ['linear'],
+                                    ['zoom'],
+                                    12, 14,
+                                    18, 22
+                                ],
+                                'text-rotate': ['get', 'bearing'],
+                                'text-rotation-alignment': 'map',
+                                'text-allow-overlap': true,
+                                'text-ignore-placement': true,
+                                'visibility': 'none',
+                                'text-offset': [0, -0.08]
+                            },
+                            paint: {
+                                'text-color': '#FFFFFF',
+                                'text-halo-color': '#FF6B00',
+                                'text-halo-width': 1.5
                             }
                         });
                     };
