@@ -464,8 +464,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             );
         };
 
-        map.current.on('style.load', add3DBuildings);
-        map.current.on('load', add3DBuildings);
+        const onStyleLoad = () => {
+            add3DBuildings();
+            if (map.current) {
+                addManeuverArrowImage(map.current);
+            }
+        };
+        map.current.on('style.load', onStyleLoad);
+        map.current.on('load', onStyleLoad);
 
         // Create marker
         const el = document.createElement('div');
@@ -576,8 +582,38 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         return getBearing(p1[1], p1[0], p2[1], p2[0]);
     };
 
+    const addManeuverArrowImage = (mapboxMap: mapboxgl.Map) => {
+        if (!mapboxMap || mapboxMap.hasImage('maneuver-arrow-head-icon')) return;
+
+        const size = 32;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#FF6B00';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            // Beautiful chevron arrow head pointing up
+            ctx.moveTo(16, 4);
+            ctx.lineTo(28, 26);
+            ctx.lineTo(16, 20);
+            ctx.lineTo(4, 26);
+            ctx.closePath();
+            
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        mapboxMap.addImage('maneuver-arrow-head-icon', canvas);
+    };
+
     const getManeuverArrowCoords = (routeCoords: [number, number][], maneuverPt: { lat: number; lng: number }) => {
-        if (routeCoords.length < 3) return null;
+        if (routeCoords.length < 2) return null;
         
         let closestIdx = -1;
         let minD = Infinity;
@@ -591,21 +627,64 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         
         if (closestIdx === -1) return null;
         
-        let startIdx = closestIdx;
+        // Target lengths: 12 meters before, 10 meters after the maneuver point
+        const dBeforeTarget = 12; // meters
+        const dAfterTarget = 10; // meters
+        
+        // 1. Traverse backward from closestIdx to collect points up to 12 meters
+        const coordsBefore: [number, number][] = [];
         let dBefore = 0;
-        while (startIdx > 0 && dBefore < 0.035) { // ~35 meters
-            dBefore += getDistance(routeCoords[startIdx][1], routeCoords[startIdx][0], routeCoords[startIdx - 1][1], routeCoords[startIdx - 1][0]);
-            startIdx--;
+        let startIdx = closestIdx;
+        
+        coordsBefore.push(routeCoords[closestIdx]);
+        
+        while (startIdx > 0 && dBefore < dBeforeTarget) {
+            const pCurrent = routeCoords[startIdx];
+            const pPrev = routeCoords[startIdx - 1];
+            const segDist = getDistance(pCurrent[1], pCurrent[0], pPrev[1], pPrev[0]) * 1000; // in meters
+            
+            if (dBefore + segDist >= dBeforeTarget) {
+                // Interpolate the exact point
+                const ratio = (dBeforeTarget - dBefore) / segDist;
+                const lng = pCurrent[0] + (pPrev[0] - pCurrent[0]) * ratio;
+                const lat = pCurrent[1] + (pPrev[1] - pCurrent[1]) * ratio;
+                coordsBefore.push([lng, lat]);
+                break;
+            } else {
+                coordsBefore.push(pPrev);
+                dBefore += segDist;
+                startIdx--;
+            }
         }
         
-        let endIdx = closestIdx;
+        // Reverse to maintain chronological order along the route
+        coordsBefore.reverse();
+        
+        // 2. Traverse forward from closestIdx to collect points up to 10 meters
+        const coordsAfter: [number, number][] = [];
         let dAfter = 0;
-        while (endIdx < routeCoords.length - 1 && dAfter < 0.02) { // ~20 meters
-            dAfter += getDistance(routeCoords[endIdx][1], routeCoords[endIdx][0], routeCoords[endIdx + 1][1], routeCoords[endIdx + 1][0]);
-            endIdx++;
+        let endIdx = closestIdx;
+        
+        while (endIdx < routeCoords.length - 1 && dAfter < dAfterTarget) {
+            const pCurrent = routeCoords[endIdx];
+            const pNext = routeCoords[endIdx + 1];
+            const segDist = getDistance(pCurrent[1], pCurrent[0], pNext[1], pNext[0]) * 1000; // in meters
+            
+            if (dAfter + segDist >= dAfterTarget) {
+                // Interpolate the exact point
+                const ratio = (dAfterTarget - dAfter) / segDist;
+                const lng = pCurrent[0] + (pNext[0] - pCurrent[0]) * ratio;
+                const lat = pCurrent[1] + (pNext[1] - pCurrent[1]) * ratio;
+                coordsAfter.push([lng, lat]);
+                break;
+            } else {
+                coordsAfter.push(pNext);
+                dAfter += segDist;
+                endIdx++;
+            }
         }
         
-        const segment = routeCoords.slice(startIdx, endIdx + 1);
+        const segment = [...coordsBefore, ...coordsAfter];
         if (segment.length < 2) return null;
         return segment;
     };
@@ -1070,35 +1149,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                             paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 1.0 }
                         });
 
-                        // Route Directional Arrows (Setas brancas sobrepostas nas curvas e retas)
-                        map.current.addLayer({
-                            id: 'route-arrows',
-                            type: 'symbol',
-                            source: 'route',
-                            layout: {
-                                'symbol-placement': 'line',
-                                'symbol-spacing': 45, // pixels between chevrons
-                                'text-field': '›', // single chevron pointing along the line direction
-                                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-                                'text-size': [
-                                    'interpolate',
-                                    ['linear'],
-                                    ['zoom'],
-                                    14, 16,
-                                    18, 24
-                                ],
-                                'text-keep-upright': false,
-                                'text-allow-overlap': true,
-                                'text-ignore-placement': true,
-                                'text-offset': [0, -0.05]
-                            },
-                            paint: {
-                                'text-color': '#FFFFFF',
-                                'text-opacity': 0.9,
-                                'text-halo-color': '#FF6B00',
-                                'text-halo-width': 0.75
-                            }
-                        });
+                        // Call addManeuverArrowImage to make sure image is loaded
+                        addManeuverArrowImage(map.current);
 
                         // Maneuver Turn Arrow Sources
                         map.current.addSource('maneuver-arrow', {
@@ -1135,8 +1187,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                     'interpolate',
                                     ['linear'],
                                     ['zoom'],
-                                    12, 14,
-                                    18, 22
+                                    12, 16,
+                                    18, 24
                                 ],
                                 'line-opacity': 0.35,
                                 'line-translate': [2.5, 2.5]
@@ -1159,8 +1211,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                     'interpolate',
                                     ['linear'],
                                     ['zoom'],
-                                    12, 15,
-                                    18, 21
+                                    12, 16,
+                                    18, 22
                                 ],
                                 'line-opacity': 1.0
                             }
@@ -1182,39 +1234,33 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                     'interpolate',
                                     ['linear'],
                                     ['zoom'],
-                                    12, 11,
-                                    18, 15
+                                    12, 10,
+                                    18, 14
                                 ],
                                 'line-opacity': 1.0
                             }
                         });
 
-                        // Maneuver Turn Arrow Head Layer (glowing triangle pointing along route)
+                        // Maneuver Turn Arrow Head Layer (using our custom canvas image icon)
                         map.current.addLayer({
                             id: 'maneuver-arrow-head',
                             type: 'symbol',
                             source: 'maneuver-arrow-head',
                             layout: {
-                                'text-field': '▲', // solid up pointing triangle
-                                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-                                'text-size': [
+                                'icon-image': 'maneuver-arrow-head-icon',
+                                'icon-size': [
                                     'interpolate',
                                     ['linear'],
                                     ['zoom'],
-                                    12, 14,
-                                    18, 22
+                                    12, 0.5,
+                                    18, 0.8
                                 ],
-                                'text-rotate': ['get', 'bearing'],
-                                'text-rotation-alignment': 'map',
-                                'text-allow-overlap': true,
-                                'text-ignore-placement': true,
+                                'icon-rotate': ['get', 'bearing'],
+                                'icon-rotation-alignment': 'map',
+                                'icon-allow-overlap': true,
+                                'icon-ignore-placement': true,
                                 'visibility': 'none',
-                                'text-offset': [0, -0.08]
-                            },
-                            paint: {
-                                'text-color': '#FFFFFF',
-                                'text-halo-color': '#FF6B00',
-                                'text-halo-width': 1.5
+                                'icon-offset': [0, -2]
                             }
                         });
                     };
