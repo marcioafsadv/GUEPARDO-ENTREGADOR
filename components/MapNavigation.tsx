@@ -351,6 +351,25 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                 .destination-marker-svg {
                     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
                 }
+                @keyframes headlight-glow {
+                    0% { opacity: 0.8; transform: translateX(-50%) scaleY(0.96) scaleX(0.98); }
+                    50% { opacity: 1.0; transform: translateX(-50%) scaleY(1.04) scaleX(1.02); }
+                    100% { opacity: 0.8; transform: translateX(-50%) scaleY(0.96) scaleX(0.98); }
+                }
+                .navigation-headlight-beam {
+                    position: absolute;
+                    bottom: 24px;
+                    left: 50%;
+                    width: 75px;
+                    height: 110px;
+                    pointer-events: none;
+                    background: linear-gradient(to top, rgba(255, 170, 0, 0.45) 0%, rgba(255, 170, 0, 0.12) 50%, rgba(255, 170, 0, 0) 100%);
+                    clip-path: polygon(50% 100%, 15% 0, 85% 0);
+                    z-index: 1;
+                    transform-origin: bottom center;
+                    transform: translateX(-50%) scaleY(0.96) scaleX(0.98);
+                    animation: headlight-glow 4s infinite ease-in-out;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -454,15 +473,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         el.innerHTML = `
             <div class="marker-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div class="marker-container" style="position: relative; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px;">
+                    <!-- Headlight Beam (Farol) -->
+                    <div class="navigation-headlight-beam"></div>
                     <!-- Main Circle -->
-                    <div style="width: 48px; height: 48px; background: rgba(13, 5, 2, 0.8); border: 3.5px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 30px rgba(255, 107, 0, 0.4), inset 0 0 15px rgba(212, 175, 55, 0.3); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); outline: 1px solid rgba(212, 175, 55, 0.5);">
+                    <div style="position: relative; z-index: 2; width: 48px; height: 48px; background: rgba(13, 5, 2, 0.8); border: 3.5px solid #FF6B00; border-radius: 50%; box-shadow: 0 0 30px rgba(255, 107, 0, 0.4), inset 0 0 15px rgba(212, 175, 55, 0.3); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); outline: 1px solid rgba(212, 175, 55, 0.5);">
                         <!-- Inner Arrow -->
                         <svg viewBox="0 0 64 64" style="width: 32px; height: 32px; filter: drop-shadow(0 0 5px #FF6B00);">
                             <path d="M32 8L54 52L32 40L10 52L32 8Z" fill="#D4AF37" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
                         </svg>
                     </div>
                     <!-- Pulse Effect -->
-                    <div class="marker-pulse" style="position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3.5px solid #D4AF37; opacity: 0;"></div>
+                    <div class="marker-pulse" style="position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3.5px solid #D4AF37; opacity: 0; z-index: 3;"></div>
                 </div>
                 
                 <!-- Attached Street Pill -->
@@ -681,6 +702,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             easing: (t) => t
         });
 
+        // Apply dynamic rotation to navigation marker container (farol + arrow)
+        if (marker.current) {
+            const containerEl = marker.current.getElement().querySelector('.marker-container') as HTMLElement;
+            if (containerEl) {
+                const markerRotation = navigationMode === 'heading_up' ? 0 : targetBearing;
+                containerEl.style.transform = `rotate(${markerRotation}deg)`;
+                containerEl.style.transition = 'transform 0.2s ease-out';
+            }
+        }
+
         // Compute local distance to the next maneuver step and trigger voice alerts
         if (nextManeuverCoords.current && instruction) {
             const localDist = getDistance(
@@ -750,9 +781,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
              const currentDist = getDistance(effectiveLocation.lat, effectiveLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
              const rawPct = ((totalRouteDistance - currentDist) / totalRouteDistance) * 100;
              setProgressPct(Math.min(100, Math.max(0, rawPct)));
-        }
+         }
 
-    }, [effectiveLocation, destinationCoords]);
+    }, [effectiveLocation, destinationCoords, navigationMode]);
 
     const simplifyInstruction = (text: string) => {
         if (!text) return '';
@@ -927,6 +958,36 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                             source: 'route',
                             layout: { 'line-join': 'round', 'line-cap': 'round' },
                             paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 1.0 }
+                        });
+
+                        // Route Directional Arrows (Setas brancas sobrepostas nas curvas e retas)
+                        map.current.addLayer({
+                            id: 'route-arrows',
+                            type: 'symbol',
+                            source: 'route',
+                            layout: {
+                                'symbol-placement': 'line',
+                                'symbol-spacing': 45, // pixels between chevrons
+                                'text-field': '›', // single chevron pointing along the line direction
+                                'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+                                'text-size': [
+                                    'interpolate',
+                                    ['linear'],
+                                    ['zoom'],
+                                    14, 16,
+                                    18, 24
+                                ],
+                                'text-keep-upright': false,
+                                'text-allow-overlap': true,
+                                'text-ignore-placement': true,
+                                'text-offset': [0, -0.05]
+                            },
+                            paint: {
+                                'text-color': '#FFFFFF',
+                                'text-opacity': 0.9,
+                                'text-halo-color': '#FF6B00',
+                                'text-halo-width': 0.75
+                            }
                         });
                     };
 
