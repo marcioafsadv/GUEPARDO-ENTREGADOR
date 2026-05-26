@@ -1063,42 +1063,51 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
                 // Next Step Instruction
                 if (route.legs[0].steps.length > 0) {
-                    const nextStep = route.legs[0].steps[0];
-                    const distText = nextStep.distance < 1000
-                        ? `${Math.round(nextStep.distance)}m`
-                        : `${(nextStep.distance / 1000).toFixed(1)}km`;
+                    const currentStep = route.legs[0].steps[0];
+                    const turnStep = route.legs[0].steps[1];
+
+                    const distText = currentStep.distance < 1000
+                        ? `${Math.round(currentStep.distance)}m`
+                        : `${(currentStep.distance / 1000).toFixed(1)}km`;
+
+                    // The instruction is about the upcoming turn (turnStep), fallback to currentStep if last step
+                    const displayStep = turnStep || currentStep;
 
                     // Use modifier (English) from Mapbox — source of truth for direction
-                    const modifier = nextStep.maneuver.modifier || 'straight';
+                    const modifier = displayStep.maneuver.modifier || 'straight';
                     const actionLabel = getActionLabel(modifier);
 
-                    // Road name: prefer the step name, but never use the instruction text as name
-                    const rawName = nextStep.name?.trim() || '';
+                    // Road name: prefer the upcoming step's name
+                    const rawName = displayStep.name?.trim() || '';
                     const roadName = rawName.length > 0 ? rawName : '';
 
                     const fullText = roadName.length > 0
                         ? `A ${distText}, ${actionLabel} na ${roadName}`
                         : `A ${distText}, ${actionLabel}`;
 
-                    // Update current street pill on the map marker
-                    if (rawName.length > 0) {
-                        setCurrentStreet(rawName.toUpperCase());
+                    // Update current street pill on the map marker to show the street the driver is CURRENTLY on
+                    const currentStreetName = currentStep.name?.trim() || '';
+                    if (currentStreetName.length > 0) {
+                        setCurrentStreet(currentStreetName.toUpperCase());
                     }
 
-                    const nextNextStep = route.legs[0].steps[1];
+                    // Next-next step for secondary info
+                    const nextNextStep = route.legs[0].steps[2] || route.legs[0].steps[1];
                     const secondaryRoad = nextNextStep?.name?.trim() || '';
 
-                    // Salva as coordenadas do próximo ponto de manobra para cálculos locais em tempo real
-                    if (nextStep.maneuver?.location) {
+                    // Salva as coordenadas do próximo ponto de manobra (curva) para desenhar a seta
+                    if (turnStep && turnStep.maneuver?.location) {
                         nextManeuverCoords.current = {
-                            lng: nextStep.maneuver.location[0],
-                            lat: nextStep.maneuver.location[1]
+                            lng: turnStep.maneuver.location[0],
+                            lat: turnStep.maneuver.location[1]
                         };
+                    } else {
+                        nextManeuverCoords.current = null;
                     }
 
                     setInstruction({
                         fullText: fullText,
-                        distance: nextStep.distance,
+                        distance: currentStep.distance,
                         distanceText: distText.replace('m', ' m').replace('km', ' km'),
                         modifier: modifier,
                         roadName: roadName || actionLabel,
