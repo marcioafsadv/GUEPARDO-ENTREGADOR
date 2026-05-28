@@ -575,7 +575,7 @@ const App: React.FC = () => {
     try {
       const { data, error } = await supabaseClient.supabase
         .from('deliveries')
-        .select('*')
+        .select('*, stores(logo_url, location_photo_url, lat, lng)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -1083,7 +1083,7 @@ const App: React.FC = () => {
             // Se for parte de um lote, busca todos os pedidos do lote que não foram concluídos
             const { data: batchData } = await supabaseClient.supabase
               .from('deliveries')
-              .select('*, stores(logo_url, location_photo_url)')
+              .select('*, stores(logo_url, location_photo_url, lat, lng)')
               .eq('batch_id', activeDbDelivery.batch_id)
               .not('status', 'in', '("completed","cancelled")')
               .order('stop_number', { ascending: true });
@@ -1768,7 +1768,7 @@ const App: React.FC = () => {
           console.log("🔍 Fetching existing pending deliveries... (Rejected count: " + rejectedMissions.length + ")");
           const { data: allPending, error } = await supabaseClient.supabase
             .from('deliveries')
-            .select('*, stores(logo_url, location_photo_url)')
+            .select('*, stores(logo_url, location_photo_url, lat, lng)')
             .eq('status', 'pending')
             .order('created_at', { ascending: true })
             .limit(20);
@@ -1799,7 +1799,7 @@ const App: React.FC = () => {
                 console.log("📦 Initial fetch detected batch:", firstPending.batch_id);
                 const { data: batchData } = await supabaseClient.supabase
                   .from('deliveries')
-                  .select('*, stores(logo_url, location_photo_url)')
+                  .select('*, stores(logo_url, location_photo_url, lat, lng)')
                   .eq('batch_id', firstPending.batch_id)
                   .in('status', ['pending', 'accepted', 'arrived_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
                 
@@ -1954,7 +1954,7 @@ const App: React.FC = () => {
           // 1. Check for orders DIRECTLY ASSIGNED to this driver (Active only to avoid ghost orders)
           const { data: assignedOrders } = await supabaseClient.supabase
             .from('deliveries')
-            .select('*')
+            .select('*, stores(logo_url, location_photo_url, lat, lng)')
             .eq('driver_id', userId)
             .in('status', ['accepted', 'arrived_pickup', 'ready_for_pickup', 'picking_up', 'in_transit', 'arrived_at_customer', 'returning']);
 
@@ -1964,7 +1964,7 @@ const App: React.FC = () => {
           if (missionRef.current?.id && !dbMissions.some(m => m.id === missionRef.current?.id)) {
             const { data: currentMissionStatus } = await supabaseClient.supabase
               .from('deliveries')
-              .select('*')
+              .select('*, stores(logo_url, location_photo_url, lat, lng)')
               .eq('id', missionRef.current.id)
               .single();
             if (currentMissionStatus && (['completed', 'cancelled', 'returning', 'closed', 'returned'].includes(currentMissionStatus.status))) {
@@ -2127,7 +2127,7 @@ const App: React.FC = () => {
           if (status === DriverStatus.ONLINE && activeMissions.length < 3) {
             const { data: allPending } = await supabaseClient.supabase
               .from('deliveries')
-              .select('*')
+              .select('*, stores(logo_url, location_photo_url, lat, lng)')
               .eq('status', 'pending')
               .order('created_at', { ascending: true })
               .limit(10);
@@ -2145,7 +2145,7 @@ const App: React.FC = () => {
                   console.log("📦 Polling detected batch:", firstPending.batch_id);
                   const { data: batchData } = await supabaseClient.supabase
                     .from('deliveries')
-                    .select('*')
+                    .select('*, stores(logo_url, location_photo_url, lat, lng)')
                     .eq('batch_id', firstPending.batch_id)
                     .eq('status', 'pending');
 
@@ -2510,7 +2510,7 @@ const App: React.FC = () => {
       // Look for missions assigned to me OR belonging to the same batch (even if somehow missing driver_id)
       let query = supabaseClient.supabase
         .from('deliveries')
-        .select('*')
+        .select('*, stores(logo_url, location_photo_url, lat, lng)')
         .in('status', [...ACTIVE_DELIVERY_STATUSES, 'returning']);
       
       if (mission.batch_id) {
@@ -2787,7 +2787,7 @@ const App: React.FC = () => {
       // 2. Fetch fresh state for the batch to ensure total consistency
       const { data: freshBatch } = await supabaseClient.supabase
         .from('deliveries')
-        .select('*')
+        .select('*, stores(logo_url, location_photo_url, lat, lng)')
         .in('id', idsToAccept);
       
       let mappedActive: DeliveryMission[] = [];
