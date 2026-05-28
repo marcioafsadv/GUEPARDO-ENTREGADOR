@@ -28,6 +28,7 @@
     "node_modules",
     "dist",
     "_BACKUP_OLD_PROJECT",
-    "supabase/functions"
+    "supabase/functions",
+    "scratch"
   ]
 }

@@ -2489,11 +2489,12 @@ const App: React.FC = () => {
       console.log('🎯 Updating mission status in database...', { missionId: mission.id, status });
       
       if (mission.isReturnRequired && status !== DriverStatus.RETURNING) {
-        await supabaseClient.supabase
+        const { error: updateError } = await supabaseClient.supabase
           .from('deliveries')
           .update({ status: 'returning' })
           .eq('id', mission.id)
           .eq('driver_id', userId);
+        if (updateError) throw updateError;
         console.log('✅ Mission set to returning (awaiting end of batch)');
       } else {
         // 🎯 INDIVIDUAL MISSION FINALIZATION: Complete only the current mission
@@ -2938,11 +2939,14 @@ const App: React.FC = () => {
           }
 
           // Update database when courier arrives at store
-          await supabaseClient.supabase
+          const { error: updateError } = await supabaseClient.supabase
             .from('deliveries')
             .update({ status: 'arrived_pickup' })
             .eq('id', mission.id)
             .eq('driver_id', userId);
+          
+          if (updateError) throw updateError;
+          
           console.log('✅ Updated delivery status to arrived_pickup');
           setStatus(DriverStatus.ARRIVED_AT_STORE);
         } catch (error) {
@@ -2955,17 +2959,22 @@ const App: React.FC = () => {
       // Fix Bug 3: Persistir 'picking_up' no banco para evitar que o polling (5s) reverta
       // o status para ARRIVED_AT_STORE ao ler 'arrived_pickup' desatualizado do servidor.
       if (mission && userId) {
-        supabaseClient.supabase
-          .from('deliveries')
-          .update({ status: 'picking_up' })
-          .eq('id', mission.id)
-          .eq('driver_id', userId)
-          .then(({ error }) => {
-            if (error) console.error('❌ Erro ao salvar status picking_up:', error);
-            else console.log('✅ Status atualizado para picking_up no banco');
-          });
+        try {
+          const { error: updateError } = await supabaseClient.supabase
+            .from('deliveries')
+            .update({ status: 'picking_up' })
+            .eq('id', mission.id)
+            .eq('driver_id', userId);
+          if (updateError) throw updateError;
+          console.log('✅ Status atualizado para picking_up no banco');
+          setStatus(DriverStatus.PICKING_UP);
+        } catch (error) {
+          console.error('❌ Error updating delivery status to picking_up:', error);
+          alert('Erro ao atualizar status para Coleta. Verifique sua conexão.');
+        }
+      } else {
+        setStatus(DriverStatus.PICKING_UP);
       }
-      setStatus(DriverStatus.PICKING_UP);
     }
     else if (status === DriverStatus.PICKING_UP) {
       // O entregador não deve conseguir avançar manualmente nesta fase.
@@ -2989,16 +2998,18 @@ const App: React.FC = () => {
   const confirmArrivalAtCustomer = async () => {
     if (mission && userId) {
       try {
-        await supabaseClient.supabase
+        const { error: updateError } = await supabaseClient.supabase
           .from('deliveries')
           .update({ status: 'arrived_at_customer' })
           .eq('id', mission.id)
           .eq('driver_id', userId);
+        if (updateError) throw updateError;
         console.log('✅ Updated delivery status to arrived_at_customer');
         setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
         setShowProximityModal(false);
       } catch (error) {
         console.error('❌ Error updating delivery status:', error);
+        alert('Erro ao atualizar status para Chegada no Cliente. Verifique sua conexão.');
       }
     } else {
       setStatus(DriverStatus.ARRIVED_AT_CUSTOMER);
@@ -5708,7 +5719,7 @@ const App: React.FC = () => {
               const totalDeliveryDist = mToShow.reduce((acc, m) => acc + (m?.deliveryDistance || 0), 0);
               const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
               const totalStops = mToShow.length;
-              const currentVehicleType = currentUser?.vehicle?.vehicleType || 'moto';
+              const currentVehicleType = currentUser?.vehicle || 'moto';
 
               return (
                 <>

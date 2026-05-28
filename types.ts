@@ -90,6 +90,13 @@ export interface NotificationModel {
 // ONBOARDING & REGISTRATION TYPES
 // ============================================
 
+export interface City {
+  id: string;
+  name: string;
+  state: string;
+  displayName: string;
+}
+
 export enum OnboardingStep {
   TERMS = 'TERMS',
   LOCATION_PERMISSION = 'LOCATION_PERMISSION',
