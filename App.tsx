@@ -174,6 +174,7 @@ const ACTIVE_DELIVERY_DB_STATUSES = ['accepted', 'arrived_pickup', 'ready_for_pi
 const DRIVER_STATUS_RANK: Record<string, number> = {
   [DriverStatus.OFFLINE]: -1,
   [DriverStatus.ONLINE]: 0,
+  [DriverStatus.BUSY]: 0,
   [DriverStatus.ALERTING]: 0.5,
   [DriverStatus.GOING_TO_STORE]: 1,
   [DriverStatus.ARRIVED_AT_STORE]: 2,
@@ -2120,7 +2121,7 @@ const App: React.FC = () => {
               // SECURITY: If we were in an active mission state but the DB is now empty, 
               // we MUST force a return to the lobby (ONLINE).
               const currentStatus = statusRef.current;
-              const isInMission = ![DriverStatus.OFFLINE, DriverStatus.ONLINE, DriverStatus.ALERTING].includes(currentStatus);
+              const isInMission = ![DriverStatus.OFFLINE, DriverStatus.ONLINE, DriverStatus.ALERTING, DriverStatus.BUSY].includes(currentStatus);
               
               if (isInMission) {
                 console.log(`🛡️ [POLLING] No missions found in DB while in status ${currentStatus}. Checking last mission status...`);
@@ -2157,6 +2158,7 @@ const App: React.FC = () => {
                     setShowPostDeliveryModal(true);
                 } else {
                     // Generic fallback — go back to lobby silently
+                    console.log("🔄 [STATUS FALLBACK] Going back to ONLINE. currentStatus:", currentStatus, "statusRef.current:", statusRef.current);
                     setStatus(DriverStatus.ONLINE);
                     setMission(null);
                     setActiveMissions([]);
@@ -2397,7 +2399,7 @@ const App: React.FC = () => {
           }
         }
         // CASE 2: Active delivery — handle cancellation, completion and merchant validation
-        else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE) {
+        else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE && currentStatus !== DriverStatus.BUSY) {
           if (['cancelled', 'canceled'].includes(newStatus)) {
             triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
             setMission(null);
