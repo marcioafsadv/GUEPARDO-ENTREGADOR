@@ -232,6 +232,18 @@ body {
   box-shadow: 0 0 10px #fff, 0 0 20px #00FF94;
 }
 
+/* Premium Amber/Ocupado Status */
+.amber-status-btn {
+  background: linear-gradient(135deg, #D35400 0%, #F39C12 100%);
+  box-shadow: 0 0 20px rgba(243, 156, 18, 0.4), inset 0 0 10px rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.amber-glow-dot {
+  background: #fff;
+  box-shadow: 0 0 10px #fff, 0 0 20px #F39C12;
+}
+
 /* Floating Chocolate Nav */
 .chocolate-nav-bar {
   background: rgba(15, 5, 2, 0.85);

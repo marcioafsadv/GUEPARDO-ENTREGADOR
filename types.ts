@@ -9,7 +9,8 @@ export enum DriverStatus {
   PICKING_UP = 'PICKING_UP',
   GOING_TO_CUSTOMER = 'GOING_TO_CUSTOMER',
   ARRIVED_AT_CUSTOMER = 'ARRIVED_AT_CUSTOMER',
-  RETURNING = 'RETURNING'
+  RETURNING = 'RETURNING',
+  BUSY = 'BUSY'
 }
 
 export interface DeliveryMission {

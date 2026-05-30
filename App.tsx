@@ -1281,12 +1281,16 @@ const App: React.FC = () => {
   };
 
   const toggleOnlineStatus = () => {
-    // Priority Check: Verification
-    if (status !== DriverStatus.OFFLINE) {
+    if (status === DriverStatus.ONLINE) {
+      // De Disponível para Ocupado
+      setStatus(DriverStatus.BUSY);
+    } else if (status === DriverStatus.BUSY) {
+      // De Ocupado para Desconectado
       setStatus(DriverStatus.OFFLINE);
       setMission(null);
       setIsNavigating(false);
-    } else {
+    } else if (status === DriverStatus.OFFLINE) {
+      // De Desconectado para Disponível
       if (currentUser.status === 'rejected') {
           alert('Seu cadastro tem pendências! Vá em Meu Perfil para revisar seus dados e reenviar para análise.');
           setCurrentScreen('SETTINGS');
@@ -1304,6 +1308,11 @@ const App: React.FC = () => {
         setMission(null);
         setBatchHasReturn(false);
       }
+    } else {
+      // Se estiver em missão, desconecta diretamente
+      setStatus(DriverStatus.OFFLINE);
+      setMission(null);
+      setIsNavigating(false);
     }
   };
 
@@ -1344,6 +1353,7 @@ const App: React.FC = () => {
     switch (status) {
       case DriverStatus.OFFLINE: return 'DESCONECTADO';
       case DriverStatus.ONLINE: return 'DISPONÍVEL';
+      case DriverStatus.BUSY: return 'OCUPADO';
       case DriverStatus.ALERTING: return 'CHAMADA RECEBIDA';
       case DriverStatus.GOING_TO_STORE: return 'INDO PARA COLETA';
       case DriverStatus.ARRIVED_AT_STORE: return isOrderReady ? 'PEDIDO PRONTO' : 'AGUARDANDO PEDIDO';
@@ -1354,6 +1364,40 @@ const App: React.FC = () => {
       default: return (status as string).replace(/_/g, ' ');
     }
   };
+
+  // --- SYNC STATUS TO SUPABASE ON CHANGE ---
+  useEffect(() => {
+    if (!userId) return;
+    
+    const updateDbStatus = async () => {
+      try {
+        if (status === DriverStatus.OFFLINE) {
+          console.log("🔌 [DB STATUS] Setting status to OFFLINE in Supabase");
+          await supabaseClient.updateProfile(userId, {
+            is_online: false,
+            is_busy: false
+          });
+        } else if (status === DriverStatus.BUSY) {
+          console.log("🔌 [DB STATUS] Setting status to BUSY in Supabase");
+          await supabaseClient.updateProfile(userId, {
+            is_online: true,
+            is_busy: true
+          });
+        } else {
+          // ONLINE or other active statuses (which mean they are active)
+          console.log("🔌 [DB STATUS] Setting status to ONLINE in Supabase (Status: " + status + ")");
+          await supabaseClient.updateProfile(userId, {
+            is_online: true,
+            is_busy: false
+          });
+        }
+      } catch (err) {
+        console.error("❌ [DB STATUS] Failed to update courier status:", err);
+      }
+    };
+    
+    updateDbStatus();
+  }, [status, userId]);
 
   // --- REAL-TIME LOCATION TRACKING ---
   useEffect(() => {
@@ -1392,6 +1436,7 @@ const App: React.FC = () => {
               current_lat: latitude,
               current_lng: longitude,
               is_online: true,
+              is_busy: statusRef.current === DriverStatus.BUSY,
               last_location_update: new Date().toISOString()
             }).catch(e => console.error("Initial location update failed", e));
             
@@ -1508,7 +1553,8 @@ const App: React.FC = () => {
     } else if (isOffline && userId) {
       // Mark as offline in DB
       supabaseClient.updateProfile(userId, {
-        is_online: false
+        is_online: false,
+        is_busy: false
       }).catch(e => console.error("Failed to mark offline", e));
     }
 
@@ -5200,9 +5246,30 @@ const App: React.FC = () => {
             </div>
 
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button onClick={toggleOnlineStatus} className={`h-8 px-5 rounded-full flex items-center space-x-2.5 transition-all duration-500 shadow-xl ${status === DriverStatus.ONLINE ? 'emerald-status-btn' : 'bg-[#1A0C06] border border-[#D4AF37]/20 text-zinc-500'}`}>
-                <div className={`w-2 h-2 rounded-full ${status === DriverStatus.ONLINE ? 'emerald-glow-dot animate-pulse' : 'bg-zinc-700'}`}></div>
-                <span className={`font-black text-[9px] uppercase tracking-widest`}>{status === DriverStatus.ONLINE ? 'Online' : 'Offline'}</span>
+              <button 
+                onClick={toggleOnlineStatus} 
+                className={`h-8 px-5 rounded-full flex items-center space-x-2.5 transition-all duration-500 shadow-xl ${
+                  status === DriverStatus.ONLINE 
+                    ? 'emerald-status-btn' 
+                    : status === DriverStatus.BUSY 
+                      ? 'amber-status-btn' 
+                      : 'bg-[#1A0C06] border border-[#D4AF37]/20 text-zinc-500'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${
+                  status === DriverStatus.ONLINE 
+                    ? 'emerald-glow-dot animate-pulse' 
+                    : status === DriverStatus.BUSY 
+                      ? 'amber-glow-dot animate-pulse' 
+                      : 'bg-zinc-700'
+                }`}></div>
+                <span className="font-black text-[9px] uppercase tracking-widest">
+                  {status === DriverStatus.ONLINE 
+                    ? 'Online' 
+                    : status === DriverStatus.BUSY 
+                      ? 'Ocupado' 
+                      : 'Offline'}
+                </span>
               </button>
             </div>
 
