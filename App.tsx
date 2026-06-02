@@ -3544,6 +3544,9 @@ const App: React.FC = () => {
                         ? preloadedCoords.store
                         : preloadedCoords.customer
                     }
+                    vehicleType={currentUser?.vehicle || 'moto'}
+                    driverId={userId || ''}
+                    missionId={mission?.id || ''}
                   />
                 )
               ) : (
@@ -3568,7 +3571,7 @@ const App: React.FC = () => {
                       ? preloadedCoords.store?.lat
                       : (status === DriverStatus.GOING_TO_CUSTOMER || status === DriverStatus.ARRIVED_AT_CUSTOMER)
                         ? preloadedCoords.customer?.lat
-: null
+                        : null
                   }
                   preloadedDestinationLng={
                     (status === DriverStatus.GOING_TO_STORE || status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP || status === DriverStatus.RETURNING)
@@ -3584,6 +3587,7 @@ const App: React.FC = () => {
                   onUpdateMetrics={(metrics: any) => setNavMetrics(metrics)}
                   isMissionOverlayExpanded={isMissionOverlayExpanded}
                   currentLocation={currentLocation}
+                  vehicleType={currentUser?.vehicle || 'moto'}
                 />
             )}
 
@@ -5895,6 +5899,7 @@ const App: React.FC = () => {
                         theme="dark"
                         currentLocation={currentLocation}
                         missions={activeMissions.length > 0 ? activeMissions : [mission]}
+                        vehicleType={currentVehicleType}
                       />
                     </div>
 

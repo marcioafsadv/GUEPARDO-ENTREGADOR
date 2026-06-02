@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { reportRouteError } from '../supabase';
 
 // Mapbox public token
 const _mbp1 = 'cTdiMThtcDEyNXIyaXQ2bTM1Ymhhcm4ifQ';
@@ -9,6 +10,120 @@ const _mbp3 = '.8-AMsHfLyfddpH7PPo1U7g';
 const MAPBOX_TOKEN = _mbp2 + _mbp1 + _mbp3;
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
+
+class KalmanFilter {
+    private Q = 0.00001; // Process variance
+    private R = 0.0001;  // Measurement variance (GPS noise)
+    private x = 0;       // Current estimate
+    private p = 1;       // Estimated covariance error
+    private k = 0;       // Kalman gain
+
+    constructor(initialValue: number) {
+        this.x = initialValue;
+    }
+
+    public filter(measurement: number): number {
+        this.p = this.p + this.Q;
+        this.k = this.p / (this.p + this.R);
+        this.x = this.x + this.k * (measurement - this.x);
+        this.p = (1 - this.k) * this.p;
+        return this.x;
+    }
+}
+
+const getDistanceHelper = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+const projectPointOnSegment = (
+    c: { lat: number; lng: number },
+    a: [number, number], // [lng, lat]
+    b: [number, number]  // [lng, lat]
+) => {
+    const latC = c.lat, lngC = c.lng;
+    const lngA = a[0], latA = a[1];
+    const lngB = b[0], latB = b[1];
+
+    const l2 = Math.pow(lngB - lngA, 2) + Math.pow(latB - latA, 2);
+    if (l2 === 0) return { lat: latA, lng: lngA, distance: 0 };
+
+    let t = ((lngC - lngA) * (lngB - lngA) + (latC - latA) * (latB - latA)) / l2;
+    t = Math.max(0, Math.min(1, t));
+
+    const projectedLng = lngA + t * (lngB - lngA);
+    const projectedLat = latA + t * (latB - latA);
+
+    return {
+        lat: projectedLat,
+        lng: projectedLng,
+        distance: getDistanceHelper(latC, lngC, projectedLat, projectedLng) * 1000 // in meters
+    };
+};
+
+const getSnappedLocation = (gpsLoc: { lat: number; lng: number }, routePoints: [number, number][]) => {
+    if (routePoints.length < 2) return { ...gpsLoc, isOffRoute: false, distanceToRoute: 0 };
+
+    let minDistance = Infinity;
+    let bestPoint = gpsLoc;
+
+    for (let i = 0; i < routePoints.length - 1; i++) {
+        const proj = projectPointOnSegment(gpsLoc, routePoints[i], routePoints[i+1]);
+        if (proj.distance < minDistance) {
+            minDistance = proj.distance;
+            bestPoint = { lat: proj.lat, lng: proj.lng };
+        }
+    }
+
+    const isOffRoute = minDistance > 35;
+    return { ...bestPoint, isOffRoute, distanceToRoute: minDistance };
+};
+
+interface VoiceOverrideZone {
+    id: string;
+    lat: number;
+    lng: number;
+    radius: number; // in meters
+    originalSubstring?: string;
+    overrideText: string;
+    playAlertBeep?: boolean;
+}
+
+const VOICE_OVERRIDE_ZONES: VoiceOverrideZone[] = [
+    // Seus cruzamentos problemáticos conhecidos podem ser catalogados aqui
+];
+
+const executeVoiceObserver = (
+    originalText: string,
+    currentLoc: { lat: number; lng: number } | null
+): { text: string; playBeep: boolean } => {
+    if (!currentLoc) return { text: originalText, playBeep: false };
+
+    const activeZone = VOICE_OVERRIDE_ZONES.find(zone => {
+        const dist = getDistanceHelper(currentLoc.lat, currentLoc.lng, zone.lat, zone.lng) * 1000;
+        if (dist <= zone.radius) {
+            if (zone.originalSubstring) {
+                return originalText.toLowerCase().includes(zone.originalSubstring.toLowerCase());
+            }
+            return true;
+        }
+        return false;
+    });
+
+    if (activeZone) {
+        console.warn(`🎯 [VoiceObserver] Override interceptado na zona ${activeZone.id}.`);
+        console.warn(`Original: "${originalText}" -> Novo: "${activeZone.overrideText}"`);
+        return { text: activeZone.overrideText, playBeep: !!activeZone.playAlertBeep };
+    }
+
+    return { text: originalText, playBeep: false };
+};
 
 interface Instruction {
     fullText: string;
@@ -34,6 +149,9 @@ interface MapNavigationProps {
     delivererName?: string;
     unreadCount?: number;
     onChatClick?: () => void;
+    vehicleType?: string;
+    driverId?: string;
+    missionId?: string;
 }
 
 export const MapNavigation: React.FC<MapNavigationProps> = ({
@@ -49,7 +167,10 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     onShowFilters,
     delivererName = 'Entregador',
     unreadCount = 0,
-    onChatClick
+    onChatClick,
+    vehicleType = 'moto',
+    driverId,
+    missionId
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -70,6 +191,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const [hideSpeedometer, setHideSpeedometer] = useState<boolean>(false);
     const lastSmoothedBearing = useRef<number | null>(null);
     const lastBearingPos = useRef<{ lat: number; lng: number } | null>(null);
+    const kalmanLat = useRef<KalmanFilter | null>(null);
+    const kalmanLng = useRef<KalmanFilter | null>(null);
+    const offRouteCount = useRef<number>(0);
     const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
     const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
     
@@ -199,9 +323,21 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
     const enqueueSpeech = (item: SpeechItem) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
-        if (item.text === lastAnnouncedText.current) return;
 
-        console.log(`🔊 [AudioQueue] Enfileirando: "${item.text}" (Prioridade: ${item.priority}, Manobra: ${item.isManeuver})`);
+        // Intercepta a instrução de voz antes de enfileirar
+        const observedResult = executeVoiceObserver(item.text, effectiveLocation);
+        const processedItem = {
+            ...item,
+            text: observedResult.text
+        };
+
+        if (processedItem.text === lastAnnouncedText.current) return;
+
+        console.log(`🔊 [AudioQueue] Enfileirando (Pós-Filtro): "${processedItem.text}" (Prioridade: ${processedItem.priority}, Manobra: ${processedItem.isManeuver})`);
+
+        if (observedResult.playBeep) {
+            playNotificationSound();
+        }
 
         // Regra de Barge-in: se estiver falando uma manobra e barge-in for false, NÃO interromper
         // Se o item atual em reprodução for manobra, e voiceBargeInEnabled for falso, não cancelamos
@@ -209,8 +345,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         
         const canInterrupt = 
             !isSpeaking.current || 
-            (!voiceBargeInEnabled && !currentIsManeuver && item.isManeuver) ||
-            (voiceBargeInEnabled && (!currentIsManeuver || item.priority > (currentSpeechItem.current?.priority || 0)));
+            (!voiceBargeInEnabled && !currentIsManeuver && processedItem.isManeuver) ||
+            (voiceBargeInEnabled && (!currentIsManeuver || processedItem.priority > (currentSpeechItem.current?.priority || 0)));
 
         if (canInterrupt && isSpeaking.current) {
             console.log(`⚡ [AudioQueue] Interrompendo áudio atual para reproduzir instrução com prioridade`);
@@ -220,7 +356,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         }
 
         // Insere na fila
-        speechQueue.current.push(item);
+        speechQueue.current.push(processedItem);
         
         // Ordena por prioridade (maior primeiro)
         speechQueue.current.sort((a, b) => b.priority - a.priority);
@@ -725,15 +861,17 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         setManeuverArrowVisibility('visible');
     };
 
-    // Off-route detection with 45 degrees instruction tolerance and API throttle
+    // Off-route detection with 45 degrees instruction tolerance and consecutive confirmation
     const shouldRecalculateRoute = (lat: number, lng: number, bearing: number) => {
-        const now = Date.now();
         if (lastFetchTime.current === 0) return true;
         
         // Force recalculate if we moved a lot (e.g. > 100m)
         if (lastFetchLocation.current) {
             const dMoved = getDistance(lastFetchLocation.current.lat, lastFetchLocation.current.lng, lat, lng) * 1000;
-            if (dMoved > 100) return true;
+            if (dMoved > 100) {
+                offRouteCount.current = 0;
+                return true;
+            }
         }
 
         // Force recalculate if we are very close to the turn point (within 15m) to advance the steps
@@ -741,6 +879,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             const distToTurn = getDistance(lat, lng, nextManeuverCoords.current.lat, nextManeuverCoords.current.lng) * 1000;
             if (distToTurn < 15) {
                 console.log("🎯 [NavEngine] Close to turn point. Recalculating route for next step...");
+                offRouteCount.current = 0;
                 return true;
             }
         }
@@ -753,22 +892,25 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             if (aDiff > 180) aDiff = 360 - aDiff;
 
             if (dToRoute > 35 && aDiff > instructionTolerance) {
-                console.log(`⚠️ [NavEngine] Off-route: dist=${dToRoute.toFixed(1)}m, angleDiff=${aDiff.toFixed(1)}°. Recalculating...`);
+                offRouteCount.current += 1;
+                console.log(`⚠️ [NavEngine] Off-route candidate tick: count=${offRouteCount.current}, dist=${dToRoute.toFixed(1)}m, angleDiff=${aDiff.toFixed(1)}°`);
                 
-                // Speak standard recalculation phrase
-                const recalculatePhrase = `Rota recalculada. Siga na via à frente.`;
-                enqueueSpeech({
-                    text: recalculatePhrase,
-                    priority: 2,
-                    isManeuver: true
-                });
-                return true;
+                if (offRouteCount.current >= 3) {
+                    console.log(`🚨 [NavEngine] Off-route confirmed after 3 ticks. Recalculating route...`);
+                    offRouteCount.current = 0;
+                    // Speak standard recalculation phrase
+                    const recalculatePhrase = `Rota recalculada. Siga na via à frente.`;
+                    enqueueSpeech({
+                        text: recalculatePhrase,
+                        priority: 2,
+                        isManeuver: true
+                    });
+                    return true;
+                }
+            } else {
+                // Reset counter since the driver is back on-route/aligned
+                offRouteCount.current = 0;
             }
-        }
-
-        // Throttled recalculation: once every 6 seconds to update distance/time
-        if (now - lastFetchTime.current > 6000) {
-            return true;
         }
 
         return false;
@@ -778,8 +920,26 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     useEffect(() => {
         if (!map.current || !effectiveLocation || !destinationCoords) return;
 
-        // Update markers
-        marker.current?.setLngLat([effectiveLocation.lng, effectiveLocation.lat]);
+        // 1. Apply Kalman Filter to raw GPS input
+        const filterGPS = (lat: number, lng: number) => {
+            if (!kalmanLat.current || !kalmanLng.current) {
+                kalmanLat.current = new KalmanFilter(lat);
+                kalmanLng.current = new KalmanFilter(lng);
+                return { lat, lng };
+            }
+            return {
+                lat: kalmanLat.current.filter(lat),
+                lng: kalmanLng.current.filter(lng)
+            };
+        };
+        const filtered = filterGPS(effectiveLocation.lat, effectiveLocation.lng);
+
+        // 2. Apply Snap-to-Road projection
+        const snapped = getSnappedLocation(filtered, routeCoordinates.current);
+        const displayLocation = snapped.isOffRoute ? filtered : { lat: snapped.lat, lng: snapped.lng };
+
+        // Update markers using displayLocation
+        marker.current?.setLngLat([displayLocation.lng, displayLocation.lat]);
         destinationMarker.current?.setLngLat([destinationCoords.lng, destinationCoords.lat]);
         
         // Add destination marker if it's not on the map yet
@@ -793,7 +953,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         const distMoved = lastLocation.current ? getDistance(
             lastLocation.current.lat, lastLocation.current.lng,
-            effectiveLocation.lat, effectiveLocation.lng
+            displayLocation.lat, displayLocation.lng
         ) * 1000 : 0; // in meters
 
         // Speed in km/h
@@ -802,7 +962,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         if (distMoved > 1.5 && speedKmh > 1.5 && lastLocation.current) {
             const rawBearing = getBearing(
                 lastLocation.current.lat, lastLocation.current.lng,
-                effectiveLocation.lat, effectiveLocation.lng
+                displayLocation.lat, displayLocation.lng
             );
             targetBearing = rawBearing;
             hasNewBearing = true;
@@ -812,14 +972,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             for (let i = 1; i < routeCoordinates.current.length; i++) {
                 const ptLng = routeCoordinates.current[i][0];
                 const ptLat = routeCoordinates.current[i][1];
-                const dist = getDistance(effectiveLocation.lat, effectiveLocation.lng, ptLat, ptLng) * 1000;
+                const dist = getDistance(displayLocation.lat, displayLocation.lng, ptLat, ptLng) * 1000;
                 if (dist > 8) {
                     nextCoordIndex = i;
                     break;
                 }
             }
             const nextPt = routeCoordinates.current[nextCoordIndex];
-            targetBearing = getBearing(effectiveLocation.lat, effectiveLocation.lng, nextPt[1], nextPt[0]);
+            targetBearing = getBearing(displayLocation.lat, displayLocation.lng, nextPt[1], nextPt[0]);
             hasNewBearing = true;
         }
 
@@ -843,7 +1003,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const dynamicTopPadding = containerHeight * (isMissionOverlayExpanded ? 0.52 : 0.38);
 
         map.current.easeTo({
-            center: [effectiveLocation.lng, effectiveLocation.lat],
+            center: [displayLocation.lng, displayLocation.lat],
             bearing: navigationMode === 'heading_up' ? targetBearing : 0,
             duration: distMoved > 1.5 ? 500 : 1000,
             padding: { top: dynamicTopPadding, bottom: 80 },
@@ -864,7 +1024,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         // Compute local distance to the next maneuver step and trigger voice alerts
         if (nextManeuverCoords.current && instruction) {
             const localDist = getDistance(
-                effectiveLocation.lat, effectiveLocation.lng,
+                displayLocation.lat, displayLocation.lng,
                 nextManeuverCoords.current.lat, nextManeuverCoords.current.lng
             ) * 1000; // in meters
 
@@ -912,27 +1072,42 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         if (effectiveLocation.speed != null) {
             setCurrentSpeed(Math.round(effectiveLocation.speed * 3.6));
         } else if (lastLocation.current) {
-            const dist = getDistance(lastLocation.current.lat, lastLocation.current.lng, effectiveLocation.lat, effectiveLocation.lng);
+            const dist = getDistance(lastLocation.current.lat, lastLocation.current.lng, displayLocation.lat, displayLocation.lng);
             if (dist > 0.001) { // Only if moved enough
                 setCurrentSpeed(Math.round((dist / 1) * 3600)); // assumes 1s interval
             }
         }
 
         // Update Maneuver Turn Arrow on curves
-        updateManeuverArrow(effectiveLocation, nextManeuverCoords.current, routeCoordinates.current);
+        updateManeuverArrow(displayLocation, nextManeuverCoords.current, routeCoordinates.current);
 
-        lastLocation.current = effectiveLocation;
+        lastLocation.current = displayLocation;
 
         // Fetch Route & Instructions (with off-route detection and throttling)
-        if (shouldRecalculateRoute(effectiveLocation.lat, effectiveLocation.lng, targetBearing)) {
-            fetchRoute(effectiveLocation, destinationCoords);
+        if (shouldRecalculateRoute(filtered.lat, filtered.lng, targetBearing)) {
+            fetchRoute(filtered, destinationCoords);
         }
 
-        // Calculate progress if we have the total distance tracked
+        // Calculate progress, remaining distance and time client-side
         if (totalRouteDistance > 0 && map.current?.getSource('route')) {
-             const currentDist = getDistance(effectiveLocation.lat, effectiveLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
+             const currentDist = getDistance(displayLocation.lat, displayLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
              const rawPct = ((totalRouteDistance - currentDist) / totalRouteDistance) * 100;
-             setProgressPct(Math.min(100, Math.max(0, rawPct)));
+             const finalPct = Math.min(100, Math.max(0, rawPct));
+             setProgressPct(finalPct);
+
+             const remD = currentDist / 1000;
+             setRemainingDistance(`${remD.toFixed(1)} km`);
+             
+             // Assumes average speed of 35 km/h (9.7 m/s) to update estimated time
+             const remTimeMin = Math.max(1, Math.round((currentDist / 9.7) / 60));
+             setRemainingTime(`${remTimeMin} min`);
+             
+             onUpdateMetrics?.({
+                 time: `${remTimeMin} min`,
+                 distance: `${remD.toFixed(1)} km`,
+                 distanceValue: currentDist,
+                 progress: finalPct
+             });
          }
 
     }, [effectiveLocation, destinationCoords, navigationMode]);
@@ -975,7 +1150,26 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const fetchRoute = async (start: { lat: number, lng: number }, end: { lat: number, lng: number }) => {
         lastFetchTime.current = Date.now();
         lastFetchLocation.current = start;
-        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_TOKEN}&language=pt`;
+
+        const getMapboxProfile = (type: string): string => {
+            switch (type?.toLowerCase()) {
+                case 'bike':
+                case 'bicycle':
+                    return 'mapbox/cycling';
+                case 'foot':
+                case 'walking':
+                    return 'mapbox/walking';
+                default:
+                    return 'mapbox/driving-traffic';
+            }
+        };
+
+        const profile = getMapboxProfile(vehicleType);
+        const excludeParam = '&exclude=ferry,toll';
+        const radiusParam = '&radiuses=35;unlimited';
+        const approachesParam = '&approaches=curb;unlimited';
+
+        const url = `https://api.mapbox.com/directions/v5/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson${excludeParam}${radiusParam}${approachesParam}&access_token=${MAPBOX_TOKEN}&language=pt`;
         
         try {
             const res = await fetch(url);
@@ -1378,6 +1572,39 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-[#FF6B00] backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5"
                 >
                     <i className="fas fa-route text-xl group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                {/* BOTÃO DE REPORTAR ERRO DE ROTA */}
+                <button 
+                    onClick={async () => {
+                        if (!effectiveLocation || !destinationCoords || !driverId || !missionId) {
+                            alert("Não foi possível reportar o erro neste momento. Certifique-se de que a localização e a rota estão ativas.");
+                            return;
+                        }
+                        
+                        try {
+                            playNotificationSound();
+                            await reportRouteError({
+                                driverId,
+                                deliveryId: missionId,
+                                driverLat: effectiveLocation.lat,
+                                driverLng: effectiveLocation.lng,
+                                destinationLat: destinationCoords.lat,
+                                destinationLng: destinationCoords.lng,
+                                currentInstruction: instruction?.fullText || '',
+                                routeGeojson: { coordinates: routeCoordinates.current },
+                                comment: 'Reportado pelo entregador via botão de pânico de rota'
+                            });
+                            alert("Obrigado! A coordenada foi registrada e nossa equipe irá auditar este trecho no OpenStreetMap.");
+                        } catch (e) {
+                            console.error("Erro ao enviar relatório de rota:", e);
+                            alert("Erro ao enviar relatório para o servidor. Tente novamente mais tarde.");
+                        }
+                    }}
+                    className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-yellow-500 backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5 relative"
+                    title="Reportar Erro de Navegação"
+                >
+                    <i className="fas fa-map-pin text-xl group-hover:scale-110 transition-transform"></i>
                 </button>
 
                 {/* BOTÃO DE CHAT COM NOTIFICAÇÃO */}

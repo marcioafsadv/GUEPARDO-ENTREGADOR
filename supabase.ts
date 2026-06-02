@@ -868,3 +868,38 @@ export const submitCompleteRegistration = async (
     throw error;
   }
 };
+
+export const reportRouteError = async (reportData: {
+  driverId: string;
+  deliveryId: string;
+  driverLat: number;
+  driverLng: number;
+  destinationLat: number;
+  destinationLng: number;
+  currentInstruction?: string;
+  routeGeojson?: any;
+  comment?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('route_error_reports')
+    .insert([{
+      driver_id: reportData.driverId,
+      delivery_id: reportData.deliveryId,
+      driver_lat: reportData.driverLat,
+      driver_lng: reportData.driverLng,
+      destination_lat: reportData.destinationLat,
+      destination_lng: reportData.destinationLng,
+      current_instruction: reportData.currentInstruction || null,
+      suggested_route_geojson: reportData.routeGeojson || null,
+      driver_comment: reportData.comment || null
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error reporting route telemetry:', error);
+    throw error;
+  }
+  return data;
+};
+

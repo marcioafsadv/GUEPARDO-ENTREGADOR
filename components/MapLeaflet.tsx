@@ -42,6 +42,7 @@ interface MapLeafletProps {
     currentLocation?: { lat: number; lng: number; speed?: number | null } | null;
     isMissionOverlayExpanded?: boolean;
     onUpdateMetrics?: (metrics: any) => void;
+    vehicleType?: string;
 }
 
 const COLORS = {
@@ -167,7 +168,8 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     missions = [],
     currentLocation: propLocation,
     isMissionOverlayExpanded = false,
-    onUpdateMetrics
+    onUpdateMetrics,
+    vehicleType = 'moto'
 }) => {
     const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -301,7 +303,24 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
             if (MAPBOX_TOKEN) {
                 try {
-                    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+                    const getMapboxProfile = (type: string): string => {
+                        switch (type?.toLowerCase()) {
+                            case 'bike':
+                            case 'bicycle':
+                                return 'mapbox/cycling';
+                            case 'foot':
+                            case 'walking':
+                                return 'mapbox/walking';
+                            default:
+                                return 'mapbox/driving-traffic';
+                        }
+                    };
+                    const profile = getMapboxProfile(vehicleType);
+                    const excludeParam = '&exclude=ferry,toll';
+                    const radiusParam = '&radiuses=35;unlimited';
+                    const approachesParam = '&approaches=curb;unlimited';
+
+                    const url = `https://api.mapbox.com/directions/v5/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson${excludeParam}${radiusParam}${approachesParam}&access_token=${MAPBOX_TOKEN}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     if (data.routes && data.routes.length > 0) {
@@ -328,7 +347,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
         };
 
         fetchRoute();
-    }, [currentLocation, destinationLocation, pickupLocation, showRoute]);
+    }, [currentLocation, destinationLocation, pickupLocation, showRoute, vehicleType]);
 
     const fitPoints = useMemo(() => {
         const pts: [number, number][] = [];
