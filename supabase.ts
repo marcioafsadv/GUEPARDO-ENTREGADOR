@@ -903,3 +903,40 @@ export const reportRouteError = async (reportData: {
   return data;
 };
 
+// ============ TESTER FEEDBACK ============
+
+export const createFeedback = async (feedbackData: {
+  user_id: string | null;
+  user_name: string;
+  user_email: string;
+  category: string;
+  rating: number;
+  comment: string;
+  tags?: string[];
+  device_info?: any;
+  app_version?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('tester_feedback')
+    .insert([
+      {
+        user_id: feedbackData.user_id,
+        user_name: feedbackData.user_name,
+        user_email: feedbackData.user_email,
+        category: feedbackData.category,
+        rating: feedbackData.rating,
+        comment: feedbackData.comment,
+        tags: feedbackData.tags || [],
+        device_info: feedbackData.device_info || {},
+        app_version: feedbackData.app_version || '1.2'
+      }
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating tester feedback:', error);
+    throw error;
+  }
+  return data;
+};

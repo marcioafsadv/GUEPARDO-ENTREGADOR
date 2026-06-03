@@ -413,6 +413,12 @@ const App: React.FC = () => {
   const [showPostDeliveryModal, setShowPostDeliveryModal] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
   const [showProximityModal, setShowProximityModal] = useState(false);
+  const [showFeedbackBanner, setShowFeedbackBanner] = useState(true);
+  const [feedbackCategory, setFeedbackCategory] = useState<'bug' | 'suggestion' | 'question' | 'praise'>('bug');
+  const [feedbackRating, setFeedbackRating] = useState<number>(5);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
+  const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
   const [isResumoExpanded, setIsResumoExpanded] = useState(false);
   const [mapCenterKey, setMapCenterKey] = useState(0);
   const [availableMissions, setAvailableMissions] = useState<any[]>([]);
@@ -3591,6 +3597,31 @@ const App: React.FC = () => {
                 />
             )}
 
+            {showFeedbackBanner && !mission && !isNavigating && (
+              <div className="absolute top-4 left-4 right-4 z-[999] bg-gradient-to-r from-[#1A0C06] to-[#25120a] border border-[#FF6B00]/40 rounded-[24px] p-4 flex items-center justify-between shadow-2xl animate-in slide-in-from-top-12 duration-500">
+                <div className="flex items-center space-x-3.5 flex-1 cursor-pointer" onClick={() => { playClick(); setCurrentScreen('SETTINGS'); setSettingsView('FEEDBACK'); }}>
+                  <div className="w-11 h-11 rounded-2xl bg-[#FF6B00]/15 flex items-center justify-center text-[#FF6B00] border border-[#FF6B00]/30 shadow-lg shadow-orange-950/40 shrink-0">
+                    <i className="fas fa-flask text-lg animate-bounce"></i>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 text-left">
+                      <span>Canal de Testes & Feedback</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    </h4>
+                    <p className="text-chocolate-muted text-[10px] font-bold leading-normal mt-0.5 text-left">
+                      Ajude a liberar a versão final na Google Play! Deixe seu feedback ou reporte bugs.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowFeedbackBanner(false); }} 
+                  className="w-8 h-8 rounded-full bg-black/45 border border-white/5 flex items-center justify-center text-chocolate-muted hover:text-white active:scale-90 transition-all shrink-0 ml-2"
+                >
+                  <i className="fas fa-times text-[10px]"></i>
+                </button>
+              </div>
+            )}
+
             {/* Floating Map Controls (Column on the right) */}
             {(!isNavigating) && (
               <div className={`absolute right-5 sm:right-6 bottom-[8rem] sm:bottom-[9rem] z-[1020] flex flex-col space-y-3.5 transition-all duration-700 ${isResumoExpanded ? '-translate-y-[17rem] sm:-translate-y-[26rem]' : 'translate-y-0'} animate-in fade-in slide-in-from-right-8`}>
@@ -4745,6 +4776,17 @@ const App: React.FC = () => {
                       <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
                     </button>
 
+                    <button onClick={() => setSettingsView('FEEDBACK')} className={`w-full p-5 rounded-[24px] border chocolate-list-item flex justify-between items-center transition-all`}>
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center bg-black/40 border border-white/5 text-[#FF6B00]`}><i className="fas fa-flask text-lg"></i></div>
+                        <div>
+                          <p className={`text-[13px] font-bold text-white`}>Feedback & Testes</p>
+                          <p className={`text-[9px] font-black uppercase text-chocolate-muted mt-0.5 tracking-tighter`}>Ajude-nos a melhorar o Guepardo</p>
+                        </div>
+                      </div>
+                      <i className={`fas fa-chevron-right text-xs text-chocolate-muted`}></i>
+                    </button>
+
 
                   </div>
                 </section>
@@ -4790,6 +4832,7 @@ const App: React.FC = () => {
                   {settingsView === 'DELIVERY' && 'Dados da Entrega'}
                   {settingsView === 'SOUNDS' && 'Escolha o Alerta'}
                   {settingsView === 'MAPS' && 'Navegador Padrão'}
+                  {settingsView === 'FEEDBACK' && 'Feedback & Testes'}
                 </h1>
               </div>
 
@@ -5136,6 +5179,178 @@ const App: React.FC = () => {
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsView === 'FEEDBACK' && (
+                <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                  {/* Explanatory Header */}
+                  <div className={`p-6 rounded-[32px] border border-[#FF6B00]/25 bg-[#1A0C06] shadow-2xl`}>
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] border border-[#FF6B00]/30 shadow-inner">
+                        <i className="fas fa-flask text-lg"></i>
+                      </div>
+                      <div>
+                        <h4 className="text-white text-sm font-black uppercase tracking-wider">Canal Oficial de Testes</h4>
+                        <p className="text-[#FF6B00] text-[9px] font-black uppercase tracking-[0.2em] mt-0.5">Google Play Beta</p>
+                      </div>
+                    </div>
+                    <p className="text-chocolate-muted text-xs font-semibold leading-relaxed">
+                      Sua opinião é fundamental para a liberação da versão final na Google Play. Registre bugs, sugira melhorias ou faça um elogio ao time de engenharia!
+                    </p>
+                  </div>
+
+                  {/* Feedback Form Card */}
+                  <div className={`p-6 sm:p-8 rounded-[32px] border ${cardBg}`}>
+                    {/* Category Selection */}
+                    <div className="mb-6">
+                      <label className="text-chocolate-muted text-[10px] font-black uppercase tracking-widest block mb-3">Categoria</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: 'bug', label: 'Bug / Defeito', icon: 'fa-bug', color: 'text-red-500 bg-red-500/10 border-red-500/20' },
+                          { id: 'suggestion', label: 'Sugestão', icon: 'fa-lightbulb', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+                          { id: 'question', label: 'Dúvida', icon: 'fa-circle-question', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
+                          { id: 'praise', label: 'Elogio', icon: 'fa-thumbs-up', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' }
+                        ].map(cat => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => { playClick(); setFeedbackCategory(cat.id as any); }}
+                            className={`p-4 rounded-2xl border transition-all flex items-center space-x-3 text-left ${feedbackCategory === cat.id ? 'bg-[#FF6B00]/10 border-[#FF6B00] text-white shadow-lg' : 'bg-black/30 border-white/5 text-chocolate-muted'}`}
+                          >
+                            <i className={`fas ${cat.icon} text-lg ${feedbackCategory === cat.id ? 'text-[#FF6B00]' : 'text-zinc-500'}`}></i>
+                            <span className="text-xs font-bold">{cat.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Star Rating */}
+                    <div className="mb-6 text-center bg-black/30 p-5 rounded-2xl border border-white/5">
+                      <label className="text-chocolate-muted text-[10px] font-black uppercase tracking-widest block mb-3">Nota para o Aplicativo</label>
+                      <div className="flex justify-center items-center space-x-2">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => { playClick(); setFeedbackRating(star); }}
+                            className="p-1 active:scale-95 transition-transform"
+                          >
+                            <i className={`fas fa-star text-3xl transition-colors duration-250 ${star <= feedbackRating ? 'text-[#FFD700] drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]' : 'text-zinc-700'}`}></i>
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[#FFD700] text-[10px] font-black uppercase tracking-widest block mt-2.5">
+                        {feedbackRating === 5 && 'Excelente! 🚀'}
+                        {feedbackRating === 4 && 'Muito Bom! 👍'}
+                        {feedbackRating === 3 && 'Bom / Razoável'}
+                        {feedbackRating === 2 && 'Precisa Melhorar'}
+                        {feedbackRating === 1 && 'Péssimo / Inutilizável ⚠️'}
+                      </span>
+                    </div>
+
+                    {/* Tag Checklist */}
+                    <div className="mb-6">
+                      <label className="text-chocolate-muted text-[10px] font-black uppercase tracking-widest block mb-3">Onde ocorreu o problema / melhoria?</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['GPS e Mapas', 'Alertas Sonoros', 'Cadastro / Documentos', 'Carteira / Saques', 'Desempenho / Lerdeza', 'Interface / Design', 'Outro'].map(tag => {
+                          const isSelected = feedbackTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                if (isSelected) {
+                                  setFeedbackTags(prev => prev.filter(t => t !== tag));
+                                } else {
+                                  setFeedbackTags(prev => [...prev, tag]);
+                                }
+                              }}
+                              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${isSelected ? 'bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-950/20' : 'bg-black/30 border-white/5 text-chocolate-muted hover:text-white'}`}
+                            >
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Description Textarea */}
+                    <div className="mb-6">
+                      <label className="text-chocolate-muted text-[10px] font-black uppercase tracking-widest block mb-2">Comentários Adicionais</label>
+                      <textarea
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        placeholder="Descreva em detalhes o erro encontrado, sugestão de melhoria ou qualquer feedback importante..."
+                        className="w-full h-32 rounded-2xl bg-black/45 border border-white/5 p-4 text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-[#FF6B00]/45 focus:ring-1 focus:ring-[#FF6B00]/30 transition-all resize-none leading-relaxed"
+                      />
+                    </div>
+
+                    {/* App Version Info */}
+                    <div className="mb-8 flex justify-between items-center text-[10px] text-chocolate-muted font-bold uppercase tracking-wider bg-black/20 p-4 rounded-xl border border-white/5">
+                      <span>Versão do App: <strong className="text-white">1.2 (TWA)</strong></span>
+                      <span>Dispositivo: <strong className="text-white">Android Mobile</strong></span>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      onClick={async () => {
+                        if (typeof playClick === 'function') playClick();
+                        if (!feedbackComment.trim()) {
+                          alert('Por favor, escreva um comentário sobre o seu feedback.');
+                          return;
+                        }
+                        
+                        setIsSubmittingFeedback(true);
+                        try {
+                          await supabaseClient.createFeedback({
+                            user_id: userId,
+                            user_name: currentUser.name || 'Testador Anônimo',
+                            user_email: currentUser.email || 'anonimo@guepardo.com',
+                            category: feedbackCategory,
+                            rating: feedbackRating,
+                            comment: feedbackComment,
+                            tags: feedbackTags,
+                            device_info: {
+                              userAgent: navigator.userAgent,
+                              platform: navigator.platform,
+                              language: navigator.language
+                            },
+                            app_version: '1.2'
+                          });
+
+                          alert('Feedback enviado com sucesso! Agradecemos sua colaboração.');
+                          // Reset form state
+                          setFeedbackComment('');
+                          setFeedbackTags([]);
+                          setFeedbackRating(5);
+                          setFeedbackCategory('bug');
+                          // Redirect back to main settings view
+                          setSettingsView('MAIN');
+                        } catch (err: any) {
+                          console.error('Error submitting feedback:', err);
+                          alert('Erro ao enviar feedback. Certifique-se de que a tabela do banco de dados foi configurada conforme o plano de migração!');
+                        } finally {
+                          setIsSubmittingFeedback(false);
+                        }
+                      }}
+                      disabled={isSubmittingFeedback}
+                      className="w-full h-16 rounded-[24px] font-black text-white uppercase italic tracking-[0.2em] shadow-xl btn-lava-accept flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingFeedback ? (
+                        <>
+                          <i className="fas fa-circle-notch fa-spin text-lg"></i>
+                          <span>ENVIANDO...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-paper-plane text-xs"></i>
+                          <span>ENVIAR FEEDBACK</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}
