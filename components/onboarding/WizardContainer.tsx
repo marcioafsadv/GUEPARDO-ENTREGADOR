@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProgressBar from '../common/ProgressBar';
 import Step1PersonalData from './steps/Step1PersonalData';
 import Step2BankData from './steps/Step2BankData';
@@ -70,50 +70,76 @@ interface WizardContainerProps {
 }
 
 const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel, initialCity = '', theme = 'dark' }) => {
-    const [currentStep, setCurrentStep] = useState(1);
-    const [wizardData, setWizardData] = useState<WizardData>({
-        fullName: '',
-        birthDate: '',
-        cpf: '',
-        phone: '',
-        email: '',
-        gender: '',
-        password: '',
-        confirmPassword: '',
-        workCity: initialCity,
-        bankName: '',
-        bankAgency: '',
-        bankAccount: '',
-        bankAccountType: '',
-        pixKey: '',
-        photoUrl: null,
-        photoFile: null,
-        zipCode: '',
-        street: '',
-        number: '',
-        hasNoNumber: false,
-        complement: '',
-        reference: '',
-        district: '',
-        city: '',
-        state: '',
-        vehicleType: 'moto',
-        cnhNumber: '',
-        cnhValidity: '',
-        plate: '',
-        plateState: '',
-        plateCity: '',
-        model: '',
-        year: '',
-        color: '',
-        renavam: '',
-        isOwner: true,
-        cnhFrontUrl: null,
-        cnhBackUrl: null,
-        crlvUrl: null,
-        bikePhotoUrl: null,
-        proofOfResidenceUrl: null,
+    const [currentStep, setCurrentStep] = useState(() => {
+        const saved = localStorage.getItem('onboarding_step');
+        return saved ? parseInt(saved, 10) : 1;
     });
+    const [wizardData, setWizardData] = useState<WizardData>(() => {
+        const saved = localStorage.getItem('onboarding_data');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                return {
+                    ...parsed,
+                    photoFile: null, // File object cannot be restored, but is not needed
+                };
+            } catch (e) {
+                // Fail silent
+            }
+        }
+        return {
+            fullName: '',
+            birthDate: '',
+            cpf: '',
+            phone: '',
+            email: '',
+            gender: '',
+            password: '',
+            confirmPassword: '',
+            workCity: initialCity,
+            bankName: '',
+            bankAgency: '',
+            bankAccount: '',
+            bankAccountType: '',
+            pixKey: '',
+            photoUrl: null,
+            photoFile: null,
+            zipCode: '',
+            street: '',
+            number: '',
+            hasNoNumber: false,
+            complement: '',
+            reference: '',
+            district: '',
+            city: '',
+            state: '',
+            vehicleType: 'moto',
+            cnhNumber: '',
+            cnhValidity: '',
+            plate: '',
+            plateState: '',
+            plateCity: '',
+            model: '',
+            year: '',
+            color: '',
+            renavam: '',
+            isOwner: true,
+            cnhFrontUrl: null,
+            cnhBackUrl: null,
+            crlvUrl: null,
+            bikePhotoUrl: null,
+            proofOfResidenceUrl: null,
+        };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('onboarding_step', currentStep.toString());
+    }, [currentStep]);
+
+    useEffect(() => {
+        const dataToSave = { ...wizardData, photoFile: null };
+        localStorage.setItem('onboarding_data', JSON.stringify(dataToSave));
+    }, [wizardData]);
 
     const totalSteps = 6;
 
@@ -133,8 +159,16 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
         }
     };
 
+    const handleCancel = () => {
+        localStorage.removeItem('onboarding_step');
+        localStorage.removeItem('onboarding_data');
+        onCancel();
+    };
+
     const handleSubmit = async () => {
         await onComplete(wizardData);
+        localStorage.removeItem('onboarding_step');
+        localStorage.removeItem('onboarding_data');
     };
 
     const cardBg = theme === 'dark' ? 'bg-zinc-900 border-white/5' : 'bg-white border-zinc-200';
@@ -149,7 +183,7 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                         Cadastro de Entregador
                     </h1>
                     <button
-                        onClick={onCancel}
+                        onClick={handleCancel}
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-600'} hover:scale-105 transition-transform`}
                     >
                         <i className="fas fa-times"></i>

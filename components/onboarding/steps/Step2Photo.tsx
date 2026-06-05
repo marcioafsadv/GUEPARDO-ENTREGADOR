@@ -120,7 +120,6 @@ const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme =
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    capture="user"
                     onChange={handleFileSelect}
                     className="hidden"
                 />
