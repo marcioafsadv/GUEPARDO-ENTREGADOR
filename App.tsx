@@ -16,7 +16,7 @@ import { processWizardRegistration } from './utils/wizardProcessor';
 
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'IDENTITY_VERIFICATION' | 'AVAILABLE_MISSIONS';
-type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS';
+type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS' | 'FEEDBACK';
 type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION' | 'PENDING_APPROVAL';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
@@ -243,7 +243,8 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     deliveryValue: parseFloat(d.delivery_value || '0'),
     paymentMethod: d.payment_method || 'PIX',
     storeLogoUrl: d.stores?.logo_url || null,
-    storeFacadeUrl: d.stores?.location_photo_url || null
+    storeFacadeUrl: d.stores?.location_photo_url || null,
+    isOpenMode: d.items?.is_open_mode === true
   };
 };
 
@@ -3817,7 +3818,7 @@ const App: React.FC = () => {
                               {getStatusLabel(status)}
                             </span>
                             <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest italic pl-1">
-                              TAXA: {formatCurrency(mission.earnings || 0)}
+                              {mission.isOpenMode || mission.earnings === 0 ? '🛵 TURNO FIXO' : `TAXA: ${formatCurrency(mission.earnings || 0)}`}
                             </span>
                           </div>
 
@@ -4237,7 +4238,9 @@ const App: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1.5 italic">GANHO</p>
-                          <p className="text-2xl font-black text-white italic tracking-tighter">{formatCurrency(missionData.earnings || 0)}</p>
+                          <p className="text-2xl font-black text-white italic tracking-tighter">
+                            {missionData.isOpenMode || missionData.earnings === 0 ? '🛵 FIXO' : formatCurrency(missionData.earnings || 0)}
+                          </p>
                         </div>
                       </div>
 
@@ -5551,9 +5554,15 @@ const App: React.FC = () => {
               <div>
                 <p className="text-white text-[10px] font-black uppercase tracking-widest leading-none mb-1">Nova Missão na Rota!</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-white font-black text-lg">+ {formatCurrency(newBatchEarnings)}</span>
-                  <div className="h-4 w-px bg-white/30"></div>
-                  <span className="text-white/80 text-[10px] font-bold">Total: {formatCurrency(activeMissions.reduce((acc, m) => acc + m.earnings, 0))}</span>
+                  {activeMissions.some(m => m.isOpenMode || m.earnings === 0) ? (
+                    <span className="text-white font-black text-xs uppercase tracking-widest leading-none">🛵 TURNO FIXO</span>
+                  ) : (
+                    <>
+                      <span className="text-white font-black text-lg">+ {formatCurrency(newBatchEarnings)}</span>
+                      <div className="h-4 w-px bg-white/30"></div>
+                      <span className="text-white/80 text-[10px] font-bold">Total: {formatCurrency(activeMissions.reduce((acc, m) => acc + m.earnings, 0))}</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -5762,7 +5771,7 @@ const App: React.FC = () => {
             <div className="w-full chocolate-inner-card-v2 p-10 mb-12 border-[#FF6B00]/30 shadow-[0_0_60px_rgba(0,0,0,0.5)]">
               <p className="text-chocolate-muted font-black text-[10px] uppercase tracking-[0.3em] mb-4">Total Arrecadado</p>
               <p className="text-6xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                {formatCurrency(batchEarnings || 0)}
+                {batchEarnings === 0 ? '🛵 TURNO FIXO' : formatCurrency(batchEarnings || 0)}
               </p>
             </div>
 

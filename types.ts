@@ -42,6 +42,7 @@ export interface DeliveryMission {
   paymentMethod?: string;
   storeLogoUrl?: string;
   storeFacadeUrl?: string;
+  isOpenMode?: boolean;
 }
 
 export interface DailySummary {
