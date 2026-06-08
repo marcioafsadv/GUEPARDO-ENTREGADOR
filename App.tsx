@@ -1080,27 +1080,37 @@ const App: React.FC = () => {
           setNotifications(notifs as NotificationModel[]);
         }
 
-        // Tenta recuperar missão ativa (State Recovery)
-        const activeDbDelivery = await supabaseClient.getActiveDelivery(userId);
-        if (activeDbDelivery) {
-          console.log('🔄 Missão ativa encontrada no banco. Recuperando estado...');
+        // Tenta recuperar missões ativas (State Recovery)
+        const activeDbDeliveries = await supabaseClient.getActiveDeliveries(userId);
+        if (activeDbDeliveries && activeDbDeliveries.length > 0) {
+          console.log('🔄 Missões ativas encontradas no banco. Recuperando estado...');
           
           let missionsToSet: DeliveryMission[] = [];
           
-          if (activeDbDelivery.batch_id) {
-            // Se for parte de um lote, busca todos os pedidos do lote que não foram concluídos
+          const batchIds = activeDbDeliveries.map(d => d.batch_id).filter(Boolean);
+          
+          if (batchIds.length > 0) {
+            // Se houver lotes, busca todos os pedidos dos lotes que não foram concluídos
             const { data: batchData } = await supabaseClient.supabase
               .from('deliveries')
               .select('*, stores(logo_url, location_photo_url, lat, lng)')
-              .eq('batch_id', activeDbDelivery.batch_id)
+              .in('batch_id', batchIds)
               .not('status', 'in', '("completed","cancelled")')
               .order('stop_number', { ascending: true });
             
             if (batchData && batchData.length > 0) {
-              missionsToSet = batchData.map(mapDbDeliveryToMission);
+              const activeIds = new Set(batchData.map(d => d.id));
+              const individuals = activeDbDeliveries.filter(d => !d.batch_id || !activeIds.has(d.id));
+              
+              missionsToSet = [
+                ...batchData.map(mapDbDeliveryToMission),
+                ...individuals.map(mapDbDeliveryToMission)
+              ].sort((a, b) => (a.stopNumber || 0) - (b.stopNumber || 0));
+            } else {
+              missionsToSet = activeDbDeliveries.map(mapDbDeliveryToMission);
             }
           } else {
-            missionsToSet = [mapDbDeliveryToMission(activeDbDelivery)];
+            missionsToSet = activeDbDeliveries.map(mapDbDeliveryToMission);
           }
 
           if (missionsToSet.length > 0) {
@@ -1169,6 +1179,8 @@ const App: React.FC = () => {
       }
     };
 
+    let deliveriesSubscription: any;
+
     if (isAuthenticated && userId) {
       loadUserData();
 
@@ -1189,11 +1201,32 @@ const App: React.FC = () => {
           }
         )
         .subscribe();
+
+      // Iniciar escuta realtime para novos pedidos atribuídos ao entregador em tempo real
+      deliveriesSubscription = supabaseClient.supabase
+        .channel(`deliveries-assigned-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'deliveries',
+            filter: `driver_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log('🔔 [REALTIME] Entrega atribuída ou atualizada:', payload);
+            loadUserData();
+          }
+        )
+        .subscribe();
     }
 
     return () => {
       if (profileSubscription) {
         supabaseClient.supabase.removeChannel(profileSubscription);
+      }
+      if (deliveriesSubscription) {
+        supabaseClient.supabase.removeChannel(deliveriesSubscription);
       }
     };
   }, [isAuthenticated, userId]);
