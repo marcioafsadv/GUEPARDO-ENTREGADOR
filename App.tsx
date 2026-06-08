@@ -4148,22 +4148,50 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Ponto de Coleta</span>
                   </div>
                   
-                  <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
-                    <div className="flex flex-col">
-                      <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
-                      <span className={`text-sm font-black ${textPrimary}`}>{mission.storeName}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                  {activeMissions.filter(m => ['accepted', 'arrived_pickup', 'picking_up'].includes(m.status)).length > 0 ? (
+                    activeMissions
+                      .filter(m => ['accepted', 'arrived_pickup', 'picking_up'].includes(m.status))
+                      .map((m, idx) => (
+                        <div key={m.id} className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner ${idx > 0 ? 'mt-3' : ''}`}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                              <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
+                              <span className={`text-sm font-black ${textPrimary}`}>{m.storeName}</span>
+                            </div>
+                            {m.isOpenMode && (
+                              <span className="bg-[#FF6B00]/20 text-[#FF6B00] text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Fixo</span>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                            <div className="flex flex-col">
+                                <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
+                                <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{m.displayId || m.id.slice(-4).toUpperCase()}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
+                                <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{m.collectionCode}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className={`p-5 rounded-[28px] border border-white/5 ${innerBg} space-y-4 shadow-inner`}>
                       <div className="flex flex-col">
-                          <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
-                          <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
+                        <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Lojista:</span>
+                        <span className={`text-sm font-black ${textPrimary}`}>{mission.storeName}</span>
                       </div>
-                      <div className="flex flex-col items-end">
-                          <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
-                          <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{mission.collectionCode}</span>
+                      <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                        <div className="flex flex-col">
+                            <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>ID Pedido:</span>
+                            <span className={`text-xs font-black text-white bg-[#FF6B00]/20 px-3 py-1 rounded-full`}>#{mission.displayId || mission.id.slice(-4).toUpperCase()}</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className={`text-[10px] font-bold uppercase ${textMuted} mb-1 opacity-50`}>Cód. Coleta:</span>
+                            <span className={`text-lg font-black text-[#FFD700] tabular-nums tracking-tighter`}>{mission.collectionCode}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Delivery Section */}
