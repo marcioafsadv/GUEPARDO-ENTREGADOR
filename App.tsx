@@ -2526,6 +2526,7 @@ const App: React.FC = () => {
       if (!alreadyInHistory) {
         processedEarningsIdsRef.current.add(earningsLockId);
         const earned = mission.earnings;
+        const isFixedShift = mission.isOpenMode === true || earned === 0;
 
         // 2. Prepare transaction data
         const newTransaction: Transaction = {
@@ -2539,8 +2540,9 @@ const App: React.FC = () => {
           details: {
             duration: '15 min',
             stops: 2,
-            timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-          }
+            timeline: generateTimeline(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })),
+            isOpenMode: isFixedShift
+          } as any
         };
 
         // 3. Save to Supabase (Transaction & Stats)
@@ -2552,7 +2554,7 @@ const App: React.FC = () => {
           status: newTransaction.status,
           week_id: newTransaction.weekId,
           user_id: userId,
-          details: newTransaction.details
+          details: { ...newTransaction.details, isOpenMode: isFixedShift }
         });
 
         console.log('📊 Updating daily stats...', { userId, earnings: earned });
@@ -3716,7 +3718,33 @@ const App: React.FC = () => {
                     </div>
                     
                     <button 
-                      onClick={() => setCurrentScreen('WALLET')} 
+                      onClick={async () => {
+                        setCurrentScreen('WALLET');
+                        // Refresh balance and history from DB to capture shift payments (Turno Fixo)
+                        try {
+                          if (!userId) return;
+                          const [freshBalance, freshTransactions] = await Promise.all([
+                            supabaseClient.getBalance(userId as string),
+                            supabaseClient.getTransactions(userId as string)
+                          ]);
+                          setBalance(freshBalance);
+                          if (freshTransactions) {
+                            const uniqueTxs = new Map<string, any>();
+                            freshTransactions.forEach((t: any) => {
+                              const createdAt = new Date(t.created_at);
+                              uniqueTxs.set(t.id, {
+                                ...t,
+                                weekId: t.week_id || 'current',
+                                date: createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                                time: createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              });
+                            });
+                            setHistory(Array.from(uniqueTxs.values()) as any);
+                          }
+                        } catch (e) {
+                          console.warn('Erro ao atualizar saldo ao abrir carteira:', e);
+                        }
+                      }} 
                       className="group flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-[#1A0C06] border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:bg-[#25120a] transition-all duration-500 shadow-lg"
                     >
                       <span className="text-[10px] sm:text-[11px] font-[900] text-[#D4AF37] uppercase tracking-widest">Painel</span>
@@ -4494,28 +4522,51 @@ const App: React.FC = () => {
                         <p className={`text-xs font-bold text-chocolate-muted`}>Nenhum registro encontrado.</p>
                       </div>
                     ) : (
-                      filteredHistory.map((item, index) => (
-                        <div
-                          key={index}
-                          onClick={() => setSelectedTransaction(item)}
-                          className={`p-4 rounded-[28px] border chocolate-list-item flex justify-between items-center transition-all cursor-pointer`}
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${item.amount > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                              <i className={`fas ${item.amount > 0 ? 'fa-arrow-down' : 'fa-arrow-up'} rotate-45`}></i>
+                      filteredHistory.map((item, index) => {
+                        // Detectar se é turno fixo: tipo 'Turno Fixo', ou entrega com isOpenMode nos details, ou entrega com valor 0
+                        const isFixedShift = 
+                          item.type === 'Turno Fixo' ||
+                          (item as any).details?.isOpenMode === true ||
+                          (typeof item.type === 'string' && item.type.startsWith('Entrega') && item.amount === 0);
+                        
+                        const itemColorClass = item.amount < 0
+                          ? 'bg-red-500/10 text-red-500'
+                          : isFixedShift
+                            ? 'bg-blue-500/10 text-blue-400'
+                            : 'bg-emerald-500/10 text-emerald-500';
+                        
+                        const amountColorClass = item.amount < 0
+                          ? 'text-red-500'
+                          : isFixedShift
+                            ? 'text-blue-400'
+                            : 'text-emerald-500';
+
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => setSelectedTransaction(item)}
+                            className={`p-4 rounded-[28px] border chocolate-list-item flex justify-between items-center transition-all cursor-pointer`}
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${itemColorClass}`}>
+                                <i className={`fas ${item.amount < 0 ? 'fa-arrow-up' : isFixedShift ? 'fa-clock' : 'fa-arrow-down'} ${item.amount >= 0 ? 'rotate-45' : ''}`}></i>
+                              </div>
+                              <div>
+                                <p className={`text-sm font-black text-white`}>{item.type}</p>
+                                {isFixedShift && item.type !== 'Turno Fixo' && (
+                                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2 py-0.5 rounded-full">Turno Fixo</span>
+                                )}
+                                <p className={`text-[10px] font-bold text-chocolate-muted uppercase tracking-tighter mt-0.5`}>{item.date}, {item.time}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className={`text-sm font-black text-white`}>{item.type}</p>
-                              <p className={`text-[10px] font-bold text-chocolate-muted uppercase tracking-tighter`}>{item.date}, {item.time}</p>
+                            <div className="text-right">
+                              <span className={`font-black text-lg block ${amountColorClass}`}>
+                                {item.amount > 0 ? '+' : ''} R$ {Math.abs(item.amount).toFixed(2)}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className={`font-black text-lg block ${item.amount > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                              {item.amount > 0 ? '+' : ''} R$ {Math.abs(item.amount).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </>
                 ) : (
@@ -5643,7 +5694,34 @@ const App: React.FC = () => {
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Mapa</span>
           </button>
           
-          <button onClick={() => { playClick(); setCurrentScreen('WALLET'); }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
+          <button onClick={async () => {
+            playClick();
+            setCurrentScreen('WALLET');
+            // Refresh balance and history from DB to capture shift payments (Turno Fixo)
+            try {
+              if (!userId) return;
+              const [freshBalance, freshTransactions] = await Promise.all([
+                supabaseClient.getBalance(userId as string),
+                supabaseClient.getTransactions(userId as string)
+              ]);
+              setBalance(freshBalance);
+              if (freshTransactions) {
+                const uniqueTxs = new Map<string, any>();
+                freshTransactions.forEach((t: any) => {
+                  const createdAt = new Date(t.created_at);
+                  uniqueTxs.set(t.id, {
+                    ...t,
+                    weekId: t.week_id || 'current',
+                    date: createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                    time: createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                  });
+                });
+                setHistory(Array.from(uniqueTxs.values()) as any);
+              }
+            } catch (e) {
+              console.warn('Erro ao atualizar saldo ao abrir carteira:', e);
+            }
+          }} className={`flex flex-col items-center space-y-1 w-1/4 relative transition-all ${currentScreen === 'WALLET' ? 'text-[#FF6B00]' : 'text-chocolate-muted'}`}>
             <div className={`w-8 h-1 bg-[#FF6B00] absolute bottom-[-4px] rounded-full transition-all shadow-[0_0_12px_#FF6B00] ${currentScreen === 'WALLET' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
             <i className={`fas fa-wallet text-lg sm:text-xl ${currentScreen === 'WALLET' ? 'neon-orange-glow-text' : ''}`}></i>
             <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest">Ganhos</span>
