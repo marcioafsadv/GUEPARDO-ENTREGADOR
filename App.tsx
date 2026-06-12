@@ -689,6 +689,8 @@ const App: React.FC = () => {
   const lastGpsUpdateRef = useRef<number>(Date.now());
   const gpsRestartCounterRef = useRef<number>(0);
   const activeGpsQueryRef = useRef<boolean>(false);
+  const lastDbProfileUpdateRef = useRef<number>(0);
+  const lastDbTrackingUpdateRef = useRef<number>(0);
 
   // --- REDIRECT TO HOME WHEN NAVIGATING / IN ACTIVE RUN ---
   useEffect(() => {
@@ -1516,12 +1518,16 @@ const App: React.FC = () => {
           const { latitude, longitude } = pos.coords;
           lastGpsUpdateRef.current = Date.now();
 
-          // Update profile for real-time head-up display
-          supabaseClient.updateProfile(userId, {
-            current_lat: latitude,
-            current_lng: longitude,
-            last_location_update: new Date().toISOString()
-          }).catch(e => console.error("Location update failed", e));
+          // Update profile for real-time head-up display - Throttled to 8 seconds
+          const now = Date.now();
+          if (now - lastDbProfileUpdateRef.current >= 8000) {
+            lastDbProfileUpdateRef.current = now;
+            supabaseClient.updateProfile(userId, {
+              current_lat: latitude,
+              current_lng: longitude,
+              last_location_update: new Date().toISOString()
+            }).catch(e => console.error("Location update failed", e));
+          }
 
           // LOG HISTORY: Use Refs to avoid closure staleness without restarting watch
           const currentStatus = statusRef.current;
@@ -1537,16 +1543,20 @@ const App: React.FC = () => {
           ];
 
           if (currentMission && activeStates.includes(currentStatus)) {
-            supabaseClient.supabase
-              .from('delivery_tracking')
-              .insert([{
-                delivery_id: currentMission.id,
-                latitude,
-                longitude
-              }])
-              .then(({ error }) => {
-                if (error) console.error("Error logging percurso:", error.message);
-              });
+            // Throttled to 10 seconds to drastically reduce DB load and egress
+            if (now - lastDbTrackingUpdateRef.current >= 10000) {
+              lastDbTrackingUpdateRef.current = now;
+              supabaseClient.supabase
+                .from('delivery_tracking')
+                .insert([{
+                  delivery_id: currentMission.id,
+                  latitude,
+                  longitude
+                }])
+                .then(({ error }) => {
+                  if (error) console.error("Error logging percurso:", error.message);
+                });
+            }
           }
 
           setCurrentLocation({ 

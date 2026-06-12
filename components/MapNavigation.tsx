@@ -1167,15 +1167,41 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const profile = getMapboxProfile(vehicleType);
         const excludeParam = '&exclude=ferry,toll';
         const radiusParam = '&radiuses=35;unlimited';
-        const approachesParam = '&approaches=curb;unlimited';
+        const approachesParam = '&approaches=curb;unrestricted';
 
         const url = `https://api.mapbox.com/directions/v5/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson${excludeParam}${radiusParam}${approachesParam}&access_token=${MAPBOX_TOKEN}&language=pt`;
         
+        let route: any = null;
         try {
             const res = await fetch(url);
+            if (!res.ok) throw new Error(`Mapbox status ${res.status}`);
             const data = await res.json();
             if (data.routes && data.routes.length > 0) {
-                const route = data.routes[0];
+                route = data.routes[0];
+            } else {
+                throw new Error("Empty routes from Mapbox");
+            }
+        } catch (e) {
+            console.error("Mapbox Directions Error, trying OSRM fallback:", e);
+            try {
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&overview=full&geometries=geojson`;
+                const res = await fetch(osrmUrl);
+                if (!res.ok) throw new Error(`OSRM status ${res.status}`);
+                const data = await res.json();
+                if (data.routes && data.routes.length > 0) {
+                    route = data.routes[0];
+                }
+            } catch (osrmErr) {
+                console.error("OSRM Fallback Error:", osrmErr);
+            }
+        }
+
+        if (!route) {
+            console.error("Failed to fetch route from both Mapbox and OSRM.");
+            return;
+        }
+
+        try {
                 const coords = route.geometry.coordinates;
 
                 // Salva coordenadas da rota para o alinhamento Heading-Up e detecção de desvios
@@ -1442,7 +1468,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         map.current?.on('load', addRouteLayers);
                     }
                 }
-            }
         } catch (e) {
             console.error("Directions Error:", e);
         }
