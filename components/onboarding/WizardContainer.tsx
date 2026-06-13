@@ -81,7 +81,14 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
                 const parsed = JSON.parse(saved);
                 return {
                     ...parsed,
-                    photoFile: null, // File object cannot be restored, but is not needed
+                    // Campos de imagem não são persistidos no localStorage (ver useEffect abaixo)
+                    photoFile: null,
+                    photoUrl: null,
+                    cnhFrontUrl: null,
+                    cnhBackUrl: null,
+                    crlvUrl: null,
+                    bikePhotoUrl: null,
+                    proofOfResidenceUrl: null,
                 };
             } catch (e) {
                 // Fail silent
@@ -137,8 +144,16 @@ const WizardContainer: React.FC<WizardContainerProps> = ({ onComplete, onCancel,
     }, [currentStep]);
 
     useEffect(() => {
-        const dataToSave = { ...wizardData, photoFile: null };
-        localStorage.setItem('onboarding_data', JSON.stringify(dataToSave));
+        // Exclui os campos de imagem (base64) da persistência no localStorage
+        // pois são muito grandes e ultrapassam o limite de ~5MB do browser.
+        // Apenas dados de texto são salvos; as fotos ficam só em memória.
+        const { photoUrl, cnhFrontUrl, cnhBackUrl, crlvUrl, bikePhotoUrl, proofOfResidenceUrl, photoFile, ...textData } = wizardData;
+        try {
+            localStorage.setItem('onboarding_data', JSON.stringify(textData));
+        } catch (e) {
+            // Ignora erro de quota — dados de texto são pequenos, não deve ocorrer
+            console.warn('Falha ao salvar rascunho do cadastro:', e);
+        }
     }, [wizardData]);
 
     const totalSteps = 6;
