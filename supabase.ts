@@ -808,6 +808,7 @@ export const submitCompleteRegistration = async (
         birth_date: registrationData.personal.birthDate,
         cpf: registrationData.personal.cpf,
         phone: registrationData.personal.phone,
+        email: registrationData.personal.email,
         gender: registrationData.personal.gender,
         pix_key: registrationData.personal.pixKey,
         avatar_url: registrationData.photoUrl,

@@ -17,7 +17,7 @@ import { processWizardRegistration } from './utils/wizardProcessor';
 
 type Screen = 'HOME' | 'WALLET' | 'ORDERS' | 'SETTINGS' | 'WITHDRAWAL_REQUEST' | 'NOTIFICATIONS' | 'IDENTITY_VERIFICATION' | 'AVAILABLE_MISSIONS';
 type SettingsView = 'MAIN' | 'PERSONAL' | 'DOCUMENTS' | 'BANK' | 'EMERGENCY' | 'DELIVERY' | 'SOUNDS' | 'MAPS' | 'FEEDBACK';
-type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION' | 'PENDING_APPROVAL';
+type AuthScreen = 'LOGIN' | 'REGISTER' | 'RECOVERY' | 'VERIFICATION' | 'PENDING_APPROVAL' | 'RESET_PASSWORD';
 type OnboardingScreen = 'CITY_SELECTION' | 'WIZARD' | null;
 type MapMode = 'standard' | 'satellite';
 
@@ -331,6 +331,8 @@ const App: React.FC = () => {
   const [authScreen, setAuthScreen] = useState<AuthScreen>('LOGIN');
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Onboarding State
   const [onboardingScreen, setOnboardingScreen] = useState<OnboardingScreen>(null);
@@ -921,17 +923,34 @@ const App: React.FC = () => {
 
 
 
-  // Restore Session on Mount
+  // Restore Session on Mount & Handle Password Recovery Redirect
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      console.log("Password recovery redirect detected in URL hash");
+      setAuthScreen('RESET_PASSWORD');
+    }
+
     const checkSession = async () => {
       const { data: { session } } = await supabaseClient.supabase.auth.getSession();
-      if (session?.user) {
+      if (session?.user && !window.location.hash.includes('type=recovery')) {
         console.log("Session restored:", session.user.id);
         setUserId(session.user.id);
         setIsAuthenticated(true);
       }
     };
     checkSession();
+
+    const { data: { subscription } } = supabaseClient.supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event);
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthScreen('RESET_PASSWORD');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Auto-expand mission overlay when arriving (within 100m)
@@ -3174,14 +3193,89 @@ const App: React.FC = () => {
     alert(`Novo código enviado para ${pendingUser?.email}`);
   };
 
-  const handleRecovery = (e: React.FormEvent) => {
+  const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!recoveryInput) {
+      alert("Por favor, preencha o campo.");
+      return;
+    }
     setIsLoadingAuth(true);
-    setTimeout(() => {
+    try {
+      if (recoveryMethod === 'email') {
+        const { error } = await supabaseClient.supabase.auth.resetPasswordForEmail(recoveryInput, {
+          redirectTo: window.location.origin
+        });
+        if (error) throw error;
+        alert(`Link de recuperação enviado para o e-mail: ${recoveryInput}`);
+        setAuthScreen('LOGIN');
+      } else {
+        // Método por CPF
+        const normalizedCpf = recoveryInput.replace(/\D/g, '');
+        if (normalizedCpf.length !== 11) {
+          alert("Por favor, insira um CPF válido.");
+          setIsLoadingAuth(false);
+          return;
+        }
+        
+        // Buscar e-mail pelo CPF na tabela profiles
+        const { data, error } = await supabaseClient.supabase
+          .from('profiles')
+          .select('email')
+          .eq('cpf', normalizedCpf)
+          .single();
+          
+        if (error || !data || !data.email) {
+          console.error("CPF lookup error:", error);
+          throw new Error("CPF não cadastrado ou e-mail correspondente não localizado.");
+        }
+        
+        const { error: resetError } = await supabaseClient.supabase.auth.resetPasswordForEmail(data.email, {
+          redirectTo: window.location.origin
+        });
+        if (resetError) throw resetError;
+        
+        alert(`CPF localizado! O link de recuperação foi enviado para o e-mail cadastrado.`);
+        setAuthScreen('LOGIN');
+      }
+    } catch (error: any) {
+      console.error("Erro na recuperação de senha:", error);
+      alert(error.message || "Erro ao processar a solicitação de recuperação.");
+    } finally {
       setIsLoadingAuth(false);
-      alert(`Link de recuperação enviado para: ${recoveryInput}`);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || !confirmPassword) {
+      alert("Preencha ambos os campos de senha.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("As senhas não coincidem.");
+      return;
+    }
+    setIsLoadingAuth(true);
+    try {
+      const { error } = await supabaseClient.supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+      alert("Senha atualizada com sucesso! Faça login com a nova senha.");
+      window.location.hash = ''; // Limpar hash da URL
+      setNewPassword('');
+      setConfirmPassword('');
       setAuthScreen('LOGIN');
-    }, 1500);
+    } catch (error: any) {
+      console.error("Erro ao atualizar senha:", error);
+      alert(error.message || "Erro ao redefinir a senha. Tente novamente.");
+    } finally {
+      setIsLoadingAuth(false);
+    }
   };
 
   // ---------------- ONBOARDING HANDLERS ----------------
@@ -3515,6 +3609,47 @@ const App: React.FC = () => {
                 style={{ background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)', boxShadow: '0 8px 32px rgba(229,91,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)' }}
               >
                 {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Enviar Link'}
+              </button>
+            </form>
+          )}
+
+          {/* ── REDEFINIÇÃO DE SENHA ── */}
+          {authScreen === 'RESET_PASSWORD' && (
+            <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between mb-1">
+                <button type="button" onClick={() => setAuthScreen('LOGIN')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+                  <i className="fas fa-chevron-left text-sm" />
+                </button>
+                <h2 className="text-xl font-black text-white italic">Nova Senha</h2>
+                <div className="w-8" />
+              </div>
+              <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>Digite sua nova senha de acesso abaixo.</p>
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Nova Senha</label>
+                <input type="password" value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full h-14 rounded-2xl px-5 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                  style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>Confirmar Nova Senha</label>
+                <input type="password" value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  className="w-full h-14 rounded-2xl px-5 text-sm font-medium text-white placeholder-white/20 outline-none transition-all"
+                  style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} required
+                />
+              </div>
+
+              <button type="submit" disabled={isLoadingAuth}
+                className="w-full h-14 rounded-2xl font-black text-white uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #FF7A20 0%, #E55B00 100%)', boxShadow: '0 8px 32px rgba(229,91,0,0.4), inset 0 1px 0 rgba(255,180,80,0.3)' }}
+              >
+                {isLoadingAuth ? <i className="fas fa-circle-notch fa-spin" /> : 'Atualizar Senha'}
               </button>
             </form>
           )}

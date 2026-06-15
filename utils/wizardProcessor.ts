@@ -126,6 +126,7 @@ export const processWizardRegistration = async (wizardData: WizardData): Promise
                 birthDate: wizardData.birthDate,
                 cpf: wizardData.cpf.replace(/\D/g, ''),
                 phone: wizardData.phone.replace(/\D/g, ''),
+                email: wizardData.email,
                 gender: wizardData.gender,
             },
             bank: {
