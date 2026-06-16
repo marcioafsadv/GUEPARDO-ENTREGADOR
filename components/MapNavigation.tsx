@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { reportRouteError } from '../supabase';
+import { reportRouteError, supabase } from '../supabase';
 
 // Mapbox public token
 const _mbp1 = 'cTdiMThtcDEyNXIyaXQ2bTM1Ymhhcm4ifQ';
@@ -22,9 +22,12 @@ class KalmanFilter {
         this.x = initialValue;
     }
 
-    public filter(measurement: number): number {
+    public filter(measurement: number, accuracy?: number): number {
+        // Dynamically scale measurement noise based on GPS accuracy.
+        // Higher accuracy value means higher noise variance, making the filter rely more on historical state.
+        const R = accuracy ? Math.max(this.R, 0.000001 * accuracy * accuracy) : this.R;
         this.p = this.p + this.Q;
-        this.k = this.p / (this.p + this.R);
+        this.k = this.p / (this.p + R);
         this.x = this.x + this.k * (measurement - this.x);
         this.p = (1 - this.k) * this.p;
         return this.x;
@@ -67,21 +70,52 @@ const projectPointOnSegment = (
     };
 };
 
-const getSnappedLocation = (gpsLoc: { lat: number; lng: number }, routePoints: [number, number][]) => {
+const getBearingHelper = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+    const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+        Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+};
+
+const getSnappedLocation = (
+    gpsLoc: { lat: number; lng: number },
+    routePoints: [number, number][],
+    currentBearing: number | null,
+    speedKmh: number = 0
+) => {
     if (routePoints.length < 2) return { ...gpsLoc, isOffRoute: false, distanceToRoute: 0 };
 
     let minDistance = Infinity;
     let bestPoint = gpsLoc;
+    let bestSegmentIndex = -1;
 
     for (let i = 0; i < routePoints.length - 1; i++) {
         const proj = projectPointOnSegment(gpsLoc, routePoints[i], routePoints[i+1]);
         if (proj.distance < minDistance) {
             minDistance = proj.distance;
             bestPoint = { lat: proj.lat, lng: proj.lng };
+            bestSegmentIndex = i;
         }
     }
 
-    const isOffRoute = minDistance > 35;
+    // Dynamic Snapping Radius: 20m at high speeds (> 30 km/h) to avoid snapping to adjacent streets, 35m otherwise
+    const snappingRadius = speedKmh > 30 ? 20 : 35;
+    let isOffRoute = minDistance > snappingRadius;
+
+    // Heading-aware Snapping Check
+    if (!isOffRoute && currentBearing !== null && bestSegmentIndex !== -1) {
+        const p1 = routePoints[bestSegmentIndex];
+        const p2 = routePoints[bestSegmentIndex + 1];
+        const segBearing = getBearingHelper(p1[1], p1[0], p2[1], p2[0]);
+        let diff = Math.abs(currentBearing - segBearing);
+        if (diff > 180) diff = 360 - diff;
+        
+        // If bearing difference is too large (> 60 degrees) and vehicle is moving (> 10 km/h), do not snap (it's off-route)
+        if (diff > 60 && speedKmh > 10) {
+            isOffRoute = true;
+        }
+    }
+
     return { ...bestPoint, isOffRoute, distanceToRoute: minDistance };
 };
 
@@ -95,19 +129,29 @@ interface VoiceOverrideZone {
     playAlertBeep?: boolean;
 }
 
-const VOICE_OVERRIDE_ZONES: VoiceOverrideZone[] = [
-    // Seus cruzamentos problemáticos conhecidos podem ser catalogados aqui
-];
-
 const executeVoiceObserver = (
     originalText: string,
-    currentLoc: { lat: number; lng: number } | null
+    currentLoc: { lat: number; lng: number } | null,
+    maneuverLoc: { lat: number; lng: number } | null,
+    overridesList: VoiceOverrideZone[]
 ): { text: string; playBeep: boolean } => {
-    if (!currentLoc) return { text: originalText, playBeep: false };
+    if (overridesList.length === 0) return { text: originalText, playBeep: false };
 
-    const activeZone = VOICE_OVERRIDE_ZONES.find(zone => {
-        const dist = getDistanceHelper(currentLoc.lat, currentLoc.lng, zone.lat, zone.lng) * 1000;
-        if (dist <= zone.radius) {
+    const activeZone = overridesList.find(zone => {
+        let isInside = false;
+
+        // Check if either current driver location or maneuver location is inside an override zone
+        if (currentLoc) {
+            const distCurrent = getDistanceHelper(currentLoc.lat, currentLoc.lng, zone.lat, zone.lng) * 1000;
+            if (distCurrent <= zone.radius) isInside = true;
+        }
+
+        if (!isInside && maneuverLoc) {
+            const distManeuver = getDistanceHelper(maneuverLoc.lat, maneuverLoc.lng, zone.lat, zone.lng) * 1000;
+            if (distManeuver <= zone.radius) isInside = true;
+        }
+
+        if (isInside) {
             if (zone.originalSubstring) {
                 return originalText.toLowerCase().includes(zone.originalSubstring.toLowerCase());
             }
@@ -137,7 +181,7 @@ interface Instruction {
 interface MapNavigationProps {
     status: string;
     destinationAddress: string | null;
-    currentLocation: { lat: number; lng: number; speed?: number | null } | null;
+    currentLocation: { lat: number; lng: number; speed?: number | null; accuracy?: number } | null;
     routeProgress?: number; // 0 to 100 percentage
     onArrived?: () => void;
     onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number, distanceValue?: number }) => void;
@@ -196,6 +240,37 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const offRouteCount = useRef<number>(0);
     const [currentStreet, setCurrentStreet] = useState<string>('Buscando localização...');
     const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+    const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrideZone[]>([]);
+    const gpsBreadcrumbs = useRef<{ lat: number; lng: number; speed: number; bearing: number; time: number }[]>([]);
+
+    // Load voice override zones dynamically from Supabase
+    useEffect(() => {
+        const loadVoiceOverrides = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('voice_overrides')
+                    .select('*');
+                if (error) throw error;
+                if (data) {
+                    const mapped: VoiceOverrideZone[] = data.map((item: any) => ({
+                        id: item.id || String(Math.random()),
+                        lat: item.lat,
+                        lng: item.lng,
+                        radius: item.radius || 50,
+                        originalSubstring: item.original_pattern || undefined,
+                        overrideText: item.override_text,
+                        playAlertBeep: !!item.play_alert_beep
+                    }));
+                    setVoiceOverrides(mapped);
+                    console.log(`🎯 [VoiceObserver] Loaded ${mapped.length} voice override zones from Supabase.`);
+                }
+            } catch (e) {
+                console.warn("⚠️ [VoiceObserver] Failed to load voice overrides from Supabase (table voice_overrides may not exist). Using empty local overrides list.");
+            }
+        };
+
+        loadVoiceOverrides();
+    }, []);
     
     // Effective location: prefer prop (updated by App.tsx watchPosition)
     const effectiveLocation = currentLocation;
@@ -325,7 +400,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         if (!voiceEnabled || !window.speechSynthesis) return;
 
         // Intercepta a instrução de voz antes de enfileirar
-        const observedResult = executeVoiceObserver(item.text, effectiveLocation);
+        const maneuverPoint = nextManeuverCoords.current;
+        const observedResult = executeVoiceObserver(item.text, effectiveLocation, maneuverPoint, voiceOverrides);
         const processedItem = {
             ...item,
             text: observedResult.text
@@ -861,9 +937,14 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         setManeuverArrowVisibility('visible');
     };
 
-    // Off-route detection with 45 degrees instruction tolerance and consecutive confirmation
+    // Off-route detection with heading alignment, dynamic snapping radius and 6 ticks confirmation
     const shouldRecalculateRoute = (lat: number, lng: number, bearing: number) => {
         if (lastFetchTime.current === 0) return true;
+        
+        // Throttle recalculations to at least once every 8 seconds to prevent Mapbox API spam
+        if (Date.now() - lastFetchTime.current < 8000) {
+            return false;
+        }
         
         // Force recalculate if we moved a lot (e.g. > 100m)
         if (lastFetchLocation.current) {
@@ -884,19 +965,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             }
         }
 
-        // Off-Route Detection: distance > 35m and bearing difference > instructionTolerance (45 deg)
+        // Off-Route Detection: use snapped isOffRoute status which accounts for bearing + distance
         if (routeCoordinates.current.length > 0) {
-            const dToRoute = getDistanceToRoute(lat, lng, routeCoordinates.current);
-            const segBearing = getRouteSegmentBearing(lat, lng, routeCoordinates.current);
-            let aDiff = Math.abs(bearing - segBearing);
-            if (aDiff > 180) aDiff = 360 - aDiff;
+            const snapped = getSnappedLocation({ lat, lng }, routeCoordinates.current, bearing, currentSpeed);
 
-            if (dToRoute > 35 && aDiff > instructionTolerance) {
+            if (snapped.isOffRoute) {
                 offRouteCount.current += 1;
-                console.log(`⚠️ [NavEngine] Off-route candidate tick: count=${offRouteCount.current}, dist=${dToRoute.toFixed(1)}m, angleDiff=${aDiff.toFixed(1)}°`);
+                console.log(`⚠️ [NavEngine] Off-route candidate tick: count=${offRouteCount.current}, dist=${snapped.distanceToRoute.toFixed(1)}m`);
                 
-                if (offRouteCount.current >= 3) {
-                    console.log(`🚨 [NavEngine] Off-route confirmed after 3 ticks. Recalculating route...`);
+                if (offRouteCount.current >= 6) { // Hysteresis of 6 seconds
+                    console.log(`🚨 [NavEngine] Off-route confirmed after 6 ticks. Recalculating route...`);
                     offRouteCount.current = 0;
                     // Speak standard recalculation phrase
                     const recalculatePhrase = `Rota recalculada. Siga na via à frente.`;
@@ -920,22 +998,30 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     useEffect(() => {
         if (!map.current || !effectiveLocation || !destinationCoords) return;
 
-        // 1. Apply Kalman Filter to raw GPS input
-        const filterGPS = (lat: number, lng: number) => {
+        // 1. Apply Kalman Filter to raw GPS input with accuracy awareness
+        const filterGPS = (lat: number, lng: number, accuracy?: number) => {
             if (!kalmanLat.current || !kalmanLng.current) {
                 kalmanLat.current = new KalmanFilter(lat);
                 kalmanLng.current = new KalmanFilter(lng);
                 return { lat, lng };
             }
             return {
-                lat: kalmanLat.current.filter(lat),
-                lng: kalmanLng.current.filter(lng)
+                lat: kalmanLat.current.filter(lat, accuracy),
+                lng: kalmanLng.current.filter(lng, accuracy)
             };
         };
-        const filtered = filterGPS(effectiveLocation.lat, effectiveLocation.lng);
+        const filtered = filterGPS(effectiveLocation.lat, effectiveLocation.lng, effectiveLocation.accuracy);
 
-        // 2. Apply Snap-to-Road projection
-        const snapped = getSnappedLocation(filtered, routeCoordinates.current);
+        // Estimate speed from raw coordinates to use as snapping parameters
+        const prevSnappedLoc = lastLocation.current;
+        const distMovedEstimate = prevSnappedLoc ? getDistance(
+            prevSnappedLoc.lat, prevSnappedLoc.lng,
+            filtered.lat, filtered.lng
+        ) * 1000 : 0;
+        const speedKmhEstimate = effectiveLocation.speed != null ? effectiveLocation.speed * 3.6 : (distMovedEstimate / 1) * 3.6;
+
+        // 2. Apply Snap-to-Road projection with bearing and speed awareness
+        const snapped = getSnappedLocation(filtered, routeCoordinates.current, lastSmoothedBearing.current, speedKmhEstimate);
         const displayLocation = snapped.isOffRoute ? filtered : { lat: snapped.lat, lng: snapped.lng };
 
         // Update markers using displayLocation
@@ -1108,7 +1194,20 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                  distanceValue: currentDist,
                  progress: finalPct
              });
-         }
+        }
+        // Record breadcrumbs for telemetry (retains last 120 ticks, i.e., approx. 2 minutes)
+        if (effectiveLocation) {
+            gpsBreadcrumbs.current.push({
+                lat: displayLocation.lat,
+                lng: displayLocation.lng,
+                speed: speedKmh,
+                bearing: targetBearing,
+                time: Date.now()
+            });
+            if (gpsBreadcrumbs.current.length > 120) {
+                gpsBreadcrumbs.current.shift();
+            }
+        }
 
     }, [effectiveLocation, destinationCoords, navigationMode]);
 
@@ -1167,7 +1266,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         const profile = getMapboxProfile(vehicleType);
         const excludeParam = '&exclude=ferry,toll';
         const radiusParam = '&radiuses=35;unlimited';
-        const approachesParam = '&approaches=curb;unrestricted';
+        const approachesParam = '&approaches=unrestricted;unrestricted';
 
         const url = `https://api.mapbox.com/directions/v5/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?steps=true&geometries=geojson${excludeParam}${radiusParam}${approachesParam}&access_token=${MAPBOX_TOKEN}&language=pt`;
         
@@ -1609,6 +1708,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         
                         try {
                             playNotificationSound();
+                            const breadcrumbsJson = JSON.stringify(gpsBreadcrumbs.current);
+                            const enrichedComment = `[BREADCRUMBS_TELEMETRY]: ${breadcrumbsJson}\n[VEHICLE_TYPE]: ${vehicleType}\nComentário: Reportado pelo entregador via botão de pânico de rota`;
+
                             await reportRouteError({
                                 driverId,
                                 deliveryId: missionId,
@@ -1618,7 +1720,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 destinationLng: destinationCoords.lng,
                                 currentInstruction: instruction?.fullText || '',
                                 routeGeojson: { coordinates: routeCoordinates.current },
-                                comment: 'Reportado pelo entregador via botão de pânico de rota'
+                                comment: enrichedComment
                             });
                             alert("Obrigado! A coordenada foi registrada e nossa equipe irá auditar este trecho no OpenStreetMap.");
                         } catch (e) {

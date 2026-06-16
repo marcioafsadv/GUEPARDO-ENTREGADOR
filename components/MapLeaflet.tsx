@@ -318,7 +318,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
                     const profile = getMapboxProfile(vehicleType);
                     const excludeParam = '&exclude=ferry,toll';
                     const radiusParam = '&radiuses=35;unlimited';
-                    const approachesParam = '&approaches=curb;unrestricted';
+                    const approachesParam = '&approaches=unrestricted;unrestricted';
 
                     const url = `https://api.mapbox.com/directions/v5/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson${excludeParam}${radiusParam}${approachesParam}&access_token=${MAPBOX_TOKEN}`;
                     const res = await fetch(url);

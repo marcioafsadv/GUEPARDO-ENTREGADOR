@@ -514,7 +514,7 @@ const App: React.FC = () => {
     customer: { lat: number; lng: number } | null;
   }>({ store: null, customer: null });
 
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null; accuracy?: number } | null>(null);
 
   /**
    * Regra de Chamada Progressiva (Raio/Tempo)
@@ -1506,7 +1506,8 @@ const App: React.FC = () => {
             setCurrentLocation({ 
               lat: latitude, 
               lng: longitude,
-              speed: pos.coords.speed
+              speed: pos.coords.speed,
+              accuracy: pos.coords.accuracy
             });
             console.log("✅ [GPS] Fix de alta precisão obtido:", latitude, longitude);
           },
@@ -1519,7 +1520,8 @@ const App: React.FC = () => {
                 setCurrentLocation(prev => prev ?? {
                   lat: pos.coords.latitude,
                   lng: pos.coords.longitude,
-                  speed: pos.coords.speed
+                  speed: pos.coords.speed,
+                  accuracy: pos.coords.accuracy
                 });
               },
               null,
@@ -1535,10 +1537,10 @@ const App: React.FC = () => {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          lastGpsUpdateRef.current = Date.now();
+          const now = Date.now();
+          lastGpsUpdateRef.current = now;
 
           // Update profile for real-time head-up display - Throttled to 8 seconds
-          const now = Date.now();
           if (now - lastDbProfileUpdateRef.current >= 8000) {
             lastDbProfileUpdateRef.current = now;
             supabaseClient.updateProfile(userId, {
@@ -1581,7 +1583,8 @@ const App: React.FC = () => {
           setCurrentLocation({ 
             lat: latitude, 
             lng: longitude,
-            speed: pos.coords.speed // m/s
+            speed: pos.coords.speed, // m/s
+            accuracy: pos.coords.accuracy
           });
         },
         (err) => {
@@ -1593,7 +1596,7 @@ const App: React.FC = () => {
           maximumAge: 0
         }
       );
-
+ 
       // 4. WATCHDOG & NUDGE: Monitora se o GPS "congelou"
       watchdogTimer = setInterval(() => {
         const timeSinceLastUpdate = Date.now() - lastGpsUpdateRef.current;
@@ -1605,7 +1608,7 @@ const App: React.FC = () => {
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     lastGpsUpdateRef.current = Date.now();
-                    setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed });
+                    setCurrentLocation({ lat: latitude, lng: longitude, speed: pos.coords.speed, accuracy: pos.coords.accuracy });
                 },
                 null,
                 { enableHighAccuracy: true, timeout: 5000 }
