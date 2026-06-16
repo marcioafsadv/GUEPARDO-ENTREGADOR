@@ -64,6 +64,46 @@ const formatCurrency = (value: number) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+// Helper para analisar data programada robustamente (suporta "18:00" ou "2026-06-19T18:00")
+const parseScheduledDate = (scheduledAtStr: string | null | undefined): Date | null => {
+  if (!scheduledAtStr) return null;
+  const str = String(scheduledAtStr);
+  if (str.includes('T') || str.includes('-')) {
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  const parts = str.split(':');
+  if (parts.length >= 2) {
+    const hh = Number(parts[0]);
+    const mm = Number(parts[1]);
+    if (!isNaN(hh) && !isNaN(mm)) {
+      const d = new Date();
+      d.setHours(hh, mm, 0, 0);
+      return d;
+    }
+  }
+  return null;
+};
+
+// Helper para formatar data programada de forma amigável
+const formatScheduledTime = (scheduledAtStr: string | null | undefined): string => {
+  if (!scheduledAtStr) return '';
+  const str = String(scheduledAtStr);
+  if (str.includes('T') || str.includes('-')) {
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      const day = String(parsed.getDate()).padStart(2, '0');
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const hours = String(parsed.getHours()).padStart(2, '0');
+      const minutes = String(parsed.getMinutes()).padStart(2, '0');
+      return `${day}/${month} às ${hours}:${minutes}`;
+    }
+  }
+  return str;
+};
+
 // Gerar semanas dinâmicas
 const getWeekOptions = () => {
   const today = new Date();
@@ -528,10 +568,8 @@ const App: React.FC = () => {
     const scheduledAt = dbMission.items?.scheduledAt || dbMission.items?.scheduled_at;
     if (scheduledAt) {
       const now = new Date();
-      const [hh, mm] = String(scheduledAt).split(':').map(Number);
-      const scheduledDate = new Date();
-      scheduledDate.setHours(hh, mm, 0, 0);
-      if (scheduledDate.getTime() > now.getTime()) {
+      const scheduledDate = parseScheduledDate(scheduledAt);
+      if (scheduledDate && scheduledDate.getTime() > now.getTime()) {
         console.log(`[Dispatch-Rule] Missão ${dbMission.id} bloqueada: Agendada para ${scheduledAt}, ainda não chegou o horário.`);
         return false;
       }
@@ -586,7 +624,7 @@ const App: React.FC = () => {
       const { data, error } = await supabaseClient.supabase
         .from('deliveries')
         .select('*, stores(logo_url, location_photo_url, lat, lng)')
-        .eq('status', 'pending')
+        .in('status', ['pending', 'scheduled'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -4453,12 +4491,10 @@ const App: React.FC = () => {
 
                   // Parse scheduled time to check if it's already due
                   let isScheduledTimeDue = false;
-                  let minutesUntilScheduled = null;
-                  if (scheduledAt) {
+                  let minutesUntilScheduled: number | null = null;
+                  const scheduledDate = parseScheduledDate(scheduledAt);
+                  if (scheduledDate) {
                     const now = new Date();
-                    const [hh, mm] = scheduledAt.split(':').map(Number);
-                    const scheduledDate = new Date();
-                    scheduledDate.setHours(hh, mm, 0, 0);
                     const diffMs = scheduledDate.getTime() - now.getTime();
                     isScheduledTimeDue = diffMs <= 0;
                     minutesUntilScheduled = Math.max(0, Math.ceil(diffMs / 60000));
@@ -4480,7 +4516,7 @@ const App: React.FC = () => {
                           </p>
                         </div>
                       </div>
-
+                      
                       <div className="space-y-4 mb-8">
                         <div className="flex items-start space-x-3">
                           <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center mt-0.5"><i className="fas fa-location-dot text-[#FF6B00] text-[10px]"></i></div>
@@ -4489,7 +4525,7 @@ const App: React.FC = () => {
                             {isScheduledMission && (
                               <div className="mt-2 flex items-center space-x-2 text-[#FFD700]">
                                 <i className="far fa-clock text-[10px]"></i>
-                                <span className="text-[9px] font-black uppercase tracking-widest">Agendado para {scheduledAt}</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest">Agendado para {formatScheduledTime(scheduledAt)}</span>
                               </div>
                             )}
                           </div>
@@ -4500,7 +4536,7 @@ const App: React.FC = () => {
                       {isScheduledMission && !isScheduledTimeDue ? (
                         <div className="w-full py-5 px-6 rounded-[22px] border-2 border-dashed border-[#FFD700]/30 bg-[#FFD700]/5 flex flex-col items-center text-center space-y-2">
                           <i className="far fa-clock text-[#FFD700] text-xl animate-pulse"></i>
-                          <p className="text-[#FFD700] font-black text-xs uppercase tracking-widest">Disponível às {scheduledAt}</p>
+                          <p className="text-[#FFD700] font-black text-xs uppercase tracking-widest">Disponível às {formatScheduledTime(scheduledAt)}</p>
                           <p className="text-zinc-500 font-bold text-[10px]">
                             {minutesUntilScheduled === 0 ? 'Em instantes...' : `Em ${minutesUntilScheduled} minuto${minutesUntilScheduled !== 1 ? 's' : ''}`}
                           </p>
