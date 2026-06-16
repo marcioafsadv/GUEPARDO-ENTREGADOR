@@ -3234,6 +3234,12 @@ const App: React.FC = () => {
     alert(`Novo código enviado para ${pendingUser?.email}`);
   };
 
+  const getRedirectUrl = () => {
+    const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
+    return isLocal ? window.location.origin : 'https://guepardodelivery-entregador.com';
+  };
+
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveryInput) {
@@ -3244,7 +3250,7 @@ const App: React.FC = () => {
     try {
       if (recoveryMethod === 'email') {
         const { error } = await supabaseClient.supabase.auth.resetPasswordForEmail(recoveryInput, {
-          redirectTo: window.location.origin
+          redirectTo: getRedirectUrl()
         });
         if (error) throw error;
         alert(`Link de recuperação enviado para o e-mail: ${recoveryInput}`);
@@ -3271,7 +3277,7 @@ const App: React.FC = () => {
         }
         
         const { error: resetError } = await supabaseClient.supabase.auth.resetPasswordForEmail(data.email, {
-          redirectTo: window.location.origin
+          redirectTo: getRedirectUrl()
         });
         if (resetError) throw resetError;
         
