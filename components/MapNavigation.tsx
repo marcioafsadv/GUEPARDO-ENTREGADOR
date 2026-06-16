@@ -26,6 +26,15 @@ class KalmanFilter {
         // Dynamically scale measurement noise based on GPS accuracy.
         // Higher accuracy value means higher noise variance, making the filter rely more on historical state.
         const R = accuracy ? Math.max(this.R, 0.000001 * accuracy * accuracy) : this.R;
+        
+        // Reset filter if measurement is too far from current estimate (approx. 16.5m in degrees)
+        // to prevent lag upon starting movement or large jumps.
+        if (this.x !== 0 && Math.abs(this.x - measurement) > 0.00015) {
+            this.x = measurement;
+            this.p = 1;
+            return this.x;
+        }
+
         this.p = this.p + this.Q;
         this.k = this.p / (this.p + R);
         this.x = this.x + this.k * (measurement - this.x);
@@ -98,8 +107,9 @@ const getSnappedLocation = (
         }
     }
 
-    // Dynamic Snapping Radius: 20m at high speeds (> 30 km/h) to avoid snapping to adjacent streets, 35m otherwise
-    const snappingRadius = speedKmh > 30 ? 20 : 35;
+    // Dynamic Snapping Radius: 50m when nearly stationary (< 5 km/h) to lock route quickly, 
+    // 20m at high speeds (> 30 km/h) to avoid adjacent street snaps, 35m otherwise.
+    const snappingRadius = speedKmh < 5 ? 50 : (speedKmh > 30 ? 20 : 35);
     let isOffRoute = minDistance > snappingRadius;
 
     // Heading-aware Snapping Check
@@ -117,6 +127,34 @@ const getSnappedLocation = (
     }
 
     return { ...bestPoint, isOffRoute, distanceToRoute: minDistance };
+};
+
+// Slices the route coordinates from the closest segment index to the driver,
+// dynamically removing the traveled path behind them on the map.
+const getRemainingRouteGeometry = (currentLoc: { lat: number; lng: number }, routeCoords: [number, number][]) => {
+    if (routeCoords.length < 2) return { type: 'LineString' as const, coordinates: routeCoords };
+    
+    let minDistance = Infinity;
+    let closestIdx = 0;
+    
+    for (let i = 0; i < routeCoords.length - 1; i++) {
+        const proj = projectPointOnSegment(currentLoc, routeCoords[i], routeCoords[i+1]);
+        if (proj.distance < minDistance) {
+            minDistance = proj.distance;
+            closestIdx = i;
+        }
+    }
+    
+    // Smooth remaining path: start exactly at driver's snapped location and continue forward
+    const remainingCoords = [
+        [currentLoc.lng, currentLoc.lat] as [number, number],
+        ...routeCoords.slice(closestIdx + 1)
+    ];
+    
+    return {
+        type: 'LineString' as const,
+        coordinates: remainingCoords
+    };
 };
 
 interface VoiceOverrideZone {
@@ -1176,6 +1214,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         // Calculate progress, remaining distance and time client-side
         if (totalRouteDistance > 0 && map.current?.getSource('route')) {
+             // Trim traveled route path dynamically
+             if (routeCoordinates.current.length > 0) {
+                 const remainingGeom = getRemainingRouteGeometry(displayLocation, routeCoordinates.current);
+                 (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+                     type: 'Feature',
+                     properties: {},
+                     geometry: remainingGeom
+                 });
+             }
+
              const currentDist = getDistance(displayLocation.lat, displayLocation.lng, destinationCoords.lat, destinationCoords.lng) * 1000;
              const rawPct = ((totalRouteDistance - currentDist) / totalRouteDistance) * 100;
              const finalPct = Math.min(100, Math.max(0, rawPct));
