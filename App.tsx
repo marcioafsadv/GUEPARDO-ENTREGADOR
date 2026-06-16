@@ -344,7 +344,8 @@ const App: React.FC = () => {
           expiry: ""
         },
         preferredMap: 'internal',
-        status: null
+        status: null,
+        rejectionReason: ''
       });
 
       // Reset Statistics & Financials
@@ -402,7 +403,8 @@ const App: React.FC = () => {
       expiry: ""
     },
     preferredMap: 'internal' as 'internal' | 'google' | 'waze' | 'choose',
-    status: null as 'pending' | 'approved' | 'rejected' | 'blocked' | null
+    status: null as 'pending' | 'approved' | 'rejected' | 'blocked' | null,
+    rejectionReason: ''
   });
 
   // Simulação de Banco de Dados de Usuários
@@ -1062,7 +1064,8 @@ const App: React.FC = () => {
               // Pix Key vem do perfil ou da conta bancária
               pixKey: profile.pix_key || (bankData?.pix_key) || prev.bank.pixKey
             },
-            status: profile.status || null
+            status: profile.status || null,
+            rejectionReason: profile.rejection_reason || ''
           }));
         }
 
@@ -1392,7 +1395,8 @@ const App: React.FC = () => {
     } else if (status === DriverStatus.OFFLINE) {
       // De Desconectado para Disponível
       if (currentUser.status === 'rejected') {
-          alert('Seu cadastro tem pendências! Vá em Meu Perfil para revisar seus dados e reenviar para análise.');
+          const reasonMsg = currentUser.rejectionReason ? `\n\nMotivos apontados:\n• ${currentUser.rejectionReason.split('; ').join('\n• ')}` : '';
+          alert(`Seu cadastro tem pendências!${reasonMsg}\n\nVá em Meu Perfil para revisar seus dados e reenviar para análise.`);
           setCurrentScreen('SETTINGS');
           return;
       }
@@ -5003,6 +5007,16 @@ const App: React.FC = () => {
                     <h3 className="text-red-500 font-black uppercase text-[11px] tracking-[0.2em] mb-2 flex items-center justify-center gap-2">
                       <i className="fas fa-triangle-exclamation"></i> Pendências no Cadastro
                     </h3>
+                    {currentUser.rejectionReason && (
+                      <div className="mb-4 p-4 bg-red-950/20 border border-red-500/25 rounded-2xl text-left">
+                        <p className="text-red-400 text-[9px] font-black uppercase tracking-widest mb-1.5">Motivo(s) da Rejeição:</p>
+                        <ul className="text-white text-[11px] font-bold leading-normal space-y-1 list-disc pl-3">
+                          {currentUser.rejectionReason.split('; ').map((reason, idx) => (
+                            <li key={idx}>{reason}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <p className="text-red-400/80 text-[11px] leading-relaxed mb-5 font-medium">
                       Por favor, atualize seus dados ou documentos incorretos abaixo. Quando terminar, reenvie para análise.
                     </p>
