@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { compressImage } from '../../../utils/imageCompressor';
 
 interface Step2PhotoProps {
     data: {
@@ -13,8 +14,9 @@ interface Step2PhotoProps {
 const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme = 'dark' }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState('');
+    const [isCompressing, setIsCompressing] = useState(false);
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -24,23 +26,28 @@ const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme =
             return;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            setError('A imagem deve ter no máximo 5MB');
+        // Safety limit: only reject files that are excessively huge (e.g. > 30MB)
+        if (file.size > 30 * 1024 * 1024) {
+            setError('A imagem é muito grande. Por favor, escolha uma foto menor que 30MB.');
             return;
         }
 
         setError('');
+        setIsCompressing(true);
 
-        // Create preview URL
-        const reader = new FileReader();
-        reader.onloadend = () => {
+        try {
+            // Compress the image down to 1200px max dimension and 75% quality
+            const compressed = await compressImage(file, 1200, 1200, 0.75);
             onUpdate({
-                photoUrl: reader.result as string,
-                photoFile: file
+                photoUrl: compressed.url,
+                photoFile: compressed.file
             });
-        };
-        reader.readAsDataURL(file);
+        } catch (err: any) {
+            console.error('Erro ao comprimir imagem:', err);
+            setError(err.message || 'Erro ao processar imagem. Tente novamente.');
+        } finally {
+            setIsCompressing(false);
+        }
     };
 
     const handleNext = () => {
@@ -90,7 +97,12 @@ const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme =
 
             {/* Photo preview or upload button */}
             <div className="flex flex-col items-center space-y-4">
-                {data.photoUrl ? (
+                {isCompressing ? (
+                    <div className={`w-48 h-48 rounded-full border-4 border-dashed border-[#FF6B00] flex flex-col items-center justify-center space-y-3`}>
+                        <i className="fas fa-spinner fa-spin text-4xl text-[#FF6B00]"></i>
+                        <span className={`text-sm font-bold ${textMuted}`}>Processando...</span>
+                    </div>
+                ) : data.photoUrl ? (
                     <div className="relative">
                         <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-[#FF6B00] shadow-2xl">
                             <img
@@ -122,6 +134,7 @@ const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme =
                     accept="image/*"
                     onChange={handleFileSelect}
                     className="hidden"
+                    disabled={isCompressing}
                 />
 
                 {error && <p className="text-sm text-red-500">{error}</p>}
@@ -129,12 +142,14 @@ const Step2Photo: React.FC<Step2PhotoProps> = ({ data, onUpdate, onNext, theme =
 
             <button
                 onClick={handleNext}
-                className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
+                disabled={isCompressing}
+                className={`w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform ${isCompressing ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
             >
-                Continuar
+                {isCompressing ? 'Processando imagem...' : 'Continuar'}
             </button>
         </div>
     );
 };
 
 export default Step2Photo;
+

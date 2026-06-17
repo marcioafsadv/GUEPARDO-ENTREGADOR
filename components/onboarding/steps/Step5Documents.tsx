@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { compressImage } from '../../../utils/imageCompressor';
 
 interface DocumentUpload {
     file: File | null;
@@ -23,6 +24,8 @@ interface Step5DocumentsProps {
 
 const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext, theme = 'dark' }) => {
     const [error, setError] = useState('');
+    const [compressingDocs, setCompressingDocs] = useState<Record<string, boolean>>({});
+    
     const fileInputRefs = {
         cnhFront: useRef<HTMLInputElement>(null),
         cnhBack: useRef<HTMLInputElement>(null),
@@ -67,7 +70,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
         }
     };
 
-    const handleFileSelect = (docType: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (docType: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -77,21 +80,38 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
             return;
         }
 
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            setError('O arquivo deve ter no máximo 10MB');
+        // Safety limit: only reject files that are excessively huge (e.g. > 30MB)
+        if (file.size > 30 * 1024 * 1024) {
+            setError('O arquivo é muito grande. Por favor, escolha um arquivo menor que 30MB.');
             return;
         }
 
         setError('');
+        const urlKey = `${docType}Url`;
 
-        // Create preview URL
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const urlKey = `${docType}Url`;
-            onUpdate({ [urlKey]: reader.result as string });
-        };
-        reader.readAsDataURL(file);
+        // If PDF, bypass compression and read base64 directly
+        if (file.type === 'application/pdf') {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onUpdate({ [urlKey]: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        // If image, compress it
+        setCompressingDocs(prev => ({ ...prev, [docType]: true }));
+
+        try {
+            // Compress document photos to a slightly larger max dimension (1600px) to ensure text readability
+            const compressed = await compressImage(file, 1600, 1600, 0.75);
+            onUpdate({ [urlKey]: compressed.url });
+        } catch (err: any) {
+            console.error(`Erro ao comprimir ${docType}:`, err);
+            setError(err.message || 'Erro ao processar imagem. Tente novamente.');
+        } finally {
+            setCompressingDocs(prev => ({ ...prev, [docType]: false }));
+        }
     };
 
     const validateAndNext = () => {
@@ -118,6 +138,8 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
     const textPrimary = theme === 'dark' ? 'text-white' : 'text-zinc-900';
     const textMuted = theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400';
 
+    const isAnyDocCompressing = Object.values(compressingDocs).some(Boolean);
+
     const renderDocumentUpload = (docKey: string, doc: DocumentUpload) => {
         // Skip CNH/CRLV if not moto
         if (!isMotorized && (docKey === 'cnhFront' || docKey === 'cnhBack' || docKey === 'crlv')) {
@@ -126,6 +148,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
 
         const urlKey = `${docKey}Url` as keyof typeof data;
         const hasDocument = data[urlKey];
+        const isCompressing = compressingDocs[docKey];
 
         return (
             <div key={docKey} className={`p-4 rounded-xl ${innerBg} space-y-3`}>
@@ -136,12 +159,17 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                             {doc.required && <span className="text-red-500 ml-1">*</span>}
                         </p>
                     </div>
-                    {hasDocument && (
+                    {hasDocument && !isCompressing && (
                         <i className="fas fa-check-circle text-green-500 text-xl"></i>
                     )}
                 </div>
 
-                {hasDocument ? (
+                {isCompressing ? (
+                    <div className={`w-full h-32 border-2 border-dashed border-[#FF6B00] rounded-lg flex flex-col items-center justify-center space-y-2`}>
+                        <i className="fas fa-spinner fa-spin text-2xl text-[#FF6B00]"></i>
+                        <span className={`text-xs font-bold ${textMuted}`}>Processando imagem...</span>
+                    </div>
+                ) : hasDocument ? (
                     <div className="relative">
                         {typeof hasDocument === 'string' && (hasDocument.startsWith('data:application/pdf') || hasDocument.toLowerCase().endsWith('.pdf')) ? (
                             <div className="w-full h-32 bg-red-500/10 rounded-lg flex flex-col items-center justify-center border border-red-500/20">
@@ -159,6 +187,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                         <button
                             onClick={() => fileInputRefs[docKey as keyof typeof fileInputRefs].current?.click()}
                             className="absolute bottom-2 right-2 w-10 h-10 bg-[#FF6B00] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                            disabled={isAnyDocCompressing}
                         >
                             <i className="fas fa-camera text-white text-sm"></i>
                         </button>
@@ -167,6 +196,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                     <button
                         onClick={() => fileInputRefs[docKey as keyof typeof fileInputRefs].current?.click()}
                         className={`w-full h-32 border-2 border-dashed ${theme === 'dark' ? 'border-zinc-700' : 'border-zinc-300'} rounded-lg flex flex-col items-center justify-center space-y-2 hover:border-[#FF6B00] transition-colors`}
+                        disabled={isAnyDocCompressing}
                     >
                         <div className="flex space-x-3 text-[#FF6B00]">
                             <i className="fas fa-camera text-2xl"></i>
@@ -182,6 +212,7 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
                     accept="image/*,application/pdf"
                     onChange={(e) => handleFileSelect(docKey, e)}
                     className="hidden"
+                    disabled={isAnyDocCompressing}
                 />
             </div>
         );
@@ -232,9 +263,10 @@ const Step5Documents: React.FC<Step5DocumentsProps> = ({ data, onUpdate, onNext,
             <div className="shrink-0 pt-2">
                 <button
                     onClick={validateAndNext}
-                    className="w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform"
+                    disabled={isAnyDocCompressing}
+                    className={`w-full h-14 bg-[#FF6B00] rounded-2xl font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform ${isAnyDocCompressing ? 'opacity-50 cursor-not-allowed hover:scale-100' : ''}`}
                 >
-                    Continuar
+                    {isAnyDocCompressing ? 'Processando documentos...' : 'Continuar'}
                 </button>
             </div>
         </div>
