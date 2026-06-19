@@ -15,26 +15,27 @@
  */
 package com.guepardodelivery.entregador;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-
-
+import android.provider.Settings;
+import android.widget.Toast;
 
 public class LauncherActivity
         extends com.google.androidbrowserhelper.trusted.LauncherActivity {
     
-
+    private static final String PREFS_NAME = "GuepardoPrefs";
+    private static final String KEY_DRIVER_ID = "driver_id";
     
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        handleIntent(getIntent());
         super.onCreate(savedInstanceState);
-        // Setting an orientation crashes the app due to the transparent background on Android 8.0
-        // Oreo and below. We only set the orientation on Oreo and above. This only affects the
-        // splash screen and Chrome will still respect the orientation.
-        // See https://github.com/GoogleChromeLabs/bubblewrap/issues/496 for details.
+        
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT);
         } else {
@@ -43,12 +44,55 @@ public class LauncherActivity
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getData() != null) {
+            Uri data = intent.getData();
+            String path = data.getPath();
+            
+            if (path != null && path.contains("set-driver")) {
+                String driverId = data.getQueryParameter("id");
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                
+                if (driverId != null && !driverId.isEmpty() && !driverId.equalsIgnoreCase("logout")) {
+                    prefs.edit().putString(KEY_DRIVER_ID, driverId).apply();
+                    startFloatingWidgetService();
+                } else {
+                    prefs.edit().remove(KEY_DRIVER_ID).apply();
+                    stopService(new Intent(this, FloatingWidgetService.class));
+                }
+            }
+        }
+    }
+
+    private void startFloatingWidgetService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Ative a permissão de sobreposição para usar a bolinha flutuante.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } else {
+            Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    @Override
     protected Uri getLaunchingUrl() {
-        // Get the original launch Url.
         Uri uri = super.getLaunchingUrl();
-
         
-
+        if (uri != null && uri.getPath() != null && uri.getPath().contains("set-driver")) {
+            return uri.buildUpon().path("/").clearQuery().build();
+        }
+        
         return uri;
     }
 }

@@ -320,6 +320,13 @@ const App: React.FC = () => {
       setUserId(null);
       setAuthScreen('LOGIN');
       
+      const isMobile = /Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        sessionStorage.removeItem('guepardo_driver_synced');
+        window.location.href = 'https://guepardodelivery-entregador.com/set-driver?id=logout';
+        return;
+      }
+      
       // Reset User Profile
       setCurrentUser({
         name: '',
@@ -374,6 +381,19 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
+  useEffect(() => {
+    if (userId) {
+      const hasSynced = sessionStorage.getItem('guepardo_driver_synced');
+      const isMobile = /Android/i.test(navigator.userAgent);
+      
+      if (isMobile && !hasSynced) {
+        sessionStorage.setItem('guepardo_driver_synced', 'true');
+        window.location.href = `https://guepardodelivery-entregador.com/set-driver?id=${userId}`;
+      }
+    }
+  }, [userId]);
 
   // Onboarding State
   const [onboardingScreen, setOnboardingScreen] = useState<OnboardingScreen>(null);

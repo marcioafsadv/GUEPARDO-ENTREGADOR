@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/collapsed_view"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:background="@android:color/transparent"
+        android:visibility="visible">
+
+        <ImageView
+            android:id="@+id/widget_img"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_centerInParent="true"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="Guepardo Entregador"
+            android:elevation="6dp" />
+            
+        <View
+            android:id="@+id/active_indicator"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_alignEnd="@id/widget_img"
+            android:layout_alignTop="@id/widget_img"
+            android:layout_marginEnd="2dp"
+            android:layout_marginTop="2dp"
+            android:background="@drawable/green_circle"
+            android:elevation="8dp"
+            android:visibility="visible" />
+    </RelativeLayout>
+</FrameLayout>
