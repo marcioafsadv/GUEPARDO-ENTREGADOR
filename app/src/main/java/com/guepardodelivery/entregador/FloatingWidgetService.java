@@ -21,6 +21,7 @@ import android.view.WindowManager;
 import androidx.core.app.NotificationCompat;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -89,7 +90,7 @@ public class FloatingWidgetService extends Service {
         mPollingRunnable = new Runnable() {
             @Override
             public void run() {
-                checkActiveDeliveries();
+                checkOnlineStatus();
                 mHandler.postDelayed(this, POLLING_INTERVAL_MS);
             }
         };
@@ -138,7 +139,7 @@ public class FloatingWidgetService extends Service {
         });
     }
 
-    private void checkActiveDeliveries() {
+    private void checkOnlineStatus() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         final String driverId = prefs.getString(KEY_DRIVER_ID, null);
 
@@ -152,8 +153,7 @@ public class FloatingWidgetService extends Service {
             public void run() {
                 HttpURLConnection urlConnection = null;
                 try {
-                    String queryUrl = SUPABASE_URL + "/rest/v1/deliveries?driver_id=eq." + driverId + 
-                            "&status=in.(accepted,arrived_pickup,picking_up,in_transit,arrived_at_customer,returning)&select=id";
+                    String queryUrl = SUPABASE_URL + "/rest/v1/profiles?id=eq." + driverId + "&select=is_online";
                     URL url = new URL(queryUrl);
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setRequestMethod("GET");
@@ -173,12 +173,12 @@ public class FloatingWidgetService extends Service {
                         }
 
                         JSONArray array = new JSONArray(result.toString());
-                        final boolean hasActive = array.length() > 0;
+                        final boolean isOnline = array.length() > 0 && array.getJSONObject(0).optBoolean("is_online", false);
 
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                updateWidgetVisibility(hasActive);
+                                updateWidgetVisibility(isOnline);
                             }
                         });
                     }
