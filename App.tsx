@@ -322,7 +322,7 @@ const App: React.FC = () => {
       
       const isMobile = /Android/i.test(navigator.userAgent);
       if (isMobile) {
-        localStorage.removeItem('guepardo_driver_synced_id');
+        sessionStorage.removeItem('guepardo_driver_synced');
         window.location.href = 'guepardo://set-driver?id=logout';
         return;
       }
@@ -385,11 +385,11 @@ const App: React.FC = () => {
   // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
   useEffect(() => {
     if (userId) {
-      const syncedId = localStorage.getItem('guepardo_driver_synced_id');
+      const syncedId = sessionStorage.getItem('guepardo_driver_synced');
       const isMobile = /Android/i.test(navigator.userAgent);
       
       if (isMobile && syncedId !== userId) {
-        localStorage.setItem('guepardo_driver_synced_id', userId);
+        sessionStorage.setItem('guepardo_driver_synced', userId);
         window.location.href = `guepardo://set-driver?id=${userId}`;
       }
     }

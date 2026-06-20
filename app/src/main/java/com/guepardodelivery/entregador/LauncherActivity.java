@@ -45,8 +45,22 @@ public class LauncherActivity
 
     @Override
     protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        handleIntent(intent);
+        if (isSetDriverIntent(intent)) {
+            handleIntent(intent);
+        } else {
+            super.onNewIntent(intent);
+            handleIntent(intent);
+        }
+    }
+
+    private boolean isSetDriverIntent(Intent intent) {
+        if (intent != null && intent.getData() != null) {
+            Uri data = intent.getData();
+            String path = data.getPath();
+            String host = data.getHost();
+            return (path != null && path.contains("set-driver")) || (host != null && host.contains("set-driver"));
+        }
+        return false;
     }
 
     @Override
