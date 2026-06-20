@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
@@ -144,6 +145,7 @@ public class FloatingWidgetService extends Service {
         final String driverId = prefs.getString(KEY_DRIVER_ID, null);
 
         if (driverId == null || driverId.isEmpty()) {
+            Toast.makeText(this, "Aviso: ID do motorista não sincronizado", Toast.LENGTH_LONG).show();
             updateWidgetVisibility(false);
             return;
         }
@@ -178,12 +180,27 @@ public class FloatingWidgetService extends Service {
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
+                                Toast.makeText(FloatingWidgetService.this, "Status da Bolinha:\nMotorista: " + driverId.substring(0, 8) + "...\nOnline no Banco: " + isOnline, Toast.LENGTH_SHORT).show();
                                 updateWidgetVisibility(isOnline);
                             }
                         });
+                    } else {
+                        final int finalStatusCode = statusCode;
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(FloatingWidgetService.this, "Erro Supabase API: HTTP " + finalStatusCode, Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     e.printStackTrace();
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(FloatingWidgetService.this, "Erro de Conexão: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
                 } finally {
                     if (urlConnection != null) {
                         urlConnection.disconnect();
