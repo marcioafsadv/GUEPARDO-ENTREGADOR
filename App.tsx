@@ -323,7 +323,7 @@ const App: React.FC = () => {
       const isMobile = /Android/i.test(navigator.userAgent);
       if (isMobile) {
         sessionStorage.removeItem('guepardo_driver_synced');
-        window.location.href = 'https://guepardodelivery-entregador.com/set-driver?id=logout';
+        window.location.href = 'guepardo://set-driver?id=logout';
         return;
       }
       
@@ -390,7 +390,7 @@ const App: React.FC = () => {
       
       if (isMobile && !hasSynced) {
         sessionStorage.setItem('guepardo_driver_synced', 'true');
-        window.location.href = `https://guepardodelivery-entregador.com/set-driver?id=${userId}`;
+        window.location.href = `guepardo://set-driver?id=${userId}`;
       }
     }
   }, [userId]);

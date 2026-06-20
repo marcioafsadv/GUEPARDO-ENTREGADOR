@@ -53,8 +53,9 @@ public class LauncherActivity
         if (intent != null && intent.getData() != null) {
             Uri data = intent.getData();
             String path = data.getPath();
+            String host = data.getHost();
             
-            if (path != null && path.contains("set-driver")) {
+            if ((path != null && path.contains("set-driver")) || (host != null && host.contains("set-driver"))) {
                 String driverId = data.getQueryParameter("id");
                 SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 
