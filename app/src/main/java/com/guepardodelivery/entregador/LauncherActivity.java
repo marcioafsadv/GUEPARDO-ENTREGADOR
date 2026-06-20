@@ -49,8 +49,31 @@ public class LauncherActivity
         handleIntent(intent);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Auto-start service if driver is logged in and overlay permission is granted
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String driverId = prefs.getString(KEY_DRIVER_ID, null);
+        if (driverId != null && !driverId.isEmpty()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
+                Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
+            }
+        }
+    }
+
     private void handleIntent(Intent intent) {
         if (intent != null && intent.getData() != null) {
+            // Avoid duplicate processing of the same intent (e.g. on recreate or configuration changes)
+            if (intent.getBooleanExtra("intent_handled", false)) {
+                return;
+            }
             Uri data = intent.getData();
             String path = data.getPath();
             String host = data.getHost();
@@ -66,6 +89,7 @@ public class LauncherActivity
                     prefs.edit().remove(KEY_DRIVER_ID).apply();
                     stopService(new Intent(this, FloatingWidgetService.class));
                 }
+                intent.putExtra("intent_handled", true);
             }
         }
     }

@@ -252,6 +252,7 @@ public class FloatingWidgetService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        checkOnlineStatus();
         return START_STICKY;
     }
 
