@@ -33,7 +33,13 @@ public class LauncherActivity
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        handleIntent(getIntent());
+        Intent intent = getIntent();
+        if (isSetDriverIntent(intent)) {
+            handleIntent(intent);
+            finish();
+            return;
+        }
+        
         super.onCreate(savedInstanceState);
         
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
@@ -47,6 +53,7 @@ public class LauncherActivity
     protected void onNewIntent(Intent intent) {
         if (isSetDriverIntent(intent)) {
             handleIntent(intent);
+            finish();
         } else {
             super.onNewIntent(intent);
             handleIntent(intent);

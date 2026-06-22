@@ -324,7 +324,6 @@ const App: React.FC = () => {
       if (isMobile) {
         sessionStorage.removeItem('guepardo_driver_synced');
         window.location.href = 'guepardo://set-driver?id=logout';
-        return;
       }
       
       // Reset User Profile
