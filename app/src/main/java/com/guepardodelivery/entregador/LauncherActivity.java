@@ -64,4 +64,24 @@ public class LauncherActivity
             }
         }
     }
+
+    @Override
+    protected Uri getLaunchingUrl() {
+        Uri originalUri = super.getLaunchingUrl();
+        if (originalUri == null) {
+            return null;
+        }
+        
+        Uri.Builder builder = originalUri.buildUpon();
+        // Indica que está rodando dentro do TWA nativo
+        builder.appendQueryParameter("twa", "true");
+        
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String driverId = prefs.getString(KEY_DRIVER_ID, null);
+        if (driverId != null && !driverId.isEmpty()) {
+            builder.appendQueryParameter("synced", "true");
+        }
+        
+        return builder.build();
+    }
 }

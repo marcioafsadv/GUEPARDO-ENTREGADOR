@@ -321,19 +321,13 @@ const App: React.FC = () => {
       setAuthScreen('LOGIN');
       
       const isMobile = /Android/i.test(navigator.userAgent);
-      if (isMobile) {
+      const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
+      if (isMobile && isTwa) {
         localStorage.removeItem('guepardo_driver_synced_id');
-        // Usa um iframe oculto para disparar a sincronização nativa
-        // sem causar reloads ou cancelamento de navegação no Chrome Custom Tabs (TWA)
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = 'guepardo://set-driver?id=logout';
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        }, 1000);
+        sessionStorage.removeItem('is_twa_synced');
+        // Como o logout é uma ação manual do usuário, usamos window.location.href diretamente.
+        // O Chrome bloqueia deep links disparados por iframes por motivos de segurança.
+        window.location.href = 'guepardo://set-driver?id=logout';
       }
       
       // Reset User Profile
@@ -394,24 +388,41 @@ const App: React.FC = () => {
   // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
   useEffect(() => {
     if (userId) {
-      const syncedId = localStorage.getItem('guepardo_driver_synced_id');
       const isMobile = /Android/i.test(navigator.userAgent);
-      
-      if (isMobile && syncedId !== userId) {
+      if (!isMobile) return;
+
+      const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
+      if (!isTwa) return;
+
+      const wasSyncedNatively = sessionStorage.getItem('is_twa_synced') === 'true';
+      const syncedId = localStorage.getItem('guepardo_driver_synced_id');
+
+      // Se já sabemos que está sincronizado nativamente, apenas salvamos no localStorage e encerramos
+      if (wasSyncedNatively) {
         localStorage.setItem('guepardo_driver_synced_id', userId);
-        
-        // Usar um iframe oculto para disparar o intent do custom scheme de forma totalmente silenciosa
-        // Isso evita que o Chrome Custom Tabs (TWA) interrompa o carregamento da página principal,
-        // corrigindo definitivamente o congelamento na tela de Splash do aplicativo.
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = `guepardo://set-driver?id=${userId}`;
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        }, 1000);
+        sessionStorage.removeItem('is_twa_synced'); // limpa da sessão para evitar reuso caso o usuário deslogue
+        return;
+      }
+
+      // Se o nativo não está sincronizado ou o localStorage difere, precisamos disparar
+      // o deep link usando window.location.href (já que iframes são bloqueados).
+      if (!wasSyncedNatively || syncedId !== userId) {
+        const triggerSync = () => {
+          localStorage.setItem('guepardo_driver_synced_id', userId);
+          sessionStorage.setItem('is_twa_synced', 'true');
+          window.location.href = `guepardo://set-driver?id=${userId}`;
+        };
+
+        // Para evitar congelar a Splash Screen do TWA, aguardamos a página estar totalmente carregada
+        if (document.readyState === 'complete') {
+          setTimeout(triggerSync, 3000);
+        } else {
+          const handleLoad = () => {
+            setTimeout(triggerSync, 3000);
+            window.removeEventListener('load', handleLoad);
+          };
+          window.addEventListener('load', handleLoad);
+        }
       }
     }
   }, [userId]);
@@ -1006,6 +1017,21 @@ const App: React.FC = () => {
 
   // Restore Session on Mount & Handle Password Recovery Redirect
   useEffect(() => {
+    // Detectar se o aplicativo está rodando dentro do TWA e se já está sincronizado nativamente
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('twa')) {
+      sessionStorage.setItem('is_twa_app', 'true');
+    }
+    if (urlParams.get('synced') === 'true') {
+      sessionStorage.setItem('is_twa_synced', 'true');
+    }
+
+    // Limpar parâmetros da URL imediatamente para evitar loops e poluição visual
+    if (urlParams.has('twa') || urlParams.has('synced')) {
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
       console.log("Password recovery redirect detected in URL hash");
