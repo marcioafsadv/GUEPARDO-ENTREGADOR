@@ -42,6 +42,7 @@ public class FloatingWidgetService extends Service {
     private View mFloatingView;
     private WindowManager.LayoutParams mParams;
     private boolean mIsViewAdded = false;
+    private boolean mIsOnline = false;
 
     private Handler mHandler;
     private Runnable mPollingRunnable;
@@ -146,7 +147,8 @@ public class FloatingWidgetService extends Service {
 
         if (driverId == null || driverId.isEmpty()) {
             Toast.makeText(this, "Aviso: ID do motorista não sincronizado", Toast.LENGTH_LONG).show();
-            updateWidgetVisibility(false);
+            mIsOnline = false;
+            updateWidgetVisibility();
             return;
         }
 
@@ -176,12 +178,12 @@ public class FloatingWidgetService extends Service {
 
                         JSONArray array = new JSONArray(result.toString());
                         final boolean isOnline = array.length() > 0 && array.getJSONObject(0).optBoolean("is_online", false);
+                        mIsOnline = isOnline;
 
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(FloatingWidgetService.this, "Status da Bolinha:\nMotorista: " + driverId.substring(0, 8) + "...\nOnline no Banco: " + isOnline, Toast.LENGTH_SHORT).show();
-                                updateWidgetVisibility(isOnline);
+                                updateWidgetVisibility();
                             }
                         });
                     } else {
@@ -210,8 +212,10 @@ public class FloatingWidgetService extends Service {
         }).start();
     }
 
-    private void updateWidgetVisibility(boolean visible) {
-        if (visible) {
+    private void updateWidgetVisibility() {
+        boolean shouldBeVisible = mIsOnline && !Application.isAppInForeground();
+        
+        if (shouldBeVisible) {
             if (!mIsViewAdded) {
                 try {
                     mWindowManager.addView(mFloatingView, mParams);
@@ -269,7 +273,11 @@ public class FloatingWidgetService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        checkOnlineStatus();
+        if (intent != null && "ACTION_UPDATE_FOREGROUND_STATE".equals(intent.getAction())) {
+            updateWidgetVisibility();
+        } else {
+            checkOnlineStatus();
+        }
         return START_STICKY;
     }
 
