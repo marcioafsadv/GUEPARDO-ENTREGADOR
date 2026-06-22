@@ -322,8 +322,18 @@ const App: React.FC = () => {
       
       const isMobile = /Android/i.test(navigator.userAgent);
       if (isMobile) {
-        sessionStorage.removeItem('guepardo_driver_synced');
-        window.location.href = 'guepardo://set-driver?id=logout';
+        localStorage.removeItem('guepardo_driver_synced_id');
+        // Usa um iframe oculto para disparar a sincronização nativa
+        // sem causar reloads ou cancelamento de navegação no Chrome Custom Tabs (TWA)
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'guepardo://set-driver?id=logout';
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
       }
       
       // Reset User Profile
@@ -384,14 +394,24 @@ const App: React.FC = () => {
   // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
   useEffect(() => {
     if (userId) {
-      const syncedId = sessionStorage.getItem('guepardo_driver_synced');
+      const syncedId = localStorage.getItem('guepardo_driver_synced_id');
       const isMobile = /Android/i.test(navigator.userAgent);
       
       if (isMobile && syncedId !== userId) {
-        sessionStorage.setItem('guepardo_driver_synced', userId);
+        localStorage.setItem('guepardo_driver_synced_id', userId);
+        
+        // Usar um iframe oculto para disparar o intent do custom scheme de forma totalmente silenciosa
+        // Isso evita que o Chrome Custom Tabs (TWA) interrompa o carregamento da página principal,
+        // corrigindo definitivamente o congelamento na tela de Splash do aplicativo.
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `guepardo://set-driver?id=${userId}`;
+        document.body.appendChild(iframe);
         setTimeout(() => {
-          window.location.href = `guepardo://set-driver?id=${userId}`;
-        }, 2000);
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
       }
     }
   }, [userId]);
