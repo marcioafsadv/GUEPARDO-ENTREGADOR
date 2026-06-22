@@ -33,6 +33,12 @@ import java.net.URL;
 
 public class FloatingWidgetService extends Service {
 
+    private static FloatingWidgetService sInstance = null;
+
+    public static FloatingWidgetService getInstance() {
+        return sInstance;
+    }
+
     private static final String PREFS_NAME = "GuepardoPrefs";
     private static final String KEY_DRIVER_ID = "driver_id";
     private static final String CHANNEL_ID = "GuepardoFloatingWidgetChannel";
@@ -59,6 +65,7 @@ public class FloatingWidgetService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sInstance = this;
 
         createNotificationChannel();
         Notification notification = createNotification();
@@ -146,9 +153,12 @@ public class FloatingWidgetService extends Service {
         final String driverId = prefs.getString(KEY_DRIVER_ID, null);
 
         if (driverId == null || driverId.isEmpty()) {
-            Toast.makeText(this, "Aviso: ID do motorista não sincronizado", Toast.LENGTH_LONG).show();
             mIsOnline = false;
             updateWidgetVisibility();
+            if (mHandler != null && mPollingRunnable != null) {
+                mHandler.removeCallbacks(mPollingRunnable);
+            }
+            stopSelf();
             return;
         }
 
@@ -186,23 +196,9 @@ public class FloatingWidgetService extends Service {
                                 updateWidgetVisibility();
                             }
                         });
-                    } else {
-                        final int finalStatusCode = statusCode;
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(FloatingWidgetService.this, "Erro Supabase API: HTTP " + finalStatusCode, Toast.LENGTH_LONG).show();
-                            }
-                        });
                     }
                 } catch (final Exception e) {
                     e.printStackTrace();
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(FloatingWidgetService.this, "Erro de Conexão: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
                 } finally {
                     if (urlConnection != null) {
                         urlConnection.disconnect();
@@ -212,7 +208,7 @@ public class FloatingWidgetService extends Service {
         }).start();
     }
 
-    private void updateWidgetVisibility() {
+    public void updateWidgetVisibility() {
         boolean shouldBeVisible = mIsOnline && !Application.isAppInForeground();
         
         if (shouldBeVisible) {
@@ -294,6 +290,7 @@ public class FloatingWidgetService extends Service {
                 e.printStackTrace();
             }
         }
+        sInstance = null;
         super.onDestroy();
     }
 }

@@ -72,11 +72,15 @@ public class LauncherActivity
         String driverId = prefs.getString(KEY_DRIVER_ID, null);
         if (driverId != null && !driverId.isEmpty()) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
-                Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
+                if (FloatingWidgetService.getInstance() == null) {
+                    Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent);
+                    } else {
+                        startService(serviceIntent);
+                    }
                 } else {
-                    startService(serviceIntent);
+                    FloatingWidgetService.getInstance().updateWidgetVisibility();
                 }
             }
         }
@@ -115,11 +119,15 @@ public class LauncherActivity
                     Uri.parse("package:" + getPackageName()));
             startActivity(intent);
         } else {
-            Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
+            if (FloatingWidgetService.getInstance() == null) {
+                Intent serviceIntent = new Intent(this, FloatingWidgetService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
             } else {
-                startService(serviceIntent);
+                FloatingWidgetService.getInstance().updateWidgetVisibility();
             }
         }
     }
