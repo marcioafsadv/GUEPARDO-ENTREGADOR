@@ -389,7 +389,9 @@ const App: React.FC = () => {
       
       if (isMobile && syncedId !== userId) {
         sessionStorage.setItem('guepardo_driver_synced', userId);
-        window.location.href = `guepardo://set-driver?id=${userId}`;
+        setTimeout(() => {
+          window.location.href = `guepardo://set-driver?id=${userId}`;
+        }, 2000);
       }
     }
   }, [userId]);
