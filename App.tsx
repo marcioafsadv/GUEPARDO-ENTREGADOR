@@ -387,6 +387,7 @@ const App: React.FC = () => {
 
   // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
   useEffect(() => {
+    let t: any;
     if (userId) {
       const isMobile = /Android/i.test(navigator.userAgent);
       if (!isMobile) return;
@@ -413,18 +414,15 @@ const App: React.FC = () => {
           window.location.href = `guepardo://set-driver?id=${userId}`;
         };
 
-        // Para evitar congelar a Splash Screen do TWA, aguardamos a página estar totalmente carregada
-        if (document.readyState === 'complete') {
-          setTimeout(triggerSync, 3000);
-        } else {
-          const handleLoad = () => {
-            setTimeout(triggerSync, 3000);
-            window.removeEventListener('load', handleLoad);
-          };
-          window.addEventListener('load', handleLoad);
-        }
+        // Dispara o sync após 4 segundos de forma direta.
+        // Isso evita depender do evento 'load' da página (que pode demorar devido a imagens grandes)
+        // e garante que a Splash Screen do TWA já foi ocultada.
+        t = setTimeout(triggerSync, 4000);
       }
     }
+    return () => {
+      if (t) clearTimeout(t);
+    };
   }, [userId]);
 
   // Onboarding State
