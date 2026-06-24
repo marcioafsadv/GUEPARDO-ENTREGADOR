@@ -326,8 +326,14 @@ const App: React.FC = () => {
         localStorage.removeItem('guepardo_driver_synced_id');
         sessionStorage.removeItem('is_twa_synced');
         // Como o logout é uma ação manual do usuário, usamos window.location.href diretamente.
-        // Usamos o formato intent:// para evitar o prompt do Chrome
-        window.location.href = 'intent://set-driver?id=logout#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;';
+        // Usamos um iframe oculto para disparar a intenção silenciosamente
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'guepardo://set-driver?id=logout';
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        }, 1000);
       }
       
       // Reset User Profile
@@ -411,8 +417,13 @@ const App: React.FC = () => {
       const triggerSync = () => {
         localStorage.setItem('guepardo_driver_synced_id', userId);
         sessionStorage.setItem('is_twa_synced', 'true');
-        // Usa o formato explícito intent:// do Chrome para direcionar direto para o app e evitar o prompt
-        window.location.href = `intent://set-driver?id=${userId}#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;`;
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `guepardo://set-driver?id=${userId}`;
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        }, 1000);
       };
 
       // 1. Tenta disparar automaticamente (pode ser bloqueado pelo Chrome sem gesto de usuário)
@@ -1473,10 +1484,18 @@ const App: React.FC = () => {
     const isMobile = /Android/i.test(navigator.userAgent);
     const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
     if (isMobile && isTwa && userId) {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
       if (status === DriverStatus.OFFLINE) {
-        window.location.href = `intent://set-driver?id=${userId}#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;`;
+        iframe.src = `guepardo://set-driver?id=${userId}`;
       } else if (status === DriverStatus.BUSY) {
-        window.location.href = 'intent://set-driver?id=logout#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;';
+        iframe.src = 'guepardo://set-driver?id=logout';
+      }
+      if (iframe.src) {
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        }, 1000);
       }
     }
 

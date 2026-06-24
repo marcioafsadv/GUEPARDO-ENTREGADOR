@@ -12,7 +12,6 @@
 -keep class com.guepardodelivery.entregador.DelegationService { <init>(); }
 -keep class com.guepardodelivery.entregador.FloatingBubbleService { <init>(); }
 -keep class com.guepardodelivery.entregador.LauncherActivity { <init>(); }
--keep class com.guepardodelivery.entregador.SetDriverActivity { <init>(); }
 -keep class android.widget.Space { <init>(android.content.Context, android.util.AttributeSet); }
 
 -keep class androidx.appcompat.app.AlertController$RecycleListView { <init>(android.content.Context, android.util.AttributeSet); }

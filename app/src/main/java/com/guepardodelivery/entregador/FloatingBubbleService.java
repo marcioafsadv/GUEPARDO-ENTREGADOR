@@ -524,9 +524,12 @@ public class FloatingBubbleService extends Service {
     }
 
     private void bringAppToForeground() {
-        Intent intent = new Intent(this, LauncherActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        startActivity(intent);
+        android.content.pm.PackageManager pm = getPackageManager();
+        Intent intent = pm.getLaunchIntentForPackage(getPackageName());
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
     }
 
     private int dpToPx(int dp) {

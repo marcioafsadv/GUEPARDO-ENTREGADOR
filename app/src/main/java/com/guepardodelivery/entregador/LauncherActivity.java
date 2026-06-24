@@ -18,6 +18,7 @@ public class LauncherActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        checkIntent(getIntent());
         // Setting an orientation crashes the app due to the transparent background on Android 8.0
         // Oreo and below. We only set the orientation on Oreo and above. This only affects the
         // splash screen and Chrome will still respect the orientation.
@@ -26,6 +27,47 @@ public class LauncherActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT);
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        checkIntent(intent);
+    }
+
+    private void checkIntent(Intent intent) {
+        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri data = intent.getData();
+            if (data != null && "guepardo".equals(data.getScheme()) && "set-driver".equals(data.getHost())) {
+                String driverId = data.getQueryParameter("id");
+                if (driverId != null) {
+                    android.content.SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
+                    if ("logout".equalsIgnoreCase(driverId)) {
+                        prefs.edit().remove("driver_id").apply();
+                        prefs.edit().remove("last_online_status").apply();
+                        try {
+                            stopService(new Intent(this, FloatingBubbleService.class));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        prefs.edit().putString("driver_id", driverId).apply();
+                        try {
+                            Intent serviceIntent = new Intent(this, FloatingBubbleService.class);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(serviceIntent);
+                            } else {
+                                startService(serviceIntent);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    // Limpa a URL do Intent para que o Bubblewrap não tente processar este deep link nativo
+                    intent.setData(null);
+                }
+            }
         }
     }
 

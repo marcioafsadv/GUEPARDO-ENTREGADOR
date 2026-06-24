@@ -26,7 +26,7 @@
     <string name="fullScopeUrl" translatable="false">https://guepardodelivery-entregador.com/</string>
     <string name="generatorApp" translatable="false">bubblewrap-cli</string>
     <string name="hostName" translatable="false">guepardodelivery-entregador.com</string>
-    <string name="launchUrl" translatable="false">https://guepardodelivery-entregador.com/</string>
+    <string name="launchUrl" translatable="false">https://guepardodelivery-entregador.com/?twa=true</string>
     <string name="launcherName" translatable="false">Guepardo</string>
     <string name="orientation" translatable="false">portrait</string>
     <string name="providerAuthority" translatable="false">com.guepardodelivery.entregador.fileprovider</string>

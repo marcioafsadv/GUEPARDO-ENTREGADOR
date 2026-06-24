@@ -12309,6 +12309,7 @@ com.guepardodelivery.entregador.R$raw
 com.guepardodelivery.entregador.R$string
 com.guepardodelivery.entregador.R$xml
 com.guepardodelivery.entregador.R
+com.guepardodelivery.entregador.SetDriverActivity
 kotlin.ArrayIntrinsicsKt
 kotlin.BuilderInference
 kotlin.CharCodeJVMKt

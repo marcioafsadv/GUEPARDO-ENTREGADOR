@@ -23,7 +23,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="23"
+    android:versionCode="24"
     android:versionName="Guepardo Entregador V.F" >
 
     <uses-sdk
@@ -34,7 +34,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -142,6 +141,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="set-driver"
+                    android:scheme="guepardo" />
+            </intent-filter>
             <intent-filter android:autoVerify="true" >
                 <action android:name="android.intent.action.VIEW" />
 
@@ -186,29 +195,13 @@
         <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity" />
         <activity android:name="com.google.androidbrowserhelper.locationdelegation.PermissionRequestActivity" />
 
+        <!-- Floating Bubble Service -->
         <service
             android:name="com.guepardodelivery.entregador.FloatingBubbleService"
-            android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync"
+            android:permission="android.permission.FOREGROUND_SERVICE" />
 
-        <activity
-            android:name="com.guepardodelivery.entregador.SetDriverActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="set-driver"
-                    android:scheme="guepardo" />
-            </intent-filter>
-        </activity>
         <activity
             android:name="com.google.android.gms.common.api.GoogleApiActivity"
             android:exported="false"

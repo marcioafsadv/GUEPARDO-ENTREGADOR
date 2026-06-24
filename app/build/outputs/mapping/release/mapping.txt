@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: db9642c
-# pg_map_hash: SHA-256 db9642cd65d26b4eee0c2da29b673ec4e12a81253691e4ed3f7b8e9699e54a64
+# pg_map_id: 9e3c2cd
+# pg_map_hash: SHA-256 9e3c2cd9930019a08c01a6b2b2f031553b4e91b4e808a71c4d5210fb098ccc6c
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -36637,7 +36637,8 @@ com.google.common.collect.UnmodifiableListIterator -> m0.s:
     1:6:void set(java.lang.Object):59:59 -> set
 com.guepardodelivery.entregador.Application -> com.guepardodelivery.entregador.Application:
 # {"id":"sourceFile","fileName":"Application.java"}
-    1:4:void <init>():20:20 -> <init>
+    boolean isAppInForeground -> a
+    1:4:void <init>():18:18 -> <init>
     1:4:void onCreate():26:26 -> onCreate
 com.guepardodelivery.entregador.DelegationService -> com.guepardodelivery.entregador.DelegationService:
 # {"id":"sourceFile","fileName":"DelegationService.java"}
@@ -36649,209 +36650,224 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     android.view.WindowManager windowManager -> a
     android.widget.FrameLayout rootView -> b
     android.view.WindowManager$LayoutParams windowParams -> c
-    android.widget.FrameLayout dismissView -> d
-    android.view.WindowManager$LayoutParams dismissParams -> e
-    android.view.View dismissCircle -> f
-    android.widget.TextView circleText -> g
-    android.widget.TextView dismissText -> h
-    int initialX -> i
-    int initialY -> j
-    float initialTouchX -> k
-    float initialTouchY -> l
-    boolean isDragging -> m
-    boolean isNearDismiss -> n
-    boolean isDriverOnline -> o
-    boolean hasCheckedStatus -> p
-    int pollCounter -> q
-    android.os.Handler handler -> r
-    java.lang.Runnable checkForegroundRunnable -> s
-    1:4:void <init>():33:33 -> <init>
-    5:6:void <init>():53:53 -> <init>
-    7:8:void <init>():54:54 -> <init>
-    9:10:void <init>():57:57 -> <init>
-    11:12:void <init>():58:58 -> <init>
-    13:14:void <init>():59:59 -> <init>
-    15:25:void <init>():61:61 -> <init>
-    26:33:void <init>():62:62 -> <init>
-    1:3:android.widget.FrameLayout access$402(com.guepardodelivery.entregador.FloatingBubbleService,android.widget.FrameLayout):33:33 -> A
-    1:3:android.view.WindowManager access$500(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> B
-    1:3:boolean access$600(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> C
-    1:3:boolean access$602(com.guepardodelivery.entregador.FloatingBubbleService,boolean):33:33 -> D
-    1:4:void access$700(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> E
-    1:3:android.os.Handler access$800(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> F
-    1:3:int access$900(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> G
-    1:3:int access$902(com.guepardodelivery.entregador.FloatingBubbleService,int):33:33 -> H
-    1:9:void bringAppToForeground():505:505 -> I
-    10:12:void bringAppToForeground():506:506 -> I
-    13:16:void bringAppToForeground():507:507 -> I
-    1:7:android.app.Notification buildNotification():550:550 -> J
-    8:16:android.app.Notification buildNotification():552:552 -> J
-    17:23:android.app.Notification buildNotification():553:553 -> J
-    24:31:android.app.Notification buildNotification():556:556 -> J
-    32:38:android.app.Notification buildNotification():562:562 -> J
-    39:43:android.app.Notification buildNotification():564:564 -> J
-    44:51:android.app.Notification buildNotification():567:567 -> J
-    52:58:android.app.Notification buildNotification():568:568 -> J
-    59:62:android.app.Notification buildNotification():569:569 -> J
-    63:67:android.app.Notification buildNotification():570:570 -> J
-    68:70:android.app.Notification buildNotification():571:571 -> J
-    71:75:android.app.Notification buildNotification():573:573 -> J
-    1:7:void checkDriverStatus():147:147 -> K
-    8:16:void checkDriverStatus():148:148 -> K
-    17:19:void checkDriverStatus():150:150 -> K
-    20:22:void checkDriverStatus():151:151 -> K
-    23:32:void checkDriverStatus():155:155 -> K
-    33:36:void checkDriverStatus():208:208 -> K
-    1:6:void createDismissView():212:212 -> L
-    7:12:void createDismissView():213:213 -> L
-    13:27:void createDismissView():216:216 -> L
-    28:31:void createDismissView():222:222 -> L
-    32:46:void createDismissView():224:224 -> L
-    47:49:void createDismissView():229:229 -> L
-    50:51:void createDismissView():230:230 -> L
-    52:53:void createDismissView():231:231 -> L
-    54:60:void createDismissView():233:233 -> L
-    61:63:void createDismissView():234:234 -> L
-    64:68:void createDismissView():237:237 -> L
-    69:83:void createDismissView():238:238 -> L
-    84:87:void createDismissView():239:239 -> L
-    88:93:void createDismissView():240:240 -> L
-    94:96:void createDismissView():241:241 -> L
-    97:102:void createDismissView():244:244 -> L
-    103:105:void createDismissView():245:245 -> L
-    106:115:void createDismissView():246:246 -> L
-    116:128:void createDismissView():247:247 -> L
-    129:131:void createDismissView():248:248 -> L
-    132:138:void createDismissView():251:251 -> L
-    139:144:void createDismissView():252:252 -> L
-    145:149:void createDismissView():256:256 -> L
-    150:156:void createDismissView():257:257 -> L
-    157:165:void createDismissView():258:258 -> L
-    166:172:void createDismissView():259:259 -> L
-    173:179:void createDismissView():260:260 -> L
-    180:185:void createDismissView():261:261 -> L
-    186:190:void createDismissView():262:262 -> L
-    191:192:void createDismissView():264:264 -> L
-    193:199:void createDismissView():267:267 -> L
-    200:205:void createDismissView():268:268 -> L
-    206:209:void createDismissView():272:272 -> L
-    210:215:void createDismissView():273:273 -> L
-    216:220:void createDismissView():274:274 -> L
-    221:227:void createDismissView():275:275 -> L
-    228:232:void createDismissView():276:276 -> L
-    233:239:void createDismissView():277:277 -> L
-    240:251:void createDismissView():278:278 -> L
-    252:256:void createDismissView():279:279 -> L
-    257:263:void createDismissView():281:281 -> L
-    264:268:void createDismissView():282:282 -> L
-    269:279:void createDismissView():285:285 -> L
-    280:283:void createDismissView():287:287 -> L
-    1:6:void createFloatingBubble():306:306 -> M
-    7:14:void createFloatingBubble():307:307 -> M
-    15:29:void createFloatingBubble():310:310 -> M
-    30:33:void createFloatingBubble():317:317 -> M
-    34:37:void createFloatingBubble():318:318 -> M
-    38:51:void createFloatingBubble():319:319 -> M
-    52:55:void createFloatingBubble():325:325 -> M
-    56:59:void createFloatingBubble():326:326 -> M
-    60:61:void createFloatingBubble():327:327 -> M
-    62:69:void createFloatingBubble():329:329 -> M
-    70:72:void createFloatingBubble():330:330 -> M
-    73:78:void createFloatingBubble():333:333 -> M
-    79:81:void createFloatingBubble():334:334 -> M
-    82:91:void createFloatingBubble():335:335 -> M
-    92:104:void createFloatingBubble():336:336 -> M
-    105:109:void createFloatingBubble():337:337 -> M
-    110:114:void createFloatingBubble():340:340 -> M
-    115:122:void createFloatingBubble():341:341 -> M
-    123:126:void createFloatingBubble():345:345 -> M
-    127:129:void createFloatingBubble():346:346 -> M
-    130:132:void createFloatingBubble():347:347 -> M
-    133:145:void createFloatingBubble():351:351 -> M
-    146:156:void createFloatingBubble():353:353 -> M
-    157:159:void createFloatingBubble():355:355 -> M
-    160:164:void createFloatingBubble():356:356 -> M
-    165:174:void createFloatingBubble():359:359 -> M
-    175:185:void createFloatingBubble():464:464 -> M
-    186:189:void createFloatingBubble():466:466 -> M
-    1:6:void createNotificationChannel():535:535 -> N
-    7:15:void createNotificationChannel():536:536 -> N
-    16:20:void createNotificationChannel():541:541 -> N
-    21:30:void createNotificationChannel():542:542 -> N
-    31:34:void createNotificationChannel():544:544 -> N
-    2:15:int dpToPx(int):531:531 -> O
-    2:13:boolean isAppInForeground():512:512 -> P
-    14:19:boolean isAppInForeground():514:514 -> P
-    20:25:boolean isAppInForeground():515:515 -> P
-    26:33:boolean isAppInForeground():516:516 -> P
-    34:53:boolean isAppInForeground():518:518 -> P
-    54:67:boolean isAppInForeground():519:519 -> P
-    68:71:boolean isAppInForeground():520:520 -> P
-    72:86:boolean isAppInForeground():521:521 -> P
-    87:90:boolean isAppInForeground():525:525 -> P
-    1:4:void removeDismissView():292:292 -> Q
-    5:11:void removeDismissView():294:294 -> Q
-    12:15:void removeDismissView():296:296 -> Q
-    16:17:void removeDismissView():298:298 -> Q
-    18:19:void removeDismissView():299:299 -> Q
-    20:21:void removeDismissView():300:300 -> Q
-    22:24:void removeDismissView():301:301 -> Q
-    1:5:void snapToEdge():471:471 -> R
-    6:10:void snapToEdge():472:472 -> R
-    11:19:void snapToEdge():473:473 -> R
-    20:21:void snapToEdge():474:474 -> R
-    22:27:void snapToEdge():476:476 -> R
-    28:31:void snapToEdge():477:477 -> R
-    32:41:void snapToEdge():480:480 -> R
-    42:51:void snapToEdge():486:486 -> R
-    52:54:void snapToEdge():487:487 -> R
-    55:62:void snapToEdge():488:488 -> R
-    63:66:void snapToEdge():501:501 -> R
-    1:3:int access$000(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> a
-    1:7:int access$008(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> b
-    1:4:void access$100(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> c
-    1:3:android.view.WindowManager$LayoutParams access$1000(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> d
-    1:3:int access$1100(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> e
-    1:3:int access$1102(com.guepardodelivery.entregador.FloatingBubbleService,int):33:33 -> f
-    1:3:float access$1200(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> g
-    1:3:float access$1202(com.guepardodelivery.entregador.FloatingBubbleService,float):33:33 -> h
-    1:3:float access$1300(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> i
-    1:3:float access$1302(com.guepardodelivery.entregador.FloatingBubbleService,float):33:33 -> j
-    1:3:boolean access$1400(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> k
-    1:3:boolean access$1402(com.guepardodelivery.entregador.FloatingBubbleService,boolean):33:33 -> l
-    1:3:boolean access$1500(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> m
-    1:3:boolean access$1502(com.guepardodelivery.entregador.FloatingBubbleService,boolean):33:33 -> n
-    1:4:void access$1600(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> o
-    1:3:void onCreate():115:115 -> onCreate
-    4:10:void onCreate():118:118 -> onCreate
-    11:18:void onCreate():119:119 -> onCreate
-    19:28:void onCreate():121:121 -> onCreate
-    29:37:void onCreate():123:123 -> onCreate
-    38:40:void onCreate():126:126 -> onCreate
-    41:44:void onCreate():128:128 -> onCreate
-    45:52:void onCreate():129:129 -> onCreate
-    53:56:void onCreate():130:130 -> onCreate
-    57:59:void onCreate():132:132 -> onCreate
-    60:69:void onCreate():135:135 -> onCreate
-    70:77:void onCreate():138:138 -> onCreate
-    1:3:void onDestroy():578:578 -> onDestroy
-    4:10:void onDestroy():579:579 -> onDestroy
-    11:14:void onDestroy():580:580 -> onDestroy
-    15:21:void onDestroy():582:582 -> onDestroy
-    22:25:void onDestroy():584:584 -> onDestroy
-    26:27:void onDestroy():586:586 -> onDestroy
-    28:31:void onDestroy():588:588 -> onDestroy
-    1:3:android.view.View access$1700(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> p
-    1:3:android.widget.FrameLayout access$1800(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> q
-    1:5:int access$1900(com.guepardodelivery.entregador.FloatingBubbleService,int):33:33 -> r
-    1:5:boolean access$200(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> s
-    1:3:android.widget.TextView access$2000(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> t
-    1:4:void access$2100(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> u
-    1:4:void access$2200(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> v
-    1:4:void access$2300(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> w
-    1:3:boolean access$300(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> x
-    1:3:boolean access$302(com.guepardodelivery.entregador.FloatingBubbleService,boolean):33:33 -> y
-    1:3:android.widget.FrameLayout access$400(com.guepardodelivery.entregador.FloatingBubbleService):33:33 -> z
+    android.view.View statusDot -> d
+    android.widget.FrameLayout dismissView -> e
+    android.view.WindowManager$LayoutParams dismissParams -> f
+    android.view.View dismissCircle -> g
+    android.widget.TextView circleText -> h
+    android.widget.TextView dismissText -> i
+    int initialX -> j
+    int initialY -> k
+    float initialTouchX -> l
+    float initialTouchY -> m
+    boolean isDragging -> n
+    boolean isNearDismiss -> o
+    boolean isDriverOnline -> p
+    boolean hasCheckedStatus -> q
+    int pollCounter -> r
+    android.os.Handler handler -> s
+    java.lang.Runnable checkForegroundRunnable -> t
+    1:4:void <init>():32:32 -> <init>
+    5:6:void <init>():55:55 -> <init>
+    7:8:void <init>():56:56 -> <init>
+    9:10:void <init>():59:59 -> <init>
+    11:12:void <init>():60:60 -> <init>
+    13:14:void <init>():61:61 -> <init>
+    15:25:void <init>():63:63 -> <init>
+    26:33:void <init>():64:64 -> <init>
+    1:4:void access$500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> A
+    1:3:android.os.Handler access$600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> B
+    1:3:boolean access$702(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> C
+    1:3:boolean access$802(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> D
+    1:3:int access$900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> E
+    1:3:int access$902(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> F
+    1:4:void bringAppToForeground():527:527 -> G
+    5:16:void bringAppToForeground():528:528 -> G
+    17:19:void bringAppToForeground():530:530 -> G
+    20:23:void bringAppToForeground():531:531 -> G
+    1:7:android.app.Notification buildNotification():555:555 -> H
+    8:16:android.app.Notification buildNotification():557:557 -> H
+    17:23:android.app.Notification buildNotification():558:558 -> H
+    24:31:android.app.Notification buildNotification():561:561 -> H
+    32:38:android.app.Notification buildNotification():567:567 -> H
+    39:43:android.app.Notification buildNotification():569:569 -> H
+    44:51:android.app.Notification buildNotification():572:572 -> H
+    52:58:android.app.Notification buildNotification():573:573 -> H
+    59:62:android.app.Notification buildNotification():574:574 -> H
+    63:67:android.app.Notification buildNotification():575:575 -> H
+    68:70:android.app.Notification buildNotification():576:576 -> H
+    71:75:android.app.Notification buildNotification():578:578 -> H
+    1:7:void checkDriverStatus():141:141 -> I
+    8:17:void checkDriverStatus():142:142 -> I
+    18:27:void checkDriverStatus():147:147 -> I
+    28:31:void checkDriverStatus():197:197 -> I
+    1:6:void createDismissView():228:228 -> J
+    7:12:void createDismissView():229:229 -> J
+    13:27:void createDismissView():232:232 -> J
+    28:31:void createDismissView():238:238 -> J
+    32:46:void createDismissView():240:240 -> J
+    47:49:void createDismissView():245:245 -> J
+    50:51:void createDismissView():246:246 -> J
+    52:53:void createDismissView():247:247 -> J
+    54:60:void createDismissView():249:249 -> J
+    61:63:void createDismissView():250:250 -> J
+    64:68:void createDismissView():253:253 -> J
+    69:83:void createDismissView():254:254 -> J
+    84:87:void createDismissView():255:255 -> J
+    88:93:void createDismissView():256:256 -> J
+    94:96:void createDismissView():257:257 -> J
+    97:102:void createDismissView():259:259 -> J
+    103:105:void createDismissView():260:260 -> J
+    106:115:void createDismissView():261:261 -> J
+    116:128:void createDismissView():262:262 -> J
+    129:131:void createDismissView():263:263 -> J
+    132:138:void createDismissView():265:265 -> J
+    139:144:void createDismissView():266:266 -> J
+    145:149:void createDismissView():270:270 -> J
+    150:156:void createDismissView():271:271 -> J
+    157:165:void createDismissView():272:272 -> J
+    166:172:void createDismissView():273:273 -> J
+    173:179:void createDismissView():274:274 -> J
+    180:185:void createDismissView():275:275 -> J
+    186:190:void createDismissView():276:276 -> J
+    191:192:void createDismissView():278:278 -> J
+    193:199:void createDismissView():280:280 -> J
+    200:205:void createDismissView():281:281 -> J
+    206:209:void createDismissView():285:285 -> J
+    210:215:void createDismissView():286:286 -> J
+    216:220:void createDismissView():287:287 -> J
+    221:227:void createDismissView():288:288 -> J
+    228:232:void createDismissView():289:289 -> J
+    233:239:void createDismissView():290:290 -> J
+    240:251:void createDismissView():291:291 -> J
+    252:256:void createDismissView():292:292 -> J
+    257:263:void createDismissView():294:294 -> J
+    264:268:void createDismissView():295:295 -> J
+    269:279:void createDismissView():298:298 -> J
+    280:283:void createDismissView():300:300 -> J
+    1:6:void createFloatingBubble():319:319 -> K
+    7:14:void createFloatingBubble():320:320 -> K
+    15:29:void createFloatingBubble():323:323 -> K
+    30:33:void createFloatingBubble():329:329 -> K
+    34:37:void createFloatingBubble():330:330 -> K
+    38:51:void createFloatingBubble():331:331 -> K
+    52:55:void createFloatingBubble():337:337 -> K
+    56:59:void createFloatingBubble():338:338 -> K
+    60:61:void createFloatingBubble():339:339 -> K
+    62:69:void createFloatingBubble():341:341 -> K
+    70:72:void createFloatingBubble():342:342 -> K
+    73:78:void createFloatingBubble():345:345 -> K
+    79:81:void createFloatingBubble():346:346 -> K
+    82:91:void createFloatingBubble():347:347 -> K
+    92:104:void createFloatingBubble():348:348 -> K
+    105:109:void createFloatingBubble():349:349 -> K
+    110:114:void createFloatingBubble():352:352 -> K
+    115:122:void createFloatingBubble():353:353 -> K
+    123:126:void createFloatingBubble():357:357 -> K
+    127:129:void createFloatingBubble():358:358 -> K
+    130:132:void createFloatingBubble():359:359 -> K
+    133:145:void createFloatingBubble():363:363 -> K
+    146:156:void createFloatingBubble():365:365 -> K
+    157:159:void createFloatingBubble():367:367 -> K
+    160:164:void createFloatingBubble():368:368 -> K
+    165:171:void createFloatingBubble():371:371 -> K
+    172:175:void createFloatingBubble():372:372 -> K
+    176:182:void createFloatingBubble():373:373 -> K
+    183:185:void createFloatingBubble():374:374 -> K
+    186:191:void createFloatingBubble():375:375 -> K
+    192:197:void createFloatingBubble():376:376 -> K
+    198:200:void createFloatingBubble():377:377 -> K
+    201:205:void createFloatingBubble():378:378 -> K
+    206:208:void createFloatingBubble():379:379 -> K
+    209:217:void createFloatingBubble():380:380 -> K
+    218:224:void createFloatingBubble():381:381 -> K
+    225:227:void createFloatingBubble():382:382 -> K
+    228:229:void createFloatingBubble():383:383 -> K
+    230:234:void createFloatingBubble():384:384 -> K
+    235:237:void createFloatingBubble():387:387 -> K
+    238:247:void createFloatingBubble():390:390 -> K
+    248:258:void createFloatingBubble():486:486 -> K
+    259:262:void createFloatingBubble():488:488 -> K
+    1:6:void createNotificationChannel():540:540 -> L
+    7:15:void createNotificationChannel():541:541 -> L
+    16:20:void createNotificationChannel():546:546 -> L
+    21:30:void createNotificationChannel():547:547 -> L
+    31:34:void createNotificationChannel():549:549 -> L
+    2:15:int dpToPx(int):536:536 -> M
+    1:4:void removeBubble():201:201 -> N
+    5:11:void removeBubble():203:203 -> N
+    12:15:void removeBubble():205:205 -> N
+    16:17:void removeBubble():207:207 -> N
+    18:20:void removeBubble():208:208 -> N
+    1:4:void removeDismissView():305:305 -> O
+    5:11:void removeDismissView():307:307 -> O
+    12:15:void removeDismissView():309:309 -> O
+    16:17:void removeDismissView():311:311 -> O
+    18:19:void removeDismissView():312:312 -> O
+    20:21:void removeDismissView():313:313 -> O
+    22:24:void removeDismissView():314:314 -> O
+    1:5:void snapToEdge():493:493 -> P
+    6:10:void snapToEdge():494:494 -> P
+    11:19:void snapToEdge():495:495 -> P
+    20:21:void snapToEdge():496:496 -> P
+    22:27:void snapToEdge():498:498 -> P
+    28:31:void snapToEdge():499:499 -> P
+    32:41:void snapToEdge():502:502 -> P
+    42:51:void snapToEdge():508:508 -> P
+    52:54:void snapToEdge():509:509 -> P
+    55:62:void snapToEdge():510:510 -> P
+    63:66:void snapToEdge():523:523 -> P
+    1:5:void updateStatusDot():214:214 -> Q
+    6:11:void updateStatusDot():215:215 -> Q
+    12:14:void updateStatusDot():216:216 -> Q
+    15:18:void updateStatusDot():217:217 -> Q
+    19:28:void updateStatusDot():218:218 -> Q
+    29:32:void updateStatusDot():219:219 -> Q
+    33:42:void updateStatusDot():220:220 -> Q
+    43:51:void updateStatusDot():222:222 -> Q
+    52:57:void updateStatusDot():224:224 -> Q
+    1:3:int access$000(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> a
+    1:7:int access$008(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> b
+    1:4:void access$100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> c
+    1:3:android.view.WindowManager$LayoutParams access$1000(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> d
+    1:3:int access$1100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> e
+    1:3:int access$1102(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> f
+    1:3:float access$1200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> g
+    1:3:float access$1202(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> h
+    1:3:float access$1300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> i
+    1:3:float access$1302(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> j
+    1:3:boolean access$1400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> k
+    1:3:boolean access$1402(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> l
+    1:3:boolean access$1500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> m
+    1:3:boolean access$1502(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> n
+    1:4:void access$1600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> o
+    1:3:void onCreate():107:107 -> onCreate
+    4:10:void onCreate():110:110 -> onCreate
+    11:19:void onCreate():111:111 -> onCreate
+    20:23:void onCreate():113:113 -> onCreate
+    24:31:void onCreate():118:118 -> onCreate
+    32:34:void onCreate():120:120 -> onCreate
+    35:38:void onCreate():122:122 -> onCreate
+    39:47:void onCreate():123:123 -> onCreate
+    48:51:void onCreate():124:124 -> onCreate
+    52:54:void onCreate():126:126 -> onCreate
+    55:64:void onCreate():129:129 -> onCreate
+    65:72:void onCreate():132:132 -> onCreate
+    1:3:void onDestroy():583:583 -> onDestroy
+    4:10:void onDestroy():584:584 -> onDestroy
+    11:13:void onDestroy():585:585 -> onDestroy
+    14:17:void onDestroy():586:586 -> onDestroy
+    1:3:android.view.WindowManager access$1700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> p
+    1:3:android.view.View access$1800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> q
+    1:3:android.widget.FrameLayout access$1900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> r
+    1:4:void access$200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> s
+    1:5:int access$2000(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> t
+    1:3:android.widget.TextView access$2100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> u
+    1:4:void access$2200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> v
+    1:4:void access$2300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> w
+    1:4:void access$2400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> x
+    1:3:android.widget.FrameLayout access$300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> y
+    1:4:void access$400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> z
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline0 -> n0.a:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -36865,196 +36881,211 @@ com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModel
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline2 -> n0.c:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
-    1:1:android.content.ComponentName n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline2.m(android.app.ActivityManager$RunningTaskInfo):0:0 -> a
+    1:1:void n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline2.m(android.app.NotificationChannel,java.lang.String):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline3 -> n0.d:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
-    1:1:android.content.ComponentName n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline3.m(android.app.ActivityManager$RunningTaskInfo):0:0 -> a
+    1:1:java.lang.Object n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline3.m(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.Class):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline4 -> n0.e:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
-    1:1:void n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline4.m(android.app.NotificationChannel,java.lang.String):0:0 -> a
-      # {"id":"com.android.tools.r8.synthesized"}
-com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline5 -> n0.f:
-# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
-# {"id":"com.android.tools.r8.synthesized"}
-    1:1:java.lang.Object n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline5.m(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.Class):0:0 -> a
-      # {"id":"com.android.tools.r8.synthesized"}
-com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline6 -> n0.g:
-# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
-# {"id":"com.android.tools.r8.synthesized"}
-    1:1:android.app.Notification$Builder n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline6.m(android.content.Context,java.lang.String):0:0 -> a
+    1:1:android.app.Notification$Builder n0.FloatingBubbleService$$ExternalSyntheticApiModelOutline4.m(android.content.Context,java.lang.String):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
 com.guepardodelivery.entregador.FloatingBubbleService$1 -> com.guepardodelivery.entregador.FloatingBubbleService$a:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):62:62 -> <init>
-    1:10:void run():67:67 -> run
-    11:19:void run():68:68 -> run
-    20:24:void run():70:70 -> run
-    25:32:void run():72:72 -> run
-    33:41:void run():73:73 -> run
-    42:49:void run():95:95 -> run
-    50:57:void run():96:96 -> run
-    58:63:void run():97:97 -> run
-    64:72:void run():75:75 -> run
-    73:89:void run():77:77 -> run
-    90:92:void run():79:79 -> run
-    93:97:void run():81:81 -> run
-    98:105:void run():85:85 -> run
-    106:114:void run():86:86 -> run
-    115:122:void run():87:87 -> run
-    123:138:void run():88:88 -> run
-    139:144:void run():89:89 -> run
-    145:147:void run():102:102 -> run
-    148:159:void run():104:104 -> run
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):64:64 -> <init>
+    1:10:void run():69:69 -> run
+    11:18:void run():70:70 -> run
+    19:23:void run():72:72 -> run
+    24:27:void run():75:75 -> run
+    28:33:void run():79:79 -> run
+    34:41:void run():82:82 -> run
+    42:49:void run():83:83 -> run
+    50:54:void run():84:84 -> run
+    55:60:void run():86:86 -> run
+    61:66:void run():89:89 -> run
+    67:69:void run():94:94 -> run
+    70:81:void run():96:96 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$2 -> com.guepardodelivery.entregador.FloatingBubbleService$b:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     java.lang.String val$driverId -> a
     android.content.SharedPreferences val$prefs -> b
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> c
-    1:10:void <init>(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.String,android.content.SharedPreferences):155:155 -> <init>
-    2:30:void run():161:161 -> run
-    31:36:void run():162:162 -> run
-    37:41:void run():163:163 -> run
-    42:48:void run():164:164 -> run
-    49:57:void run():165:165 -> run
-    58:60:void run():166:166 -> run
-    61:63:void run():167:167 -> run
-    64:71:void run():169:169 -> run
-    72:75:void run():171:171 -> run
-    76:87:void run():172:172 -> run
-    88:92:void run():173:173 -> run
-    93:98:void run():175:175 -> run
-    99:107:void run():176:176 -> run
-    108:111:void run():178:178 -> run
-    112:131:void run():179:179 -> run
-    132:146:void run():182:182 -> run
-    147:175:void run():184:184 -> run
-    176:178:void run():201:201 -> run
-    179:191:void run():204:204 -> run
-    192:196:void run():198:198 -> run
-    197:214:void run():201:201 -> run
-    215:217:void run():204:204 -> run
-    218:218:void run():206:206 -> run
+    1:10:void <init>(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.String,android.content.SharedPreferences):147:147 -> <init>
+    2:30:void run():153:153 -> run
+    31:36:void run():154:154 -> run
+    37:41:void run():155:155 -> run
+    42:48:void run():156:156 -> run
+    49:57:void run():157:157 -> run
+    58:60:void run():158:158 -> run
+    61:63:void run():159:159 -> run
+    64:71:void run():161:161 -> run
+    72:75:void run():163:163 -> run
+    76:87:void run():164:164 -> run
+    88:92:void run():165:165 -> run
+    93:98:void run():167:167 -> run
+    99:107:void run():168:168 -> run
+    108:111:void run():170:170 -> run
+    112:131:void run():171:171 -> run
+    132:146:void run():174:174 -> run
+    147:175:void run():176:176 -> run
+    176:178:void run():190:190 -> run
+    179:191:void run():193:193 -> run
+    192:196:void run():187:187 -> run
+    197:214:void run():190:190 -> run
+    215:217:void run():193:193 -> run
+    218:218:void run():195:195 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$2$1 -> com.guepardodelivery.entregador.FloatingBubbleService$b$a:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     boolean val$online -> a
     com.guepardodelivery.entregador.FloatingBubbleService$2 this$1 -> b
       # {"id":"com.android.tools.r8.residualsignature","signature":"Lcom/guepardodelivery/entregador/FloatingBubbleService$b;"}
-    1:8:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$2,boolean):184:184 -> <init>
+    1:8:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$2,boolean):176:176 -> <init>
       # {"id":"com.android.tools.r8.residualsignature","signature":"(Lcom/guepardodelivery/entregador/FloatingBubbleService$b;Z)V"}
-    1:22:void run():187:187 -> run
-    23:26:void run():188:188 -> run
-    27:36:void run():189:189 -> run
-    37:40:void run():188:188 -> run
-    41:43:void run():190:190 -> run
-    44:52:void run():192:192 -> run
-    53:61:void run():193:193 -> run
+    1:9:void run():179:179 -> run
+    10:17:void run():180:180 -> run
+    18:25:void run():182:182 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$3 -> com.guepardodelivery.entregador.FloatingBubbleService$c:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):359:359 -> <init>
-    1:14:boolean onTouch(android.view.View,android.view.MotionEvent):362:362 -> onTouch
-    15:26:boolean onTouch(android.view.View,android.view.MotionEvent):376:376 -> onTouch
-    27:38:boolean onTouch(android.view.View,android.view.MotionEvent):377:377 -> onTouch
-    39:52:boolean onTouch(android.view.View,android.view.MotionEvent):379:379 -> onTouch
-    53:57:boolean onTouch(android.view.View,android.view.MotionEvent):380:380 -> onTouch
-    58:65:boolean onTouch(android.view.View,android.view.MotionEvent):383:383 -> onTouch
-    66:80:boolean onTouch(android.view.View,android.view.MotionEvent):384:384 -> onTouch
-    81:95:boolean onTouch(android.view.View,android.view.MotionEvent):385:385 -> onTouch
-    96:118:boolean onTouch(android.view.View,android.view.MotionEvent):387:387 -> onTouch
-    119:121:boolean onTouch(android.view.View,android.view.MotionEvent):389:389 -> onTouch
-    122:137:boolean onTouch(android.view.View,android.view.MotionEvent):393:393 -> onTouch
-    138:139:boolean onTouch(android.view.View,android.view.MotionEvent):394:394 -> onTouch
-    140:148:boolean onTouch(android.view.View,android.view.MotionEvent):395:395 -> onTouch
-    149:162:boolean onTouch(android.view.View,android.view.MotionEvent):396:396 -> onTouch
-    163:176:boolean onTouch(android.view.View,android.view.MotionEvent):397:397 -> onTouch
-    177:178:boolean onTouch(android.view.View,android.view.MotionEvent):399:399 -> onTouch
-    179:187:boolean onTouch(android.view.View,android.view.MotionEvent):400:400 -> onTouch
-    188:201:boolean onTouch(android.view.View,android.view.MotionEvent):401:401 -> onTouch
-    202:219:boolean onTouch(android.view.View,android.view.MotionEvent):402:402 -> onTouch
-    220:225:boolean onTouch(android.view.View,android.view.MotionEvent):404:404 -> onTouch
-    226:230:boolean onTouch(android.view.View,android.view.MotionEvent):405:405 -> onTouch
-    231:234:boolean onTouch(android.view.View,android.view.MotionEvent):404:404 -> onTouch
-    235:251:boolean onTouch(android.view.View,android.view.MotionEvent):407:407 -> onTouch
-    252:259:boolean onTouch(android.view.View,android.view.MotionEvent):410:410 -> onTouch
-    260:264:boolean onTouch(android.view.View,android.view.MotionEvent):411:411 -> onTouch
-    265:273:boolean onTouch(android.view.View,android.view.MotionEvent):413:413 -> onTouch
-    274:301:boolean onTouch(android.view.View,android.view.MotionEvent):415:415 -> onTouch
-    302:306:boolean onTouch(android.view.View,android.view.MotionEvent):417:417 -> onTouch
-    307:309:boolean onTouch(android.view.View,android.view.MotionEvent):418:418 -> onTouch
-    310:316:boolean onTouch(android.view.View,android.view.MotionEvent):419:419 -> onTouch
-    317:325:boolean onTouch(android.view.View,android.view.MotionEvent):420:420 -> onTouch
-    326:333:boolean onTouch(android.view.View,android.view.MotionEvent):421:421 -> onTouch
-    334:344:boolean onTouch(android.view.View,android.view.MotionEvent):422:422 -> onTouch
-    345:352:boolean onTouch(android.view.View,android.view.MotionEvent):426:426 -> onTouch
-    353:357:boolean onTouch(android.view.View,android.view.MotionEvent):427:427 -> onTouch
-    358:384:boolean onTouch(android.view.View,android.view.MotionEvent):429:429 -> onTouch
-    385:389:boolean onTouch(android.view.View,android.view.MotionEvent):430:430 -> onTouch
-    390:392:boolean onTouch(android.view.View,android.view.MotionEvent):431:431 -> onTouch
-    393:401:boolean onTouch(android.view.View,android.view.MotionEvent):432:432 -> onTouch
-    402:414:boolean onTouch(android.view.View,android.view.MotionEvent):433:433 -> onTouch
-    415:423:boolean onTouch(android.view.View,android.view.MotionEvent):434:434 -> onTouch
-    424:431:boolean onTouch(android.view.View,android.view.MotionEvent):435:435 -> onTouch
-    432:445:boolean onTouch(android.view.View,android.view.MotionEvent):436:436 -> onTouch
-    446:450:boolean onTouch(android.view.View,android.view.MotionEvent):446:446 -> onTouch
-    451:458:boolean onTouch(android.view.View,android.view.MotionEvent):448:448 -> onTouch
-    459:464:boolean onTouch(android.view.View,android.view.MotionEvent):449:449 -> onTouch
-    465:472:boolean onTouch(android.view.View,android.view.MotionEvent):451:451 -> onTouch
-    473:478:boolean onTouch(android.view.View,android.view.MotionEvent):452:452 -> onTouch
-    479:484:boolean onTouch(android.view.View,android.view.MotionEvent):454:454 -> onTouch
-    485:495:boolean onTouch(android.view.View,android.view.MotionEvent):364:364 -> onTouch
-    496:506:boolean onTouch(android.view.View,android.view.MotionEvent):365:365 -> onTouch
-    507:515:boolean onTouch(android.view.View,android.view.MotionEvent):366:366 -> onTouch
-    516:524:boolean onTouch(android.view.View,android.view.MotionEvent):367:367 -> onTouch
-    525:529:boolean onTouch(android.view.View,android.view.MotionEvent):368:368 -> onTouch
-    530:534:boolean onTouch(android.view.View,android.view.MotionEvent):369:369 -> onTouch
-    535:540:boolean onTouch(android.view.View,android.view.MotionEvent):372:372 -> onTouch
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):390:390 -> <init>
+    1:14:boolean onTouch(android.view.View,android.view.MotionEvent):393:393 -> onTouch
+    15:26:boolean onTouch(android.view.View,android.view.MotionEvent):405:405 -> onTouch
+    27:38:boolean onTouch(android.view.View,android.view.MotionEvent):406:406 -> onTouch
+    39:52:boolean onTouch(android.view.View,android.view.MotionEvent):408:408 -> onTouch
+    53:57:boolean onTouch(android.view.View,android.view.MotionEvent):409:409 -> onTouch
+    58:65:boolean onTouch(android.view.View,android.view.MotionEvent):412:412 -> onTouch
+    66:80:boolean onTouch(android.view.View,android.view.MotionEvent):413:413 -> onTouch
+    81:95:boolean onTouch(android.view.View,android.view.MotionEvent):414:414 -> onTouch
+    96:118:boolean onTouch(android.view.View,android.view.MotionEvent):416:416 -> onTouch
+    119:121:boolean onTouch(android.view.View,android.view.MotionEvent):418:418 -> onTouch
+    122:137:boolean onTouch(android.view.View,android.view.MotionEvent):421:421 -> onTouch
+    138:139:boolean onTouch(android.view.View,android.view.MotionEvent):422:422 -> onTouch
+    140:148:boolean onTouch(android.view.View,android.view.MotionEvent):423:423 -> onTouch
+    149:162:boolean onTouch(android.view.View,android.view.MotionEvent):424:424 -> onTouch
+    163:176:boolean onTouch(android.view.View,android.view.MotionEvent):425:425 -> onTouch
+    177:178:boolean onTouch(android.view.View,android.view.MotionEvent):427:427 -> onTouch
+    179:187:boolean onTouch(android.view.View,android.view.MotionEvent):428:428 -> onTouch
+    188:201:boolean onTouch(android.view.View,android.view.MotionEvent):429:429 -> onTouch
+    202:219:boolean onTouch(android.view.View,android.view.MotionEvent):430:430 -> onTouch
+    220:225:boolean onTouch(android.view.View,android.view.MotionEvent):432:432 -> onTouch
+    226:230:boolean onTouch(android.view.View,android.view.MotionEvent):433:433 -> onTouch
+    231:234:boolean onTouch(android.view.View,android.view.MotionEvent):432:432 -> onTouch
+    235:251:boolean onTouch(android.view.View,android.view.MotionEvent):435:435 -> onTouch
+    252:259:boolean onTouch(android.view.View,android.view.MotionEvent):438:438 -> onTouch
+    260:264:boolean onTouch(android.view.View,android.view.MotionEvent):439:439 -> onTouch
+    265:273:boolean onTouch(android.view.View,android.view.MotionEvent):440:440 -> onTouch
+    274:301:boolean onTouch(android.view.View,android.view.MotionEvent):441:441 -> onTouch
+    302:306:boolean onTouch(android.view.View,android.view.MotionEvent):442:442 -> onTouch
+    307:309:boolean onTouch(android.view.View,android.view.MotionEvent):443:443 -> onTouch
+    310:316:boolean onTouch(android.view.View,android.view.MotionEvent):444:444 -> onTouch
+    317:325:boolean onTouch(android.view.View,android.view.MotionEvent):445:445 -> onTouch
+    326:333:boolean onTouch(android.view.View,android.view.MotionEvent):446:446 -> onTouch
+    334:344:boolean onTouch(android.view.View,android.view.MotionEvent):447:447 -> onTouch
+    345:352:boolean onTouch(android.view.View,android.view.MotionEvent):451:451 -> onTouch
+    353:357:boolean onTouch(android.view.View,android.view.MotionEvent):452:452 -> onTouch
+    358:384:boolean onTouch(android.view.View,android.view.MotionEvent):453:453 -> onTouch
+    385:389:boolean onTouch(android.view.View,android.view.MotionEvent):454:454 -> onTouch
+    390:392:boolean onTouch(android.view.View,android.view.MotionEvent):455:455 -> onTouch
+    393:401:boolean onTouch(android.view.View,android.view.MotionEvent):456:456 -> onTouch
+    402:414:boolean onTouch(android.view.View,android.view.MotionEvent):457:457 -> onTouch
+    415:423:boolean onTouch(android.view.View,android.view.MotionEvent):458:458 -> onTouch
+    424:431:boolean onTouch(android.view.View,android.view.MotionEvent):459:459 -> onTouch
+    432:445:boolean onTouch(android.view.View,android.view.MotionEvent):460:460 -> onTouch
+    446:450:boolean onTouch(android.view.View,android.view.MotionEvent):469:469 -> onTouch
+    451:458:boolean onTouch(android.view.View,android.view.MotionEvent):470:470 -> onTouch
+    459:464:boolean onTouch(android.view.View,android.view.MotionEvent):471:471 -> onTouch
+    465:472:boolean onTouch(android.view.View,android.view.MotionEvent):473:473 -> onTouch
+    473:478:boolean onTouch(android.view.View,android.view.MotionEvent):474:474 -> onTouch
+    479:484:boolean onTouch(android.view.View,android.view.MotionEvent):476:476 -> onTouch
+    485:495:boolean onTouch(android.view.View,android.view.MotionEvent):395:395 -> onTouch
+    496:506:boolean onTouch(android.view.View,android.view.MotionEvent):396:396 -> onTouch
+    507:515:boolean onTouch(android.view.View,android.view.MotionEvent):397:397 -> onTouch
+    516:524:boolean onTouch(android.view.View,android.view.MotionEvent):398:398 -> onTouch
+    525:529:boolean onTouch(android.view.View,android.view.MotionEvent):399:399 -> onTouch
+    530:534:boolean onTouch(android.view.View,android.view.MotionEvent):400:400 -> onTouch
+    535:540:boolean onTouch(android.view.View,android.view.MotionEvent):401:401 -> onTouch
 com.guepardodelivery.entregador.FloatingBubbleService$4 -> com.guepardodelivery.entregador.FloatingBubbleService$d:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):488:488 -> <init>
-    1:8:void onAnimationUpdate(android.animation.ValueAnimator):491:491 -> onAnimationUpdate
-    9:26:void onAnimationUpdate(android.animation.ValueAnimator):492:492 -> onAnimationUpdate
-    27:49:void onAnimationUpdate(android.animation.ValueAnimator):494:494 -> onAnimationUpdate
-    50:53:void onAnimationUpdate(android.animation.ValueAnimator):496:496 -> onAnimationUpdate
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):510:510 -> <init>
+    1:8:void onAnimationUpdate(android.animation.ValueAnimator):513:513 -> onAnimationUpdate
+    9:26:void onAnimationUpdate(android.animation.ValueAnimator):514:514 -> onAnimationUpdate
+    27:49:void onAnimationUpdate(android.animation.ValueAnimator):516:516 -> onAnimationUpdate
+    50:53:void onAnimationUpdate(android.animation.ValueAnimator):518:518 -> onAnimationUpdate
 com.guepardodelivery.entregador.LauncherActivity -> com.guepardodelivery.entregador.LauncherActivity:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     boolean isDialogShowing -> h
     1:4:void <init>():12:12 -> <init>
     5:7:void <init>():16:16 -> <init>
-    1:5:android.net.Uri getLaunchingUrl():99:99 -> i
+    1:5:android.net.Uri getLaunchingUrl():193:193 -> i
     1:3:void onCreate(android.os.Bundle):20:20 -> onCreate
-    4:11:void onCreate(android.os.Bundle):25:25 -> onCreate
-    12:16:void onCreate(android.os.Bundle):26:26 -> onCreate
-    17:20:void onCreate(android.os.Bundle):28:28 -> onCreate
-    1:3:void onResume():45:45 -> onResume
-    4:7:void onResume():46:46 -> onResume
-    1:3:void onStart():34:34 -> onStart
-    4:15:void onStart():37:37 -> onStart
-    16:19:void onStart():39:39 -> onStart
-    1:3:void onStop():51:51 -> onStop
-    4:18:void onStop():54:54 -> onStop
-    19:29:void onStop():55:55 -> onStop
-    30:33:void onStop():57:57 -> onStop
-    34:37:void onStop():59:59 -> onStop
-    38:41:void onStop():63:63 -> onStop
+    4:10:void onCreate(android.os.Bundle):21:21 -> onCreate
+    11:18:void onCreate(android.os.Bundle):26:26 -> onCreate
+    19:23:void onCreate(android.os.Bundle):27:27 -> onCreate
+    24:27:void onCreate(android.os.Bundle):29:29 -> onCreate
+    1:3:void onNewIntent(android.content.Intent):35:35 -> onNewIntent
+    4:7:void onNewIntent(android.content.Intent):36:36 -> onNewIntent
+    1:3:void onResume():89:89 -> onResume
+    4:7:void onResume():90:90 -> onResume
+    1:4:void onStart():76:76 -> onStart
+    5:6:void onStart():78:78 -> onStart
+    7:18:void onStart():81:81 -> onStart
+    19:22:void onStart():83:83 -> onStart
+    1:4:void onStop():95:95 -> onStop
+    5:6:void onStop():97:97 -> onStop
+    7:12:void onStop():100:100 -> onStop
+    13:22:void onStop():101:101 -> onStop
+    23:29:void onStop():106:106 -> onStop
+    30:35:void onStop():107:107 -> onStop
+    36:41:void onStop():108:108 -> onStop
+    42:45:void onStop():110:110 -> onStop
+    46:49:void onStop():113:113 -> onStop
     1:3:boolean access$002(com.guepardodelivery.entregador.LauncherActivity,boolean):12:12 -> q
-    1:6:void checkOverlayPermission():68:68 -> r
-    7:12:void checkOverlayPermission():69:69 -> r
-    13:18:void checkOverlayPermission():70:70 -> r
-    19:20:void checkOverlayPermission():71:71 -> r
-    21:27:void checkOverlayPermission():72:72 -> r
-    28:33:void checkOverlayPermission():73:73 -> r
-    34:38:void checkOverlayPermission():74:74 -> r
-    39:47:void checkOverlayPermission():75:75 -> r
-    48:58:void checkOverlayPermission():76:76 -> r
-    59:64:void checkOverlayPermission():85:85 -> r
-    65:68:void checkOverlayPermission():91:91 -> r
-com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutline0 -> n0.h:
+    3:14:void checkIntent(android.content.Intent):40:40 -> r
+    15:20:void checkIntent(android.content.Intent):41:41 -> r
+    21:44:void checkIntent(android.content.Intent):42:42 -> r
+    45:52:void checkIntent(android.content.Intent):43:43 -> r
+    53:59:void checkIntent(android.content.Intent):45:45 -> r
+    60:71:void checkIntent(android.content.Intent):46:46 -> r
+    72:82:void checkIntent(android.content.Intent):47:47 -> r
+    83:95:void checkIntent(android.content.Intent):48:48 -> r
+    96:105:void checkIntent(android.content.Intent):50:50 -> r
+    106:109:void checkIntent(android.content.Intent):52:52 -> r
+    110:120:void checkIntent(android.content.Intent):55:55 -> r
+    121:125:void checkIntent(android.content.Intent):57:57 -> r
+    126:131:void checkIntent(android.content.Intent):58:58 -> r
+    132:137:void checkIntent(android.content.Intent):59:59 -> r
+    138:141:void checkIntent(android.content.Intent):61:61 -> r
+    142:145:void checkIntent(android.content.Intent):64:64 -> r
+    146:149:void checkIntent(android.content.Intent):68:68 -> r
+    1:6:void checkOverlayPermission():118:118 -> s
+    7:12:void checkOverlayPermission():119:119 -> s
+    13:18:void checkOverlayPermission():120:120 -> s
+    19:20:void checkOverlayPermission():121:121 -> s
+    21:27:void checkOverlayPermission():122:122 -> s
+    28:33:void checkOverlayPermission():123:123 -> s
+    34:38:void checkOverlayPermission():124:124 -> s
+    39:47:void checkOverlayPermission():125:125 -> s
+    48:58:void checkOverlayPermission():126:126 -> s
+    59:64:void checkOverlayPermission():135:135 -> s
+    65:68:void checkOverlayPermission():141:141 -> s
+    69:72:void checkOverlayPermission():143:143 -> s
+    1:4:void checkXiaomiPermissions():149:149 -> t
+    5:28:void checkXiaomiPermissions():150:150 -> t
+    29:35:void checkXiaomiPermissions():151:151 -> t
+    36:43:void checkXiaomiPermissions():152:152 -> t
+    44:50:void checkXiaomiPermissions():154:154 -> t
+    51:56:void checkXiaomiPermissions():155:155 -> t
+    57:60:void checkXiaomiPermissions():156:156 -> t
+    61:69:void checkXiaomiPermissions():157:157 -> t
+    70:80:void checkXiaomiPermissions():158:158 -> t
+    81:86:void checkXiaomiPermissions():179:179 -> t
+    87:90:void checkXiaomiPermissions():185:185 -> t
+com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutline0 -> n0.f:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:android.content.ComponentName n0.LauncherActivity$$ExternalSyntheticApiModelOutline0.m(com.guepardodelivery.entregador.LauncherActivity,android.content.Intent):0:0 -> a
@@ -37062,38 +37093,35 @@ com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutli
 com.guepardodelivery.entregador.LauncherActivity$1 -> com.guepardodelivery.entregador.LauncherActivity$a:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):85:85 -> <init>
-    1:7:void onClick(android.content.DialogInterface,int):88:88 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):135:135 -> <init>
+    1:7:void onClick(android.content.DialogInterface,int):138:138 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$2 -> com.guepardodelivery.entregador.LauncherActivity$b:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):76:76 -> <init>
-    1:6:void onClick(android.content.DialogInterface,int):79:79 -> onClick
-    7:20:void onClick(android.content.DialogInterface,int):80:80 -> onClick
-    21:40:void onClick(android.content.DialogInterface,int):81:81 -> onClick
-    41:48:void onClick(android.content.DialogInterface,int):82:82 -> onClick
-com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entregador.SetDriverActivity:
-# {"id":"sourceFile","fileName":"SetDriverActivity.java"}
-    1:4:void <init>():9:9 -> <init>
-    3:14:void handleIntent(android.content.Intent):25:25 -> a
-    15:20:void handleIntent(android.content.Intent):26:26 -> a
-    21:44:void handleIntent(android.content.Intent):27:27 -> a
-    45:50:void handleIntent(android.content.Intent):28:28 -> a
-    51:59:void handleIntent(android.content.Intent):29:29 -> a
-    60:69:void handleIntent(android.content.Intent):31:31 -> a
-    70:80:void handleIntent(android.content.Intent):32:32 -> a
-    81:93:void handleIntent(android.content.Intent):33:33 -> a
-    94:102:void handleIntent(android.content.Intent):34:34 -> a
-    103:114:void handleIntent(android.content.Intent):36:36 -> a
-    115:118:void handleIntent(android.content.Intent):38:38 -> a
-    119:129:void handleIntent(android.content.Intent):41:41 -> a
-    130:139:void handleIntent(android.content.Intent):42:42 -> a
-    1:3:void onCreate(android.os.Bundle):12:12 -> onCreate
-    4:10:void onCreate(android.os.Bundle):13:13 -> onCreate
-    11:14:void onCreate(android.os.Bundle):14:14 -> onCreate
-    1:3:void onNewIntent(android.content.Intent):19:19 -> onNewIntent
-    4:6:void onNewIntent(android.content.Intent):20:20 -> onNewIntent
-    7:10:void onNewIntent(android.content.Intent):21:21 -> onNewIntent
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):126:126 -> <init>
+    1:6:void onClick(android.content.DialogInterface,int):129:129 -> onClick
+    7:20:void onClick(android.content.DialogInterface,int):130:130 -> onClick
+    21:40:void onClick(android.content.DialogInterface,int):131:131 -> onClick
+    41:48:void onClick(android.content.DialogInterface,int):132:132 -> onClick
+com.guepardodelivery.entregador.LauncherActivity$3 -> com.guepardodelivery.entregador.LauncherActivity$c:
+# {"id":"sourceFile","fileName":"LauncherActivity.java"}
+    com.guepardodelivery.entregador.LauncherActivity this$0 -> a
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):179:179 -> <init>
+com.guepardodelivery.entregador.LauncherActivity$4 -> com.guepardodelivery.entregador.LauncherActivity$d:
+# {"id":"sourceFile","fileName":"LauncherActivity.java"}
+    android.content.SharedPreferences val$prefs -> a
+    com.guepardodelivery.entregador.LauncherActivity this$0 -> b
+    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):158:158 -> <init>
+    1:16:void onClick(android.content.DialogInterface,int):161:161 -> onClick
+    17:23:void onClick(android.content.DialogInterface,int):163:163 -> onClick
+    24:30:void onClick(android.content.DialogInterface,int):164:164 -> onClick
+    31:41:void onClick(android.content.DialogInterface,int):165:165 -> onClick
+    42:48:void onClick(android.content.DialogInterface,int):166:166 -> onClick
+    49:51:void onClick(android.content.DialogInterface,int):168:168 -> onClick
+    52:67:void onClick(android.content.DialogInterface,int):170:170 -> onClick
+    68:85:void onClick(android.content.DialogInterface,int):171:171 -> onClick
+    86:92:void onClick(android.content.DialogInterface,int):172:172 -> onClick
+    93:96:void onClick(android.content.DialogInterface,int):174:174 -> onClick
 kotlin.Lazy -> o0.a:
 # {"id":"sourceFile","fileName":"Lazy.kt"}
     java.lang.Object getValue() -> getValue
