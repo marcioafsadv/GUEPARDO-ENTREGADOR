@@ -326,8 +326,8 @@ const App: React.FC = () => {
         localStorage.removeItem('guepardo_driver_synced_id');
         sessionStorage.removeItem('is_twa_synced');
         // Como o logout é uma ação manual do usuário, usamos window.location.href diretamente.
-        // O Chrome bloqueia deep links disparados por iframes por motivos de segurança.
-        window.location.href = 'guepardo://set-driver?id=logout';
+        // Usamos o formato intent:// para evitar o prompt do Chrome
+        window.location.href = 'intent://set-driver?id=logout#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;';
       }
       
       // Reset User Profile
@@ -411,7 +411,8 @@ const App: React.FC = () => {
       const triggerSync = () => {
         localStorage.setItem('guepardo_driver_synced_id', userId);
         sessionStorage.setItem('is_twa_synced', 'true');
-        window.location.href = `guepardo://set-driver?id=${userId}`;
+        // Usa o formato explícito intent:// do Chrome para direcionar direto para o app e evitar o prompt
+        window.location.href = `intent://set-driver?id=${userId}#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;`;
       };
 
       // 1. Tenta disparar automaticamente (pode ser bloqueado pelo Chrome sem gesto de usuário)
@@ -1473,9 +1474,9 @@ const App: React.FC = () => {
     const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
     if (isMobile && isTwa && userId) {
       if (status === DriverStatus.OFFLINE) {
-        window.location.href = `guepardo://set-driver?id=${userId}`;
+        window.location.href = `intent://set-driver?id=${userId}#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;`;
       } else if (status === DriverStatus.BUSY) {
-        window.location.href = 'guepardo://set-driver?id=logout';
+        window.location.href = 'intent://set-driver?id=logout#Intent;scheme=guepardo;package=com.guepardodelivery.entregador;end;';
       }
     }
 
