@@ -388,6 +388,8 @@ const App: React.FC = () => {
   // Sincronizar o userId com o aplicativo Android (TWA) para controle da bolinha flutuante
   useEffect(() => {
     let t: any;
+    let clickListener: any;
+
     if (userId) {
       const isMobile = /Android/i.test(navigator.userAgent);
       if (!isMobile) return;
@@ -405,23 +407,31 @@ const App: React.FC = () => {
         return;
       }
 
-      // Se o nativo não está sincronizado ou o localStorage difere, precisamos disparar
-      // o deep link usando window.location.href (já que iframes são bloqueados).
-      if (!wasSyncedNatively || syncedId !== userId) {
-        const triggerSync = () => {
-          localStorage.setItem('guepardo_driver_synced_id', userId);
-          sessionStorage.setItem('is_twa_synced', 'true');
-          window.location.href = `guepardo://set-driver?id=${userId}`;
-        };
+      // Função de disparo do deep link
+      const triggerSync = () => {
+        localStorage.setItem('guepardo_driver_synced_id', userId);
+        sessionStorage.setItem('is_twa_synced', 'true');
+        window.location.href = `guepardo://set-driver?id=${userId}`;
+      };
 
-        // Dispara o sync após 4 segundos de forma direta.
-        // Isso evita depender do evento 'load' da página (que pode demorar devido a imagens grandes)
-        // e garante que a Splash Screen do TWA já foi ocultada.
+      // 1. Tenta disparar automaticamente (pode ser bloqueado pelo Chrome sem gesto de usuário)
+      if (!wasSyncedNatively || syncedId !== userId) {
         t = setTimeout(triggerSync, 4000);
+
+        // 2. Garante o disparo no primeiro clique do usuário na tela usando fase de captura (evita bloqueio de propagação de outros elementos como o mapa)
+        clickListener = () => {
+          const synced = sessionStorage.getItem('is_twa_synced') === 'true';
+          if (!synced) {
+            triggerSync();
+          }
+          window.removeEventListener('click', clickListener, true);
+        };
+        window.addEventListener('click', clickListener, true);
       }
     }
     return () => {
       if (t) clearTimeout(t);
+      if (clickListener) window.removeEventListener('click', clickListener, true);
     };
   }, [userId]);
 
@@ -1449,6 +1459,17 @@ const App: React.FC = () => {
   };
 
   const toggleOnlineStatus = () => {
+    // Sincroniza nativamente no clique do botão (gesto do usuário)
+    const isMobile = /Android/i.test(navigator.userAgent);
+    const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
+    if (isMobile && isTwa && userId) {
+      if (status === DriverStatus.OFFLINE) {
+        window.location.href = `guepardo://set-driver?id=${userId}`;
+      } else if (status === DriverStatus.BUSY) {
+        window.location.href = 'guepardo://set-driver?id=logout';
+      }
+    }
+
     if (status === DriverStatus.ONLINE) {
       // De Disponível para Ocupado
       setStatus(DriverStatus.BUSY);
