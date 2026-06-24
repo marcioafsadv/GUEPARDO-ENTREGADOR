@@ -141,16 +141,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="set-driver"
-                    android:scheme="guepardo" />
-            </intent-filter>
             <intent-filter android:autoVerify="true" >
                 <action android:name="android.intent.action.VIEW" />
 
@@ -196,6 +186,22 @@
         <activity android:name="com.google.androidbrowserhelper.locationdelegation.PermissionRequestActivity" />
 
         <!-- Floating Bubble Service -->
+        <activity
+            android:name="com.guepardodelivery.entregador.SetDriverActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="set-driver"
+                    android:scheme="guepardo" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name="com.guepardodelivery.entregador.FloatingBubbleService"
             android:exported="false"

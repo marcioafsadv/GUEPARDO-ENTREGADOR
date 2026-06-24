@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 7f25da2
-# pg_map_hash: SHA-256 7f25da2ebb4ece795b83e1e8ab471c2f1ec12795770d4c58bff01f946445904a
+# pg_map_id: fd1d80a
+# pg_map_hash: SHA-256 fd1d80a4894efa05140af9dbe9268121999bfa27ebf05462a6b01839501251f8
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -37024,70 +37024,48 @@ com.guepardodelivery.entregador.LauncherActivity -> com.guepardodelivery.entrega
     boolean isDialogShowing -> h
     1:4:void <init>():12:12 -> <init>
     5:7:void <init>():16:16 -> <init>
-    1:5:android.net.Uri getLaunchingUrl():193:193 -> i
-    1:7:void onCreate(android.os.Bundle):20:20 -> onCreate
-    8:10:void onCreate(android.os.Bundle):21:21 -> onCreate
-    11:18:void onCreate(android.os.Bundle):26:26 -> onCreate
-    19:23:void onCreate(android.os.Bundle):27:27 -> onCreate
-    24:27:void onCreate(android.os.Bundle):29:29 -> onCreate
-    1:3:void onNewIntent(android.content.Intent):35:35 -> onNewIntent
-    4:7:void onNewIntent(android.content.Intent):36:36 -> onNewIntent
-    1:3:void onResume():89:89 -> onResume
-    4:7:void onResume():90:90 -> onResume
-    1:4:void onStart():76:76 -> onStart
-    5:6:void onStart():78:78 -> onStart
-    7:18:void onStart():81:81 -> onStart
-    19:22:void onStart():83:83 -> onStart
-    1:4:void onStop():95:95 -> onStop
-    5:6:void onStop():97:97 -> onStop
-    7:12:void onStop():100:100 -> onStop
-    13:22:void onStop():101:101 -> onStop
-    23:29:void onStop():106:106 -> onStop
-    30:35:void onStop():107:107 -> onStop
-    36:41:void onStop():108:108 -> onStop
-    42:45:void onStop():110:110 -> onStop
-    46:49:void onStop():113:113 -> onStop
+    1:5:android.net.Uri getLaunchingUrl():145:145 -> i
+    1:3:void onCreate(android.os.Bundle):20:20 -> onCreate
+    4:11:void onCreate(android.os.Bundle):25:25 -> onCreate
+    12:16:void onCreate(android.os.Bundle):26:26 -> onCreate
+    17:20:void onCreate(android.os.Bundle):28:28 -> onCreate
+    1:3:void onResume():41:41 -> onResume
+    4:7:void onResume():42:42 -> onResume
+    1:4:void onStart():34:34 -> onStart
+    5:7:void onStart():36:36 -> onStart
+    1:4:void onStop():47:47 -> onStop
+    5:6:void onStop():49:49 -> onStop
+    7:12:void onStop():52:52 -> onStop
+    13:22:void onStop():53:53 -> onStop
+    23:29:void onStop():58:58 -> onStop
+    30:35:void onStop():59:59 -> onStop
+    36:41:void onStop():60:60 -> onStop
+    42:45:void onStop():62:62 -> onStop
+    46:49:void onStop():65:65 -> onStop
     1:3:boolean access$002(com.guepardodelivery.entregador.LauncherActivity,boolean):12:12 -> q
-    3:14:void checkIntent(android.content.Intent):40:40 -> r
-    15:20:void checkIntent(android.content.Intent):41:41 -> r
-    21:44:void checkIntent(android.content.Intent):42:42 -> r
-    45:52:void checkIntent(android.content.Intent):43:43 -> r
-    53:59:void checkIntent(android.content.Intent):45:45 -> r
-    60:71:void checkIntent(android.content.Intent):46:46 -> r
-    72:82:void checkIntent(android.content.Intent):47:47 -> r
-    83:95:void checkIntent(android.content.Intent):48:48 -> r
-    96:105:void checkIntent(android.content.Intent):50:50 -> r
-    106:109:void checkIntent(android.content.Intent):52:52 -> r
-    110:120:void checkIntent(android.content.Intent):55:55 -> r
-    121:125:void checkIntent(android.content.Intent):57:57 -> r
-    126:131:void checkIntent(android.content.Intent):58:58 -> r
-    132:137:void checkIntent(android.content.Intent):59:59 -> r
-    138:141:void checkIntent(android.content.Intent):61:61 -> r
-    142:145:void checkIntent(android.content.Intent):64:64 -> r
-    146:149:void checkIntent(android.content.Intent):68:68 -> r
-    1:6:void checkOverlayPermission():118:118 -> s
-    7:12:void checkOverlayPermission():119:119 -> s
-    13:18:void checkOverlayPermission():120:120 -> s
-    19:20:void checkOverlayPermission():121:121 -> s
-    21:27:void checkOverlayPermission():122:122 -> s
-    28:33:void checkOverlayPermission():123:123 -> s
-    34:38:void checkOverlayPermission():124:124 -> s
-    39:47:void checkOverlayPermission():125:125 -> s
-    48:58:void checkOverlayPermission():126:126 -> s
-    59:64:void checkOverlayPermission():135:135 -> s
-    65:68:void checkOverlayPermission():141:141 -> s
-    69:72:void checkOverlayPermission():143:143 -> s
-    1:4:void checkXiaomiPermissions():149:149 -> t
-    5:28:void checkXiaomiPermissions():150:150 -> t
-    29:35:void checkXiaomiPermissions():151:151 -> t
-    36:43:void checkXiaomiPermissions():152:152 -> t
-    44:50:void checkXiaomiPermissions():154:154 -> t
-    51:56:void checkXiaomiPermissions():155:155 -> t
-    57:60:void checkXiaomiPermissions():156:156 -> t
-    61:69:void checkXiaomiPermissions():157:157 -> t
-    70:80:void checkXiaomiPermissions():158:158 -> t
-    81:86:void checkXiaomiPermissions():179:179 -> t
-    87:90:void checkXiaomiPermissions():185:185 -> t
+    1:6:void checkOverlayPermission():70:70 -> r
+    7:12:void checkOverlayPermission():71:71 -> r
+    13:18:void checkOverlayPermission():72:72 -> r
+    19:20:void checkOverlayPermission():73:73 -> r
+    21:27:void checkOverlayPermission():74:74 -> r
+    28:33:void checkOverlayPermission():75:75 -> r
+    34:38:void checkOverlayPermission():76:76 -> r
+    39:47:void checkOverlayPermission():77:77 -> r
+    48:58:void checkOverlayPermission():78:78 -> r
+    59:64:void checkOverlayPermission():87:87 -> r
+    65:68:void checkOverlayPermission():93:93 -> r
+    69:72:void checkOverlayPermission():95:95 -> r
+    1:4:void checkXiaomiPermissions():101:101 -> s
+    5:28:void checkXiaomiPermissions():102:102 -> s
+    29:35:void checkXiaomiPermissions():103:103 -> s
+    36:43:void checkXiaomiPermissions():104:104 -> s
+    44:50:void checkXiaomiPermissions():106:106 -> s
+    51:56:void checkXiaomiPermissions():107:107 -> s
+    57:60:void checkXiaomiPermissions():108:108 -> s
+    61:69:void checkXiaomiPermissions():109:109 -> s
+    70:80:void checkXiaomiPermissions():110:110 -> s
+    81:86:void checkXiaomiPermissions():131:131 -> s
+    87:90:void checkXiaomiPermissions():137:137 -> s
 com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutline0 -> n0.f:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -37096,35 +37074,62 @@ com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutli
 com.guepardodelivery.entregador.LauncherActivity$1 -> com.guepardodelivery.entregador.LauncherActivity$a:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):135:135 -> <init>
-    1:7:void onClick(android.content.DialogInterface,int):138:138 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):87:87 -> <init>
+    1:7:void onClick(android.content.DialogInterface,int):90:90 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$2 -> com.guepardodelivery.entregador.LauncherActivity$b:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):126:126 -> <init>
-    1:6:void onClick(android.content.DialogInterface,int):129:129 -> onClick
-    7:20:void onClick(android.content.DialogInterface,int):130:130 -> onClick
-    21:40:void onClick(android.content.DialogInterface,int):131:131 -> onClick
-    41:48:void onClick(android.content.DialogInterface,int):132:132 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):78:78 -> <init>
+    1:6:void onClick(android.content.DialogInterface,int):81:81 -> onClick
+    7:20:void onClick(android.content.DialogInterface,int):82:82 -> onClick
+    21:40:void onClick(android.content.DialogInterface,int):83:83 -> onClick
+    41:48:void onClick(android.content.DialogInterface,int):84:84 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$3 -> com.guepardodelivery.entregador.LauncherActivity$c:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):179:179 -> <init>
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):131:131 -> <init>
 com.guepardodelivery.entregador.LauncherActivity$4 -> com.guepardodelivery.entregador.LauncherActivity$d:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     android.content.SharedPreferences val$prefs -> a
     com.guepardodelivery.entregador.LauncherActivity this$0 -> b
-    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):158:158 -> <init>
-    1:16:void onClick(android.content.DialogInterface,int):161:161 -> onClick
-    17:23:void onClick(android.content.DialogInterface,int):163:163 -> onClick
-    24:30:void onClick(android.content.DialogInterface,int):164:164 -> onClick
-    31:41:void onClick(android.content.DialogInterface,int):165:165 -> onClick
-    42:48:void onClick(android.content.DialogInterface,int):166:166 -> onClick
-    49:51:void onClick(android.content.DialogInterface,int):168:168 -> onClick
-    52:67:void onClick(android.content.DialogInterface,int):170:170 -> onClick
-    68:85:void onClick(android.content.DialogInterface,int):171:171 -> onClick
-    86:92:void onClick(android.content.DialogInterface,int):172:172 -> onClick
-    93:96:void onClick(android.content.DialogInterface,int):174:174 -> onClick
+    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):110:110 -> <init>
+    1:16:void onClick(android.content.DialogInterface,int):113:113 -> onClick
+    17:23:void onClick(android.content.DialogInterface,int):115:115 -> onClick
+    24:30:void onClick(android.content.DialogInterface,int):116:116 -> onClick
+    31:41:void onClick(android.content.DialogInterface,int):117:117 -> onClick
+    42:48:void onClick(android.content.DialogInterface,int):118:118 -> onClick
+    49:51:void onClick(android.content.DialogInterface,int):120:120 -> onClick
+    52:67:void onClick(android.content.DialogInterface,int):122:122 -> onClick
+    68:85:void onClick(android.content.DialogInterface,int):123:123 -> onClick
+    86:92:void onClick(android.content.DialogInterface,int):124:124 -> onClick
+    93:96:void onClick(android.content.DialogInterface,int):126:126 -> onClick
+com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entregador.SetDriverActivity:
+# {"id":"sourceFile","fileName":"SetDriverActivity.java"}
+    1:4:void <init>():10:10 -> <init>
+    1:3:void onCreate(android.os.Bundle):14:14 -> onCreate
+    4:9:void onCreate(android.os.Bundle):16:16 -> onCreate
+    10:21:void onCreate(android.os.Bundle):17:17 -> onCreate
+    22:27:void onCreate(android.os.Bundle):18:18 -> onCreate
+    28:51:void onCreate(android.os.Bundle):19:19 -> onCreate
+    52:59:void onCreate(android.os.Bundle):20:20 -> onCreate
+    60:66:void onCreate(android.os.Bundle):22:22 -> onCreate
+    67:78:void onCreate(android.os.Bundle):23:23 -> onCreate
+    79:89:void onCreate(android.os.Bundle):24:24 -> onCreate
+    90:102:void onCreate(android.os.Bundle):25:25 -> onCreate
+    103:112:void onCreate(android.os.Bundle):27:27 -> onCreate
+    113:116:void onCreate(android.os.Bundle):29:29 -> onCreate
+    117:127:void onCreate(android.os.Bundle):32:32 -> onCreate
+    128:132:void onCreate(android.os.Bundle):34:34 -> onCreate
+    133:138:void onCreate(android.os.Bundle):35:35 -> onCreate
+    139:144:void onCreate(android.os.Bundle):36:36 -> onCreate
+    145:148:void onCreate(android.os.Bundle):38:38 -> onCreate
+    149:151:void onCreate(android.os.Bundle):41:41 -> onCreate
+    152:155:void onCreate(android.os.Bundle):49:49 -> onCreate
+com.guepardodelivery.entregador.SetDriverActivity$$ExternalSyntheticApiModelOutline0 -> n0.g:
+# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
+# {"id":"com.android.tools.r8.synthesized"}
+    1:1:android.content.ComponentName n0.SetDriverActivity$$ExternalSyntheticApiModelOutline0.m(com.guepardodelivery.entregador.SetDriverActivity,android.content.Intent):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
 kotlin.Lazy -> o0.a:
 # {"id":"sourceFile","fileName":"Lazy.kt"}
     java.lang.Object getValue() -> getValue
