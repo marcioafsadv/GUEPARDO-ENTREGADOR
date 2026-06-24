@@ -17,11 +17,11 @@
   "maskableIconUrl": "https://guepardodelivery-entregador.com/logo-entregador.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
-    "path": "g:\\Outros computadores\\Notebook Márcio Augusto\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
+    "path": "c:\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
     "alias": "android"
   },
-  "appVersionName": "1.6",
-  "appVersionCode": 17,
+  "appVersionName": "Guepardo Entregador V.F",
+  "appVersionCode": 23,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://guepardodelivery-entregador.com/manifest.webmanifest",
@@ -47,5 +47,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1.6"
+  "appVersion": "Guepardo Entregador V.F"
 }

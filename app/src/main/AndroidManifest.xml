@@ -22,14 +22,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador">
 
-    
-        <uses-permission android:name="android.permission.INTERNET"/>
-        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-        <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-        <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-        <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-        <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
-    
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     
 
@@ -159,19 +155,9 @@
                 />
             </intent-filter>
 
-        </activity>
+            
 
-        <activity android:name="SetDriverActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="guepardo"
-                    android:host="set-driver"
-                />
-            </intent-filter>
+            
         </activity>
 
         <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
@@ -206,16 +192,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".FloatingWidgetService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <meta-data
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Widget flutuante para rastreamento de rota de entregadores em trânsito." />
-        </service>
-
         
             <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity" />
         
@@ -224,5 +200,11 @@
             <activity android:name=
         "com.google.androidbrowserhelper.locationdelegation.PermissionRequestActivity"/>
         
+        <service
+            android:name=".FloatingBubbleService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+            
     </application>
 </manifest>
