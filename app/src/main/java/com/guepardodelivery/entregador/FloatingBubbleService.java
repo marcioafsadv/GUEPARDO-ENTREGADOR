@@ -39,7 +39,7 @@ public class FloatingBubbleService extends Service {
     private FrameLayout rootView;
     private WindowManager.LayoutParams windowParams;
 
-    // Dismiss target views
+    // Dismiss target views (created/removed dynamically)
     private FrameLayout dismissView;
     private WindowManager.LayoutParams dismissParams;
     private View dismissCircle;
@@ -70,32 +70,31 @@ public class FloatingBubbleService extends Service {
                 pollCounter++;
 
                 boolean inForeground = isAppInForeground();
-                if (inForeground) {
-                    if (rootView != null && rootView.getVisibility() == View.VISIBLE) {
-                        rootView.setVisibility(View.GONE);
+                if (inForeground || !isDriverOnline) {
+                    // Hide/remove bubble if app is in foreground or driver is offline
+                    if (rootView != null) {
+                        try {
+                            windowManager.removeView(rootView);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        rootView = null;
                     }
-                } else {
-                    if (isDriverOnline) {
-                        if (Settings.canDrawOverlays(FloatingBubbleService.this)) {
-                            if (rootView != null) {
-                                if (rootView.getVisibility() != View.VISIBLE) {
-                                    rootView.setVisibility(View.VISIBLE);
-                                }
-                            } else {
-                                createFloatingBubble();
-                            }
-                        }
-                    } else {
-                        // Hide bubble
-                        if (rootView != null && rootView.getVisibility() == View.VISIBLE) {
-                            rootView.setVisibility(View.GONE);
-                        }
-                        // If we have verified they are offline or they logged out, stop service
+
+                    // If driver is offline, verify and stop service
+                    if (!isDriverOnline) {
                         SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
                         String driverId = prefs.getString("driver_id", null);
                         if (driverId == null || (hasCheckedStatus && !isDriverOnline)) {
                             stopSelf();
                             return; // Stop the runnable loop
+                        }
+                    }
+                } else {
+                    // App is in background AND driver is online: show bubble
+                    if (Settings.canDrawOverlays(FloatingBubbleService.this)) {
+                        if (rootView == null) {
+                            createFloatingBubble();
                         }
                     }
                 }
@@ -129,9 +128,6 @@ public class FloatingBubbleService extends Service {
         }
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        
-        // Pre-create the dismiss view
-        createDismissView();
 
         // Start checking foreground and driver status
         handler.post(checkForegroundRunnable);
@@ -225,7 +221,7 @@ public class FloatingBubbleService extends Service {
         dismissParams.y = 0;
 
         dismissView = new FrameLayout(this);
-        dismissView.setVisibility(View.GONE);
+        dismissView.setVisibility(View.VISIBLE);
 
         // Circular dismiss target (the trash/close circle)
         FrameLayout circle = new FrameLayout(this);
@@ -282,6 +278,20 @@ public class FloatingBubbleService extends Service {
         }
     }
 
+    private void removeDismissView() {
+        if (dismissView != null) {
+            try {
+                windowManager.removeView(dismissView);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            dismissView = null;
+            dismissCircle = null;
+            circleText = null;
+            dismissText = null;
+        }
+    }
+
     private void createFloatingBubble() {
         if (rootView != null) return;
         if (!Settings.canDrawOverlays(this)) return;
@@ -307,7 +317,7 @@ public class FloatingBubbleService extends Service {
         windowParams.y = 300;
 
         rootView = new FrameLayout(this);
-        rootView.setVisibility(View.GONE); // Controlled by checkForegroundRunnable
+        rootView.setVisibility(View.VISIBLE);
 
         // Background for Main Bubble (circular, dark brown app background with Guepardo orange border)
         GradientDrawable bubbleBg = new GradientDrawable();
@@ -348,10 +358,8 @@ public class FloatingBubbleService extends Service {
                         isDragging = false;
                         isNearDismiss = false;
 
-                        // Show dismiss zone immediately on touch
-                        if (dismissView != null) {
-                            dismissView.setVisibility(View.VISIBLE);
-                        }
+                        // Dynamically add the dismiss zone on touch
+                        createDismissView();
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -372,7 +380,7 @@ public class FloatingBubbleService extends Service {
                             }
 
                             // Check intersection with dismiss circle
-                            if (dismissCircle != null && dismissView != null && dismissView.getVisibility() == View.VISIBLE) {
+                            if (dismissCircle != null && dismissView != null) {
                                 int[] dismissLoc = new int[2];
                                 dismissCircle.getLocationOnScreen(dismissLoc);
                                 int dismissCenterX = dismissLoc[0] + dismissCircle.getWidth() / 2;
@@ -400,7 +408,9 @@ public class FloatingBubbleService extends Service {
                                         activeBg.setShape(GradientDrawable.OVAL);
                                         activeBg.setColor(Color.parseColor("#FF3B30"));
                                         dismissCircle.setBackground(activeBg);
-                                        circleText.setTextColor(Color.WHITE);
+                                        if (circleText != null) {
+                                            circleText.setTextColor(Color.WHITE);
+                                        }
                                     }
                                 } else {
                                     if (isNearDismiss) {
@@ -412,7 +422,9 @@ public class FloatingBubbleService extends Service {
                                         normalBg.setColor(Color.parseColor("#33FF3B30"));
                                         normalBg.setStroke(dpToPx(2), Color.parseColor("#FF3B30"));
                                         dismissCircle.setBackground(normalBg);
-                                        circleText.setTextColor(Color.parseColor("#FF3B30"));
+                                        if (circleText != null) {
+                                            circleText.setTextColor(Color.parseColor("#FF3B30"));
+                                        }
                                     }
                                 }
                             }
@@ -420,10 +432,8 @@ public class FloatingBubbleService extends Service {
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        // Hide dismiss zone
-                        if (dismissView != null) {
-                            dismissView.setVisibility(View.GONE);
-                        }
+                        // Dynamically remove the dismiss zone
+                        removeDismissView();
 
                         if (!isDragging) {
                             bringAppToForeground();
@@ -565,13 +575,6 @@ public class FloatingBubbleService extends Service {
             }
             rootView = null;
         }
-        if (dismissView != null) {
-            try {
-                windowManager.removeView(dismissView);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            dismissView = null;
-        }
+        removeDismissView();
     }
 }
