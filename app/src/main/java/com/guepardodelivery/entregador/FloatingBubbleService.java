@@ -118,6 +118,11 @@ public class FloatingBubbleService extends Service {
         SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
         isDriverOnline = prefs.getBoolean("last_online_status", false);
 
+        String driverId = prefs.getString("driver_id", null);
+        if (driverId == null) {
+            android.widget.Toast.makeText(this, "Guepardo: ID do entregador ausente! Abra o app para sincronizar.", android.widget.Toast.LENGTH_LONG).show();
+        }
+
         createNotificationChannel();
         
         Notification notification = buildNotification();
@@ -179,6 +184,11 @@ public class FloatingBubbleService extends Service {
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
+                                if (!hasCheckedStatus || isDriverOnline != online) {
+                                    android.widget.Toast.makeText(FloatingBubbleService.this, 
+                                        online ? "Guepardo: Entregador Online!" : "Guepardo: Entregador Offline!", 
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                                }
                                 isDriverOnline = online;
                                 hasCheckedStatus = true;
                             }

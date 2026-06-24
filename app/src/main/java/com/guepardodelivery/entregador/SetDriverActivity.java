@@ -31,6 +31,7 @@ public class SetDriverActivity extends Activity {
                     if ("logout".equalsIgnoreCase(driverId)) {
                         prefs.edit().remove("driver_id").apply();
                         prefs.edit().remove("last_online_status").apply();
+                        android.widget.Toast.makeText(this, "Guepardo: Desconectado nativamente!", android.widget.Toast.LENGTH_SHORT).show();
                         try {
                             stopService(new Intent(this, FloatingBubbleService.class));
                         } catch (Exception e) {
@@ -38,6 +39,7 @@ public class SetDriverActivity extends Activity {
                         }
                     } else {
                         prefs.edit().putString("driver_id", driverId).apply();
+                        android.widget.Toast.makeText(this, "Guepardo: Entregador Sincronizado!", android.widget.Toast.LENGTH_SHORT).show();
                     }
                 }
             }
