@@ -106,6 +106,8 @@ public class FloatingBubbleService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        promoteToForeground();
+
         // Verifica se há driver_id salvo
         SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
         String driverId = prefs.getString("driver_id", null);
@@ -117,15 +119,6 @@ public class FloatingBubbleService extends Service {
         // Carrega o último status conhecido do cache
         isDriverOnline = prefs.getBoolean("last_online_status", false);
 
-        createNotificationChannel();
-
-        Notification notification = buildNotification();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
-        }
-
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         // Inicia o loop de verificação
@@ -134,7 +127,22 @@ public class FloatingBubbleService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        promoteToForeground();
         return START_STICKY;
+    }
+
+    private void promoteToForeground() {
+        try {
+            createNotificationChannel();
+            Notification notification = buildNotification();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void checkDriverStatus() {
