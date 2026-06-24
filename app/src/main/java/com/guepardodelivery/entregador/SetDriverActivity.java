@@ -40,6 +40,16 @@ public class SetDriverActivity extends Activity {
                     } else {
                         prefs.edit().putString("driver_id", driverId).apply();
                         android.widget.Toast.makeText(this, "Guepardo: Entregador Sincronizado!", android.widget.Toast.LENGTH_SHORT).show();
+                        try {
+                            Intent serviceIntent = new Intent(this, FloatingBubbleService.class);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(serviceIntent);
+                            } else {
+                                startService(serviceIntent);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }

@@ -23,7 +23,7 @@ plugins {
 def twaManifest = [
     applicationId: 'com.guepardodelivery.entregador',
     hostName: 'guepardodelivery-entregador.com', // The domain being opened in the TWA.
-    launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
+    launchUrl: '/?twa=true', // The start path for the TWA. Must be relative to the domain.
     name: 'Guepardo Entregador', // The application name.
     launcherName: 'Guepardo', // The name shown on the Android Launcher.
     themeColor: '#FF6B00', // The color used for the status bar.
@@ -57,7 +57,7 @@ android {
         applicationId "com.guepardodelivery.entregador"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 23
+        versionCode 24
         versionName "Guepardo Entregador V.F"
 
         // The name for the application

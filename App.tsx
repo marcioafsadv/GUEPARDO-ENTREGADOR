@@ -1027,7 +1027,7 @@ const App: React.FC = () => {
   useEffect(() => {
     // Detectar se o aplicativo está rodando dentro do TWA e se já está sincronizado nativamente
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('twa')) {
+    if (urlParams.has('twa') || (document.referrer && document.referrer.includes('android-app://'))) {
       sessionStorage.setItem('is_twa_app', 'true');
     }
     if (urlParams.get('synced') === 'true') {
@@ -1060,6 +1060,15 @@ const App: React.FC = () => {
       console.log("Auth event:", event);
       if (event === 'PASSWORD_RECOVERY') {
         setAuthScreen('RESET_PASSWORD');
+      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        // Restaura a sessão automaticamente sem pedir novo login
+        // Isso acontece quando o MIUI reinicia o Chrome e o Supabase faz refresh do token
+        console.log("Sessão restaurada automaticamente:", session.user.id);
+        setUserId(session.user.id);
+        setIsAuthenticated(true);
+      } else if (event === 'SIGNED_OUT') {
+        setUserId(null);
+        setIsAuthenticated(false);
       }
     });
 

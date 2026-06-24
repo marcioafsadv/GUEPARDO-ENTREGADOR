@@ -1,6 +1,5 @@
 package com.guepardodelivery.entregador;
 
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -39,6 +38,9 @@ public class FloatingBubbleService extends Service {
     private FrameLayout rootView;
     private WindowManager.LayoutParams windowParams;
 
+    // Status dot view to indicate online/offline
+    private View statusDot;
+
     // Dismiss target views (created/removed dynamically)
     private FrameLayout dismissView;
     private WindowManager.LayoutParams dismissParams;
@@ -69,32 +71,22 @@ public class FloatingBubbleService extends Service {
                 }
                 pollCounter++;
 
-                boolean inForeground = isAppInForeground();
-                if (inForeground || !isDriverOnline) {
-                    // Hide/remove bubble if app is in foreground or driver is offline
-                    if (rootView != null) {
-                        try {
-                            windowManager.removeView(rootView);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        rootView = null;
-                    }
+                // Usa a flag estática confiável da Application para detectar foreground
+                boolean inForeground = Application.isAppInForeground;
 
-                    // If driver is offline, verify and stop service
-                    if (!isDriverOnline) {
-                        SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
-                        String driverId = prefs.getString("driver_id", null);
-                        if (driverId == null || (hasCheckedStatus && !isDriverOnline)) {
-                            stopSelf();
-                            return; // Stop the runnable loop
-                        }
-                    }
+                if (inForeground) {
+                    // Esconde a bolinha quando o app está em primeiro plano
+                    removeBubble();
                 } else {
-                    // App is in background AND driver is online: show bubble
+                    // App está em background: mostra a bolinha SEMPRE (independente do status online)
                     if (Settings.canDrawOverlays(FloatingBubbleService.this)) {
                         if (rootView == null) {
                             createFloatingBubble();
+                            // Verifica o status imediatamente após criar a bolinha
+                            checkDriverStatus();
+                        } else {
+                            // Atualiza o indicador de status (ponto verde/vermelho)
+                            updateStatusDot();
                         }
                     }
                 }
@@ -113,18 +105,20 @@ public class FloatingBubbleService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        
-        // Load initial status from cache to prevent flashing
-        SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
-        isDriverOnline = prefs.getBoolean("last_online_status", false);
 
+        // Verifica se há driver_id salvo
+        SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
         String driverId = prefs.getString("driver_id", null);
         if (driverId == null) {
-            android.widget.Toast.makeText(this, "Guepardo: ID do entregador ausente! Abra o app para sincronizar.", android.widget.Toast.LENGTH_LONG).show();
+            stopSelf();
+            return;
         }
 
+        // Carrega o último status conhecido do cache
+        isDriverOnline = prefs.getBoolean("last_online_status", false);
+
         createNotificationChannel();
-        
+
         Notification notification = buildNotification();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
@@ -134,7 +128,7 @@ public class FloatingBubbleService extends Service {
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-        // Start checking foreground and driver status
+        // Inicia o loop de verificação
         handler.post(checkForegroundRunnable);
     }
 
@@ -147,8 +141,6 @@ public class FloatingBubbleService extends Service {
         SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
         final String driverId = prefs.getString("driver_id", null);
         if (driverId == null) {
-            isDriverOnline = false;
-            hasCheckedStatus = true;
             return;
         }
 
@@ -161,8 +153,8 @@ public class FloatingBubbleService extends Service {
                     java.net.URL url = new java.net.URL("https://eviukbluwrwcblwhkzwz.supabase.co/rest/v1/profiles?id=eq." + driverId + "&select=is_online");
                     conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
-                    conn.setRequestProperty("apikey", "sb_publishable_5FFYs0bPMCjQZTawObPk2A_lK5jmGJY");
-                    conn.setRequestProperty("Authorization", "Bearer sb_publishable_5FFYs0bPMCjQZTawObPk2A_lK5jmGJY");
+                    conn.setRequestProperty("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2aXVrYmx1d3J3Y2Jsd2hrend6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDg4MjAsImV4cCI6MjA4NTIyNDgyMH0.HcF64H4gAp932vPkK5ILv8Q85IQBK3-g0OyrxykxS_E");
+                    conn.setRequestProperty("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2aXVrYmx1d3J3Y2Jsd2hrend6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDg4MjAsImV4cCI6MjA4NTIyNDgyMH0.HcF64H4gAp932vPkK5ILv8Q85IQBK3-g0OyrxykxS_E");
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
 
@@ -177,20 +169,17 @@ public class FloatingBubbleService extends Service {
                         }
                         String response = sb.toString();
                         final boolean online = response.contains("\"is_online\":true") || response.contains("\"is_online\": true");
-                        
-                        // Cache status
+
+                        // Salva status no cache
                         prefs.edit().putBoolean("last_online_status", online).apply();
 
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                if (!hasCheckedStatus || isDriverOnline != online) {
-                                    android.widget.Toast.makeText(FloatingBubbleService.this, 
-                                        online ? "Guepardo: Entregador Online!" : "Guepardo: Entregador Offline!", 
-                                        android.widget.Toast.LENGTH_SHORT).show();
-                                }
                                 isDriverOnline = online;
                                 hasCheckedStatus = true;
+                                // Atualiza o ponto de status na bolinha, se ela estiver visível
+                                updateStatusDot();
                             }
                         });
                     }
@@ -206,6 +195,33 @@ public class FloatingBubbleService extends Service {
                 }
             }
         }).start();
+    }
+
+    private void removeBubble() {
+        if (rootView != null) {
+            try {
+                windowManager.removeView(rootView);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            rootView = null;
+            statusDot = null;
+        }
+    }
+
+    /** Atualiza a cor do ponto de status (verde = online, vermelho = offline / cinza = verificando) */
+    private void updateStatusDot() {
+        if (statusDot == null) return;
+        GradientDrawable dotBg = new GradientDrawable();
+        dotBg.setShape(GradientDrawable.OVAL);
+        if (!hasCheckedStatus) {
+            dotBg.setColor(Color.parseColor("#888888")); // cinza: verificando
+        } else if (isDriverOnline) {
+            dotBg.setColor(Color.parseColor("#34C759")); // verde: online
+        } else {
+            dotBg.setColor(Color.parseColor("#FF3B30")); // vermelho: offline
+        }
+        statusDot.setBackground(dotBg);
     }
 
     private void createDismissView() {
@@ -233,21 +249,19 @@ public class FloatingBubbleService extends Service {
         dismissView = new FrameLayout(this);
         dismissView.setVisibility(View.VISIBLE);
 
-        // Circular dismiss target (the trash/close circle)
+        // Circular dismiss target
         FrameLayout circle = new FrameLayout(this);
         FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams(dpToPx(64), dpToPx(64));
         circleParams.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
         circleParams.bottomMargin = dpToPx(32);
         circle.setLayoutParams(circleParams);
 
-        // Circular background (translucent red with red border)
         GradientDrawable circleBg = new GradientDrawable();
         circleBg.setShape(GradientDrawable.OVAL);
-        circleBg.setColor(Color.parseColor("#33FF3B30")); // Translucent red
+        circleBg.setColor(Color.parseColor("#33FF3B30"));
         circleBg.setStroke(dpToPx(2), Color.parseColor("#FF3B30"));
         circle.setBackground(circleBg);
 
-        // Text inside the circle
         circleText = new TextView(this);
         FrameLayout.LayoutParams textParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -263,7 +277,6 @@ public class FloatingBubbleService extends Service {
 
         dismissCircle = circle;
 
-        // Label text above the circle
         dismissText = new TextView(this);
         FrameLayout.LayoutParams labelParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -313,7 +326,6 @@ public class FloatingBubbleService extends Service {
             layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
         }
 
-        // Adjust window size to exactly 60dp x 60dp (same as bubble design)
         windowParams = new WindowManager.LayoutParams(
                 dpToPx(60),
                 dpToPx(60),
@@ -329,14 +341,14 @@ public class FloatingBubbleService extends Service {
         rootView = new FrameLayout(this);
         rootView.setVisibility(View.VISIBLE);
 
-        // Background for Main Bubble (circular, dark brown app background with Guepardo orange border)
+        // Background circular escuro com borda laranja (cor Guepardo)
         GradientDrawable bubbleBg = new GradientDrawable();
         bubbleBg.setShape(GradientDrawable.OVAL);
         bubbleBg.setColor(Color.parseColor("#1A0A05"));
         bubbleBg.setStroke(dpToPx(3), Color.parseColor("#FF6B00"));
         rootView.setBackground(bubbleBg);
 
-        // App Icon inside Main Bubble
+        // Ícone do app dentro da bolinha
         ImageView appIconView = new ImageView(this);
         FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -355,7 +367,26 @@ public class FloatingBubbleService extends Service {
         appIconView.setImageDrawable(appIcon);
         rootView.addView(appIconView);
 
-        // Set Touch Listener on Main Bubble for dragging, dismiss detection, and clicking
+        // Ponto de status (verde = online, vermelho = offline) no canto superior direito
+        View dot = new View(this);
+        int dotSize = dpToPx(12);
+        FrameLayout.LayoutParams dotParams = new FrameLayout.LayoutParams(dotSize, dotSize);
+        dotParams.gravity = Gravity.TOP | Gravity.RIGHT;
+        dotParams.topMargin = dpToPx(2);
+        dotParams.rightMargin = dpToPx(2);
+        dot.setLayoutParams(dotParams);
+        GradientDrawable dotBg = new GradientDrawable();
+        dotBg.setShape(GradientDrawable.OVAL);
+        dotBg.setColor(Color.parseColor("#888888")); // começa cinza (verificando)
+        dotBg.setStroke(dpToPx(1), Color.WHITE);
+        dot.setBackground(dotBg);
+        statusDot = dot;
+        rootView.addView(dot);
+
+        // Aplica o status inicial
+        updateStatusDot();
+
+        // Touch listener para arrastar, fechar e clicar
         rootView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -367,19 +398,17 @@ public class FloatingBubbleService extends Service {
                         initialTouchY = event.getRawY();
                         isDragging = false;
                         isNearDismiss = false;
-
-                        // Dynamically add the dismiss zone on touch
                         createDismissView();
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
                         int deltaX = (int) (event.getRawX() - initialTouchX);
                         int deltaY = (int) (event.getRawY() - initialTouchY);
-                        
+
                         if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
                             isDragging = true;
                         }
-                        
+
                         if (isDragging) {
                             windowParams.x = initialX + deltaX;
                             windowParams.y = initialY + deltaY;
@@ -389,7 +418,6 @@ public class FloatingBubbleService extends Service {
                                 e.printStackTrace();
                             }
 
-                            // Check intersection with dismiss circle
                             if (dismissCircle != null && dismissView != null) {
                                 int[] dismissLoc = new int[2];
                                 dismissCircle.getLocationOnScreen(dismissLoc);
@@ -401,7 +429,7 @@ public class FloatingBubbleService extends Service {
                                 int bubbleCenterX = bubbleLoc[0] + rootView.getWidth() / 2;
                                 int bubbleCenterY = bubbleLoc[1] + rootView.getHeight() / 2;
 
-                                double distance = Math.sqrt(Math.pow(bubbleCenterX - dismissCenterX, 2) 
+                                double distance = Math.sqrt(Math.pow(bubbleCenterX - dismissCenterX, 2)
                                         + Math.pow(bubbleCenterY - dismissCenterY, 2));
 
                                 boolean near = distance < dpToPx(90);
@@ -409,11 +437,8 @@ public class FloatingBubbleService extends Service {
                                 if (near) {
                                     if (!isNearDismiss) {
                                         isNearDismiss = true;
-                                        // Haptic feedback
                                         dismissCircle.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                                        // Scale up target
                                         dismissCircle.animate().scaleX(1.2f).scaleY(1.2f).setDuration(150).start();
-                                        // Solid red background
                                         GradientDrawable activeBg = new GradientDrawable();
                                         activeBg.setShape(GradientDrawable.OVAL);
                                         activeBg.setColor(Color.parseColor("#FF3B30"));
@@ -425,7 +450,6 @@ public class FloatingBubbleService extends Service {
                                 } else {
                                     if (isNearDismiss) {
                                         isNearDismiss = false;
-                                        // Restore normal target state
                                         dismissCircle.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start();
                                         GradientDrawable normalBg = new GradientDrawable();
                                         normalBg.setShape(GradientDrawable.OVAL);
@@ -442,9 +466,7 @@ public class FloatingBubbleService extends Service {
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        // Dynamically remove the dismiss zone
                         removeDismissView();
-
                         if (!isDragging) {
                             bringAppToForeground();
                         } else {
@@ -472,17 +494,17 @@ public class FloatingBubbleService extends Service {
         android.graphics.Point displaySize = new android.graphics.Point();
         windowManager.getDefaultDisplay().getRealSize(displaySize);
         int screenWidth = displaySize.x;
-        
+
         int bubbleWidth = rootView.getWidth();
         int currentX = windowParams.x;
         int targetX;
-        
+
         if (currentX + bubbleWidth / 2 < screenWidth / 2) {
             targetX = 0;
         } else {
             targetX = screenWidth - bubbleWidth;
         }
-        
+
         ValueAnimator animator = ValueAnimator.ofInt(currentX, targetX);
         animator.setDuration(250);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -505,26 +527,6 @@ public class FloatingBubbleService extends Service {
         Intent intent = new Intent(this, LauncherActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
-    }
-
-    private boolean isAppInForeground() {
-        try {
-            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-            if (am == null) return false;
-            java.util.List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
-            if (tasks != null && !tasks.isEmpty()) {
-                ActivityManager.RunningTaskInfo topTask = tasks.get(0);
-                if (topTask != null) {
-                    String basePackage = topTask.baseActivity != null ? topTask.baseActivity.getPackageName() : "";
-                    String topPackage = topTask.topActivity != null ? topTask.topActivity.getPackageName() : "";
-                    String myPackage = getPackageName();
-                    return basePackage.equals(myPackage) || topPackage.equals(myPackage);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     private int dpToPx(int dp) {
@@ -577,14 +579,7 @@ public class FloatingBubbleService extends Service {
     public void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(checkForegroundRunnable);
-        if (rootView != null) {
-            try {
-                windowManager.removeView(rootView);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            rootView = null;
-        }
+        removeBubble();
         removeDismissView();
     }
 }

@@ -15,15 +15,14 @@
  */
 package com.guepardodelivery.entregador;
 
-
-
 public class Application extends android.app.Application {
 
-  
+    // Variável estática para rastrear se o app está em foreground de forma confiável.
+    // Atualizada por LauncherActivity.onStart() / onStop().
+    public static boolean isAppInForeground = false;
 
-  @Override
-  public void onCreate() {
-      super.onCreate();
-      
-  }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+    }
 }

@@ -32,7 +32,9 @@ public class LauncherActivity
     @Override
     protected void onStart() {
         super.onStart();
-        // Stop service when app is back in foreground
+        // Marca que o app está em foreground (usado pelo FloatingBubbleService)
+        Application.isAppInForeground = true;
+        // Para o serviço quando o app volta ao foreground
         try {
             stopService(new Intent(this, FloatingBubbleService.class));
         } catch (Exception e) {
@@ -49,15 +51,21 @@ public class LauncherActivity
     @Override
     protected void onStop() {
         super.onStop();
-        // Start service when app is minimized / in background, only if permission is granted
+        // Marca que o app saiu do foreground (usado pelo FloatingBubbleService)
+        Application.isAppInForeground = false;
+        // Inicia o serviço quando o app vai para background, se o driver estiver logado
         try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
-                Intent intent = new Intent(this, FloatingBubbleService.class);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent);
-                } else {
-                    startService(intent);
-                }
+            android.content.SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
+            String driverId = prefs.getString("driver_id", null);
+            if (driverId == null) {
+                return;
+            }
+
+            Intent intent = new Intent(this, FloatingBubbleService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,6 +94,50 @@ public class LauncherActivity
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             isDialogShowing = false;
+                        }
+                    })
+                    .show();
+            } else {
+                checkXiaomiPermissions();
+            }
+        }
+    }
+
+    private void checkXiaomiPermissions() {
+        String manufacturer = Build.MANUFACTURER;
+        if (manufacturer != null && (manufacturer.equalsIgnoreCase("Xiaomi") || manufacturer.equalsIgnoreCase("Redmi") || manufacturer.equalsIgnoreCase("Poco"))) {
+            android.content.SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
+            boolean wasXiaomiDialogShown = prefs.getBoolean("xiaomi_dialog_shown", false);
+            if (!wasXiaomiDialogShown) {
+                new AlertDialog.Builder(this)
+                    .setTitle("Aviso para Dispositivos Xiaomi")
+                    .setMessage("Para que a bolinha flutuante funcione no seu Xiaomi (MIUI/HyperOS), você precisa ativar a permissão:\n\n• 'Abrir novas janelas enquanto executa em segundo plano'\n\nRecomendamos ativar também:\n• 'Mostrar na Tela de bloqueio'\n• 'Atalhos na Tela inicial'\n\nVamos abrir a tela de configurações para você.")
+                    .setCancelable(false)
+                    .setPositiveButton("Configurar", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            prefs.edit().putBoolean("xiaomi_dialog_shown", true).apply();
+                            try {
+                                Intent intent = new Intent("miui.intent.action.APP_PERM_EDITOR");
+                                intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity");
+                                intent.putExtra("extra_pkgname", getPackageName());
+                                startActivity(intent);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                try {
+                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.parse("package:" + getPackageName()));
+                                    startActivity(intent);
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    })
+                    .setNegativeButton("Mais Tarde", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Não faz nada para que seja avisado na próxima vez até configurar
                         }
                     })
                     .show();
