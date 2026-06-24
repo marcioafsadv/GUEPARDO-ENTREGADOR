@@ -235,9 +235,23 @@ public class FloatingBubbleService extends Service {
     }
 
     private boolean isAppInForeground() {
-        ActivityManager.RunningAppProcessInfo appProcessInfo = new ActivityManager.RunningAppProcessInfo();
-        ActivityManager.getMyMemoryState(appProcessInfo);
-        return appProcessInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            if (am == null) return false;
+            java.util.List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+            if (tasks != null && !tasks.isEmpty()) {
+                ActivityManager.RunningTaskInfo topTask = tasks.get(0);
+                if (topTask != null) {
+                    String basePackage = topTask.baseActivity != null ? topTask.baseActivity.getPackageName() : "";
+                    String topPackage = topTask.topActivity != null ? topTask.topActivity.getPackageName() : "";
+                    String myPackage = getPackageName();
+                    return basePackage.equals(myPackage) || topPackage.equals(myPackage);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {
