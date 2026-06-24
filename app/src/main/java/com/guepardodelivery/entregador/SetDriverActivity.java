@@ -12,6 +12,11 @@ public class SetDriverActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         
         Intent intent = getIntent();
         if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
@@ -43,9 +48,18 @@ public class SetDriverActivity extends Activity {
                     }
                 }
             }
+            // Clear intent to avoid processing again if resumed
+            setIntent(new Intent());
         }
         
-        // Finaliza imediatamente sem mostrar nada
-        finish();
+        // Atraso sutil antes de finalizar a Activity para garantir que o serviço tenha 
+        // tempo de registrar o startForeground() enquanto a Activity ainda está no topo (foreground).
+        // Isso evita o ForegroundServiceStartNotAllowedException no Android 12+.
+        new android.os.Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                finish();
+            }
+        }, 500);
     }
 }

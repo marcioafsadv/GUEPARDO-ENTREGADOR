@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: fd1d80a
-# pg_map_hash: SHA-256 fd1d80a4894efa05140af9dbe9268121999bfa27ebf05462a6b01839501251f8
+# pg_map_id: 87d0985
+# pg_map_hash: SHA-256 87d0985999770aaa7846fddf52e54422279ee9973f55314232a8458f8ef11a52
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -37106,30 +37106,37 @@ com.guepardodelivery.entregador.LauncherActivity$4 -> com.guepardodelivery.entre
 com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entregador.SetDriverActivity:
 # {"id":"sourceFile","fileName":"SetDriverActivity.java"}
     1:4:void <init>():10:10 -> <init>
-    1:3:void onCreate(android.os.Bundle):14:14 -> onCreate
-    4:9:void onCreate(android.os.Bundle):16:16 -> onCreate
-    10:21:void onCreate(android.os.Bundle):17:17 -> onCreate
-    22:27:void onCreate(android.os.Bundle):18:18 -> onCreate
-    28:51:void onCreate(android.os.Bundle):19:19 -> onCreate
-    52:59:void onCreate(android.os.Bundle):20:20 -> onCreate
-    60:66:void onCreate(android.os.Bundle):22:22 -> onCreate
-    67:78:void onCreate(android.os.Bundle):23:23 -> onCreate
-    79:89:void onCreate(android.os.Bundle):24:24 -> onCreate
-    90:102:void onCreate(android.os.Bundle):25:25 -> onCreate
-    103:112:void onCreate(android.os.Bundle):27:27 -> onCreate
-    113:116:void onCreate(android.os.Bundle):29:29 -> onCreate
-    117:127:void onCreate(android.os.Bundle):32:32 -> onCreate
-    128:132:void onCreate(android.os.Bundle):34:34 -> onCreate
-    133:138:void onCreate(android.os.Bundle):35:35 -> onCreate
-    139:144:void onCreate(android.os.Bundle):36:36 -> onCreate
-    145:148:void onCreate(android.os.Bundle):38:38 -> onCreate
-    149:151:void onCreate(android.os.Bundle):41:41 -> onCreate
-    152:155:void onCreate(android.os.Bundle):49:49 -> onCreate
+    1:4:void onCreate(android.os.Bundle):14:14 -> onCreate
+    1:3:void onResume():19:19 -> onResume
+    4:9:void onResume():21:21 -> onResume
+    10:21:void onResume():22:22 -> onResume
+    22:27:void onResume():23:23 -> onResume
+    28:51:void onResume():24:24 -> onResume
+    52:59:void onResume():25:25 -> onResume
+    60:66:void onResume():27:27 -> onResume
+    67:78:void onResume():28:28 -> onResume
+    79:89:void onResume():29:29 -> onResume
+    90:102:void onResume():30:30 -> onResume
+    103:112:void onResume():32:32 -> onResume
+    113:116:void onResume():34:34 -> onResume
+    117:127:void onResume():37:37 -> onResume
+    128:132:void onResume():39:39 -> onResume
+    133:138:void onResume():40:40 -> onResume
+    139:144:void onResume():41:41 -> onResume
+    145:148:void onResume():43:43 -> onResume
+    149:151:void onResume():46:46 -> onResume
+    152:159:void onResume():52:52 -> onResume
+    160:175:void onResume():58:58 -> onResume
 com.guepardodelivery.entregador.SetDriverActivity$$ExternalSyntheticApiModelOutline0 -> n0.g:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:android.content.ComponentName n0.SetDriverActivity$$ExternalSyntheticApiModelOutline0.m(com.guepardodelivery.entregador.SetDriverActivity,android.content.Intent):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
+com.guepardodelivery.entregador.SetDriverActivity$1 -> com.guepardodelivery.entregador.SetDriverActivity$a:
+# {"id":"sourceFile","fileName":"SetDriverActivity.java"}
+    com.guepardodelivery.entregador.SetDriverActivity this$0 -> a
+    1:6:void <init>(com.guepardodelivery.entregador.SetDriverActivity):58:58 -> <init>
+    1:6:void run():61:61 -> run
 kotlin.Lazy -> o0.a:
 # {"id":"sourceFile","fileName":"Lazy.kt"}
     java.lang.Object getValue() -> getValue
