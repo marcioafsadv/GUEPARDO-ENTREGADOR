@@ -59,15 +59,19 @@ public class FloatingBubbleService extends Service {
     private boolean isDriverOnline = false;
     private boolean hasCheckedStatus = false;
     private int pollCounter = 0;
+    private String lastRingingDeliveryId = null;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable checkForegroundRunnable = new Runnable() {
         @Override
         public void run() {
             try {
-                // Fetch driver status from Supabase every 15 seconds
-                if (pollCounter % 15 == 0) {
+                // Fetch driver status and new deliveries from Supabase every 10 seconds
+                if (pollCounter % 10 == 0) {
                     checkDriverStatus();
+                    if (isDriverOnline) {
+                        checkNewDeliveries();
+                    }
                 }
                 pollCounter++;
 
@@ -190,6 +194,71 @@ public class FloatingBubbleService extends Service {
                                 updateStatusDot();
                             }
                         });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (reader != null) {
+                        try { reader.close(); } catch (Exception e) {}
+                    }
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void checkNewDeliveries() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                java.io.BufferedReader reader = null;
+                java.net.HttpURLConnection conn = null;
+                try {
+                    // Busca a entrega pendente mais recente
+                    java.net.URL url = new java.net.URL("https://eviukbluwrwcblwhkzwz.supabase.co/rest/v1/deliveries?status=eq.pending&select=id&order=created_at.desc&limit=1");
+                    conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2aXVrYmx1d3J3Y2Jsd2hrend6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDg4MjAsImV4cCI6MjA4NTIyNDgyMH0.HcF64H4gAp932vPkK5ILv8Q85IQBK3-g0OyrxykxS_E");
+                    conn.setRequestProperty("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2aXVrYmx1d3J3Y2Jsd2hrend6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDg4MjAsImV4cCI6MjA4NTIyNDgyMH0.HcF64H4gAp932vPkK5ILv8Q85IQBK3-g0OyrxykxS_E");
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+
+                    int responseCode = conn.getResponseCode();
+                    if (responseCode == 200) {
+                        java.io.InputStream in = conn.getInputStream();
+                        reader = new java.io.BufferedReader(new java.io.InputStreamReader(in, "UTF-8"));
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sb.append(line);
+                        }
+                        String response = sb.toString();
+                        
+                        // O response será um array JSON como: [{"id":"uuid-aqui"}] ou []
+                        if (response.contains("\"id\"") && !response.equals("[]")) {
+                            // Extrai o ID manualmente de forma simples
+                            int idIndex = response.indexOf("\"id\":\"") + 6;
+                            int endQuote = response.indexOf("\"", idIndex);
+                            if (idIndex > 5 && endQuote > idIndex) {
+                                String deliveryId = response.substring(idIndex, endQuote);
+                                
+                                if (lastRingingDeliveryId == null || !lastRingingDeliveryId.equals(deliveryId)) {
+                                    lastRingingDeliveryId = deliveryId;
+                                    
+                                    // Temos uma nova entrega pendente! Vamos chamar a tela nativa.
+                                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Intent intent = new Intent(FloatingBubbleService.this, CallActivity.class);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                            startActivity(intent);
+                                        }
+                                    });
+                                }
+                            }
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
