@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 886bcd0
-# pg_map_hash: SHA-256 886bcd013d8f829cf238579caf93058e47ccaa72334511606d6ce9b6696caf5e
+# pg_map_id: d5bd78a
+# pg_map_hash: SHA-256 d5bd78a19a7d8b8616d97c9670c4b5fa2cdacaad7c7cd5a56d9380bfce51564a
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -36682,21 +36682,20 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     1:3:int access$900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> E
     1:3:int access$902(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> F
     1:4:void bringAppToForeground():535:535 -> G
-    5:16:void bringAppToForeground():536:536 -> G
-    17:19:void bringAppToForeground():538:538 -> G
-    20:23:void bringAppToForeground():539:539 -> G
-    1:7:android.app.Notification buildNotification():563:563 -> H
-    8:16:android.app.Notification buildNotification():565:565 -> H
-    17:23:android.app.Notification buildNotification():566:566 -> H
-    24:31:android.app.Notification buildNotification():569:569 -> H
-    32:38:android.app.Notification buildNotification():575:575 -> H
-    39:43:android.app.Notification buildNotification():577:577 -> H
-    44:51:android.app.Notification buildNotification():580:580 -> H
-    52:58:android.app.Notification buildNotification():581:581 -> H
-    59:62:android.app.Notification buildNotification():582:582 -> H
-    63:67:android.app.Notification buildNotification():583:583 -> H
-    68:70:android.app.Notification buildNotification():584:584 -> H
-    71:75:android.app.Notification buildNotification():586:586 -> H
+    5:14:void bringAppToForeground():536:536 -> G
+    15:18:void bringAppToForeground():538:538 -> G
+    1:7:android.app.Notification buildNotification():562:562 -> H
+    8:16:android.app.Notification buildNotification():564:564 -> H
+    17:23:android.app.Notification buildNotification():565:565 -> H
+    24:31:android.app.Notification buildNotification():568:568 -> H
+    32:38:android.app.Notification buildNotification():574:574 -> H
+    39:43:android.app.Notification buildNotification():576:576 -> H
+    44:51:android.app.Notification buildNotification():579:579 -> H
+    52:58:android.app.Notification buildNotification():580:580 -> H
+    59:62:android.app.Notification buildNotification():581:581 -> H
+    63:67:android.app.Notification buildNotification():582:582 -> H
+    68:70:android.app.Notification buildNotification():583:583 -> H
+    71:75:android.app.Notification buildNotification():585:585 -> H
     1:7:void checkDriverStatus():149:149 -> I
     8:17:void checkDriverStatus():150:150 -> I
     18:27:void checkDriverStatus():155:155 -> I
@@ -36788,12 +36787,12 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     238:247:void createFloatingBubble():398:398 -> K
     248:258:void createFloatingBubble():494:494 -> K
     259:262:void createFloatingBubble():496:496 -> K
-    1:6:void createNotificationChannel():548:548 -> L
-    7:15:void createNotificationChannel():549:549 -> L
-    16:20:void createNotificationChannel():554:554 -> L
-    21:30:void createNotificationChannel():555:555 -> L
-    31:34:void createNotificationChannel():557:557 -> L
-    2:15:int dpToPx(int):544:544 -> M
+    1:6:void createNotificationChannel():547:547 -> L
+    7:15:void createNotificationChannel():548:548 -> L
+    16:20:void createNotificationChannel():553:553 -> L
+    21:30:void createNotificationChannel():554:554 -> L
+    31:34:void createNotificationChannel():556:556 -> L
+    2:15:int dpToPx(int):543:543 -> M
     1:3:void promoteToForeground():136:136 -> N
     4:7:void promoteToForeground():137:137 -> N
     8:16:void promoteToForeground():138:138 -> N
@@ -36855,10 +36854,10 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     27:34:void onCreate():120:120 -> onCreate
     35:44:void onCreate():122:122 -> onCreate
     45:52:void onCreate():125:125 -> onCreate
-    1:3:void onDestroy():591:591 -> onDestroy
-    4:10:void onDestroy():592:592 -> onDestroy
-    11:13:void onDestroy():593:593 -> onDestroy
-    14:17:void onDestroy():594:594 -> onDestroy
+    1:3:void onDestroy():590:590 -> onDestroy
+    4:10:void onDestroy():591:591 -> onDestroy
+    11:13:void onDestroy():592:592 -> onDestroy
+    14:17:void onDestroy():593:593 -> onDestroy
     1:5:int onStartCommand(android.content.Intent,int,int):130:130 -> onStartCommand
     1:3:android.view.WindowManager access$1700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> p
     1:3:android.view.View access$1800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> q
@@ -37024,48 +37023,48 @@ com.guepardodelivery.entregador.LauncherActivity -> com.guepardodelivery.entrega
     boolean isDialogShowing -> h
     1:4:void <init>():12:12 -> <init>
     5:7:void <init>():16:16 -> <init>
-    1:5:android.net.Uri getLaunchingUrl():145:145 -> i
+    1:5:android.net.Uri getLaunchingUrl():146:146 -> i
     1:3:void onCreate(android.os.Bundle):20:20 -> onCreate
     4:11:void onCreate(android.os.Bundle):25:25 -> onCreate
     12:16:void onCreate(android.os.Bundle):26:26 -> onCreate
-    17:20:void onCreate(android.os.Bundle):28:28 -> onCreate
-    1:3:void onResume():58:58 -> onResume
-    4:7:void onResume():59:59 -> onResume
-    1:4:void onStart():34:34 -> onStart
-    5:6:void onStart():36:36 -> onStart
-    7:13:void onStart():41:41 -> onStart
-    14:22:void onStart():42:42 -> onStart
-    23:29:void onStart():44:44 -> onStart
-    30:35:void onStart():45:45 -> onStart
-    36:41:void onStart():46:46 -> onStart
-    42:45:void onStart():48:48 -> onStart
-    46:49:void onStart():52:52 -> onStart
-    1:4:void onStop():64:64 -> onStop
-    5:7:void onStop():66:66 -> onStop
+    17:19:void onCreate(android.os.Bundle):28:28 -> onCreate
+    20:23:void onCreate(android.os.Bundle):31:31 -> onCreate
+    1:4:void onResume():60:60 -> onResume
+    1:4:void onStart():36:36 -> onStart
+    5:6:void onStart():38:38 -> onStart
+    7:13:void onStart():43:43 -> onStart
+    14:22:void onStart():44:44 -> onStart
+    23:29:void onStart():46:46 -> onStart
+    30:35:void onStart():47:47 -> onStart
+    36:41:void onStart():48:48 -> onStart
+    42:45:void onStart():50:50 -> onStart
+    46:49:void onStart():54:54 -> onStart
+    1:4:void onStop():65:65 -> onStop
+    5:7:void onStop():67:67 -> onStop
     1:3:boolean access$002(com.guepardodelivery.entregador.LauncherActivity,boolean):12:12 -> q
-    1:6:void checkOverlayPermission():70:70 -> r
-    7:12:void checkOverlayPermission():71:71 -> r
-    13:18:void checkOverlayPermission():72:72 -> r
-    19:20:void checkOverlayPermission():73:73 -> r
-    21:27:void checkOverlayPermission():74:74 -> r
-    28:33:void checkOverlayPermission():75:75 -> r
-    34:38:void checkOverlayPermission():76:76 -> r
-    39:47:void checkOverlayPermission():77:77 -> r
-    48:58:void checkOverlayPermission():78:78 -> r
-    59:64:void checkOverlayPermission():87:87 -> r
-    65:68:void checkOverlayPermission():93:93 -> r
-    69:72:void checkOverlayPermission():95:95 -> r
-    1:4:void checkXiaomiPermissions():101:101 -> s
-    5:28:void checkXiaomiPermissions():102:102 -> s
-    29:35:void checkXiaomiPermissions():103:103 -> s
-    36:43:void checkXiaomiPermissions():104:104 -> s
-    44:50:void checkXiaomiPermissions():106:106 -> s
-    51:56:void checkXiaomiPermissions():107:107 -> s
-    57:60:void checkXiaomiPermissions():108:108 -> s
-    61:69:void checkXiaomiPermissions():109:109 -> s
-    70:80:void checkXiaomiPermissions():110:110 -> s
-    81:86:void checkXiaomiPermissions():131:131 -> s
-    87:90:void checkXiaomiPermissions():137:137 -> s
+    1:6:void checkOverlayPermission():71:71 -> r
+    7:12:void checkOverlayPermission():72:72 -> r
+    13:18:void checkOverlayPermission():73:73 -> r
+    19:20:void checkOverlayPermission():74:74 -> r
+    21:27:void checkOverlayPermission():75:75 -> r
+    28:33:void checkOverlayPermission():76:76 -> r
+    34:38:void checkOverlayPermission():77:77 -> r
+    39:47:void checkOverlayPermission():78:78 -> r
+    48:58:void checkOverlayPermission():79:79 -> r
+    59:64:void checkOverlayPermission():88:88 -> r
+    65:68:void checkOverlayPermission():94:94 -> r
+    69:72:void checkOverlayPermission():96:96 -> r
+    1:4:void checkXiaomiPermissions():102:102 -> s
+    5:28:void checkXiaomiPermissions():103:103 -> s
+    29:35:void checkXiaomiPermissions():104:104 -> s
+    36:43:void checkXiaomiPermissions():105:105 -> s
+    44:50:void checkXiaomiPermissions():107:107 -> s
+    51:56:void checkXiaomiPermissions():108:108 -> s
+    57:60:void checkXiaomiPermissions():109:109 -> s
+    61:69:void checkXiaomiPermissions():110:110 -> s
+    70:80:void checkXiaomiPermissions():111:111 -> s
+    81:86:void checkXiaomiPermissions():132:132 -> s
+    87:90:void checkXiaomiPermissions():138:138 -> s
 com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutline0 -> n0.f:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -37074,35 +37073,37 @@ com.guepardodelivery.entregador.LauncherActivity$$ExternalSyntheticApiModelOutli
 com.guepardodelivery.entregador.LauncherActivity$1 -> com.guepardodelivery.entregador.LauncherActivity$a:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):87:87 -> <init>
-    1:7:void onClick(android.content.DialogInterface,int):90:90 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):88:88 -> <init>
+    1:7:void onClick(android.content.DialogInterface,int):91:91 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$2 -> com.guepardodelivery.entregador.LauncherActivity$b:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):78:78 -> <init>
-    1:6:void onClick(android.content.DialogInterface,int):81:81 -> onClick
-    7:20:void onClick(android.content.DialogInterface,int):82:82 -> onClick
-    21:40:void onClick(android.content.DialogInterface,int):83:83 -> onClick
-    41:48:void onClick(android.content.DialogInterface,int):84:84 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):79:79 -> <init>
+    1:6:void onClick(android.content.DialogInterface,int):82:82 -> onClick
+    7:20:void onClick(android.content.DialogInterface,int):83:83 -> onClick
+    21:40:void onClick(android.content.DialogInterface,int):84:84 -> onClick
+    41:48:void onClick(android.content.DialogInterface,int):85:85 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$3 -> com.guepardodelivery.entregador.LauncherActivity$c:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
-    com.guepardodelivery.entregador.LauncherActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.LauncherActivity):131:131 -> <init>
+    android.content.SharedPreferences val$prefs -> a
+    com.guepardodelivery.entregador.LauncherActivity this$0 -> b
+    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):132:132 -> <init>
+    1:17:void onClick(android.content.DialogInterface,int):135:135 -> onClick
 com.guepardodelivery.entregador.LauncherActivity$4 -> com.guepardodelivery.entregador.LauncherActivity$d:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     android.content.SharedPreferences val$prefs -> a
     com.guepardodelivery.entregador.LauncherActivity this$0 -> b
-    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):110:110 -> <init>
-    1:16:void onClick(android.content.DialogInterface,int):113:113 -> onClick
-    17:23:void onClick(android.content.DialogInterface,int):115:115 -> onClick
-    24:30:void onClick(android.content.DialogInterface,int):116:116 -> onClick
-    31:41:void onClick(android.content.DialogInterface,int):117:117 -> onClick
-    42:48:void onClick(android.content.DialogInterface,int):118:118 -> onClick
-    49:51:void onClick(android.content.DialogInterface,int):120:120 -> onClick
-    52:67:void onClick(android.content.DialogInterface,int):122:122 -> onClick
-    68:85:void onClick(android.content.DialogInterface,int):123:123 -> onClick
-    86:92:void onClick(android.content.DialogInterface,int):124:124 -> onClick
-    93:96:void onClick(android.content.DialogInterface,int):126:126 -> onClick
+    1:8:void <init>(com.guepardodelivery.entregador.LauncherActivity,android.content.SharedPreferences):111:111 -> <init>
+    1:16:void onClick(android.content.DialogInterface,int):114:114 -> onClick
+    17:23:void onClick(android.content.DialogInterface,int):116:116 -> onClick
+    24:30:void onClick(android.content.DialogInterface,int):117:117 -> onClick
+    31:41:void onClick(android.content.DialogInterface,int):118:118 -> onClick
+    42:48:void onClick(android.content.DialogInterface,int):119:119 -> onClick
+    49:51:void onClick(android.content.DialogInterface,int):121:121 -> onClick
+    52:67:void onClick(android.content.DialogInterface,int):123:123 -> onClick
+    68:85:void onClick(android.content.DialogInterface,int):124:124 -> onClick
+    86:92:void onClick(android.content.DialogInterface,int):125:125 -> onClick
+    93:96:void onClick(android.content.DialogInterface,int):127:127 -> onClick
 com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entregador.SetDriverActivity:
 # {"id":"sourceFile","fileName":"SetDriverActivity.java"}
     1:4:void <init>():10:10 -> <init>

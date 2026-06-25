@@ -27,6 +27,8 @@ public class LauncherActivity
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
+        
+        checkOverlayPermission();
     }
 
     @Override
@@ -56,7 +58,6 @@ public class LauncherActivity
     @Override
     protected void onResume() {
         super.onResume();
-        checkOverlayPermission();
     }
 
     @Override
@@ -128,10 +129,10 @@ public class LauncherActivity
                             }
                         }
                     })
-                    .setNegativeButton("Mais Tarde", new DialogInterface.OnClickListener() {
+                    .setNegativeButton("Já Configurei / Mais Tarde", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            // Não faz nada para que seja avisado na próxima vez até configurar
+                            prefs.edit().putBoolean("xiaomi_dialog_shown", true).apply();
                         }
                     })
                     .show();
