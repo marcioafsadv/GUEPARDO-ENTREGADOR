@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 87d0985
-# pg_map_hash: SHA-256 87d0985999770aaa7846fddf52e54422279ee9973f55314232a8458f8ef11a52
+# pg_map_id: 886bcd0
+# pg_map_hash: SHA-256 886bcd013d8f829cf238579caf93058e47ccaa72334511606d6ce9b6696caf5e
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -37029,19 +37029,19 @@ com.guepardodelivery.entregador.LauncherActivity -> com.guepardodelivery.entrega
     4:11:void onCreate(android.os.Bundle):25:25 -> onCreate
     12:16:void onCreate(android.os.Bundle):26:26 -> onCreate
     17:20:void onCreate(android.os.Bundle):28:28 -> onCreate
-    1:3:void onResume():41:41 -> onResume
-    4:7:void onResume():42:42 -> onResume
+    1:3:void onResume():58:58 -> onResume
+    4:7:void onResume():59:59 -> onResume
     1:4:void onStart():34:34 -> onStart
-    5:7:void onStart():36:36 -> onStart
-    1:4:void onStop():47:47 -> onStop
-    5:6:void onStop():49:49 -> onStop
-    7:12:void onStop():52:52 -> onStop
-    13:22:void onStop():53:53 -> onStop
-    23:29:void onStop():58:58 -> onStop
-    30:35:void onStop():59:59 -> onStop
-    36:41:void onStop():60:60 -> onStop
-    42:45:void onStop():62:62 -> onStop
-    46:49:void onStop():65:65 -> onStop
+    5:6:void onStart():36:36 -> onStart
+    7:13:void onStart():41:41 -> onStart
+    14:22:void onStart():42:42 -> onStart
+    23:29:void onStart():44:44 -> onStart
+    30:35:void onStart():45:45 -> onStart
+    36:41:void onStart():46:46 -> onStart
+    42:45:void onStart():48:48 -> onStart
+    46:49:void onStart():52:52 -> onStart
+    1:4:void onStop():64:64 -> onStop
+    5:7:void onStop():66:66 -> onStop
     1:3:boolean access$002(com.guepardodelivery.entregador.LauncherActivity,boolean):12:12 -> q
     1:6:void checkOverlayPermission():70:70 -> r
     7:12:void checkOverlayPermission():71:71 -> r

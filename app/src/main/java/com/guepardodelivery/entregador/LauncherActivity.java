@@ -34,6 +34,23 @@ public class LauncherActivity
         super.onStart();
         // Marca que o app está em foreground (usado pelo FloatingBubbleService)
         Application.isAppInForeground = true;
+        
+        // Inicia o serviço quando o app está em FOREGROUND, se o driver estiver logado.
+        // Android 12+ proíbe iniciar Foreground Services quando o app está em background (ex: onStop).
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
+            String driverId = prefs.getString("driver_id", null);
+            if (driverId != null) {
+                Intent intent = new Intent(this, FloatingBubbleService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent);
+                } else {
+                    startService(intent);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -47,23 +64,6 @@ public class LauncherActivity
         super.onStop();
         // Marca que o app saiu do foreground (usado pelo FloatingBubbleService)
         Application.isAppInForeground = false;
-        // Inicia o serviço quando o app vai para background, se o driver estiver logado
-        try {
-            android.content.SharedPreferences prefs = getSharedPreferences("GuepardoPrefs", MODE_PRIVATE);
-            String driverId = prefs.getString("driver_id", null);
-            if (driverId == null) {
-                return;
-            }
-
-            Intent intent = new Intent(this, FloatingBubbleService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void checkOverlayPermission() {
