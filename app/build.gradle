@@ -57,8 +57,8 @@ android {
         applicationId "com.guepardodelivery.entregador"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 30
-        versionName "Guepardo Entregador V.L"
+        versionCode 25
+        versionName "Guepardo Entregador V.G"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
@@ -150,18 +150,9 @@ android {
 
         
     }
-    signingConfigs {
-        release {
-            storeFile file("../android.keystore")
-            storePassword "guepardo123"
-            keyAlias "android"
-            keyPassword "guepardo123"
-        }
-    }
     buildTypes {
         release {
             minifyEnabled true
-            signingConfig signingConfigs.release
         }
     }
     compileOptions {

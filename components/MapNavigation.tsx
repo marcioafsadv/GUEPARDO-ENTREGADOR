@@ -365,6 +365,9 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
     // Descobrir voz pt-BR baseado no gênero selecionado
     useEffect(() => {
+        let retryCount = 0;
+        const maxRetries = 5;
+
         const loadVoices = () => {
             if (!window.speechSynthesis) return;
             const voices = window.speechSynthesis.getVoices();
@@ -407,7 +410,16 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 ptVoices[0];
                 }
                 
-                if (preferred) setSelectedVoice(preferred);
+                if (preferred) {
+                    console.log('🗣️ [TTS] Voz pt-BR selecionada:', preferred.name);
+                    setSelectedVoice(preferred);
+                } else {
+                    console.warn('⚠️ [TTS] Nenhuma voz pt-BR específica encontrada. Usando voz padrão do sistema.');
+                }
+            } else if (retryCount < maxRetries) {
+                // Tenta novamente caso as vozes sejam carregadas de forma assíncrona
+                retryCount++;
+                setTimeout(loadVoices, 500);
             }
         };
 
@@ -434,6 +446,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const speechQueue = useRef<SpeechItem[]>([]);
     const isSpeaking = useRef<boolean>(false);
     const currentSpeechItem = useRef<SpeechItem | null>(null);
+    const activeUtterance = useRef<SpeechSynthesisUtterance | null>(null);
 
     const enqueueSpeech = (item: SpeechItem) => {
         if (!voiceEnabled || !window.speechSynthesis) return;
@@ -485,6 +498,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
         if (!window.speechSynthesis || speechQueue.current.length === 0) {
             isSpeaking.current = false;
             currentSpeechItem.current = null;
+            activeUtterance.current = null;
             return;
         }
 
@@ -497,26 +511,38 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
         // Aguarda som de notificação
         setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(nextItem.text);
-            if (selectedVoice) utterance.voice = selectedVoice;
-            utterance.lang = 'pt-BR';
-            utterance.rate = 1.0;
-            utterance.pitch = voiceGender === 'male' ? 0.82 : 1.05;
+            try {
+                const utterance = new SpeechSynthesisUtterance(nextItem.text);
+                activeUtterance.current = utterance; // Protege contra Garbage Collection do V8/WebKit
+                
+                if (selectedVoice) utterance.voice = selectedVoice;
+                utterance.lang = 'pt-BR';
+                utterance.rate = 1.0;
+                utterance.pitch = voiceGender === 'male' ? 0.82 : 1.05;
 
-            utterance.onend = () => {
+                utterance.onend = () => {
+                    activeUtterance.current = null;
+                    isSpeaking.current = false;
+                    currentSpeechItem.current = null;
+                    processQueue();
+                };
+
+                utterance.onerror = (e) => {
+                    console.error('[AudioQueue] Erro no TTS:', e);
+                    activeUtterance.current = null;
+                    isSpeaking.current = false;
+                    currentSpeechItem.current = null;
+                    processQueue();
+                };
+
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                console.error('[AudioQueue] Erro fatal ao iniciar fala:', err);
+                activeUtterance.current = null;
                 isSpeaking.current = false;
                 currentSpeechItem.current = null;
                 processQueue();
-            };
-
-            utterance.onerror = (e) => {
-                console.error('[AudioQueue] Erro no TTS:', e);
-                isSpeaking.current = false;
-                currentSpeechItem.current = null;
-                processQueue();
-            };
-
-            window.speechSynthesis.speak(utterance);
+            }
         }, 300);
     };
 
@@ -1664,21 +1690,34 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                             <p className="text-[#D4AF37] text-[10px] font-black leading-tight tracking-[0.25em] mt-1.5 line-clamp-1 opacity-90">
                                 {instruction?.roadName || 'SIGA EM FRENTE'}
                             </p>
-                        </div>
-                        {/* Audio Controls */}
-                        <div className="flex items-center space-x-2">
-                             {/* Gender Toggle Button */}
-                             <button 
-                                onClick={() => setVoiceGender(prev => prev === 'male' ? 'female' : 'male')}
+                            {/* Gender Toggle Button */}
+                            <button 
+                                onClick={() => {
+                                    const nextGender = voiceGender === 'male' ? 'female' : 'male';
+                                    setVoiceGender(nextGender);
+                                    if (voiceEnabled) {
+                                        setTimeout(() => {
+                                            speak(nextGender === 'male' ? 'Voz masculina selecionada' : 'Voz feminina selecionada', 1, false);
+                                        }, 100);
+                                    }
+                                }}
                                 className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-white/5 border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-white/10 transition-all font-black text-[9px] tracking-wide"
                                 title="Alternar voz Masculina / Feminina"
-                             >
+                            >
                                 <span className="leading-none text-[8px] text-[#F5E6D3]/60 mb-0.5 font-bold uppercase">Voz</span>
                                 <span className="leading-none font-black">{voiceGender === 'male' ? 'MASC' : 'FEM'}</span>
-                             </button>
-                             {/* Speaker Button */}
-                             <button 
-                                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                            </button>
+                            {/* Speaker Button */}
+                            <button 
+                                onClick={() => {
+                                    const nextEnabled = !voiceEnabled;
+                                    setVoiceEnabled(nextEnabled);
+                                    if (nextEnabled) {
+                                        setTimeout(() => {
+                                            speak('Navegação por voz ativada', 1, false);
+                                        }, 100);
+                                    }
+                                }}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${voiceEnabled ? 'bg-orange-600/20 text-orange-500 border border-orange-500/30 shadow-[0_0_15px_rgba(255,107,0,0.2)]' : 'bg-white/5 border border-white/10 text-white/20'}`}
                             >
                                 <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-sm`}></i>
