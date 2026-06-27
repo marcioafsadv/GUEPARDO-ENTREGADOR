@@ -366,6 +366,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     // Descobrir voz pt-BR baseado no gênero selecionado
     useEffect(() => {
         const loadVoices = () => {
+            if (!window.speechSynthesis) return;
             const voices = window.speechSynthesis.getVoices();
             if (voices.length > 0) {
                 const ptVoices = voices.filter(v => v.lang.startsWith('pt'));

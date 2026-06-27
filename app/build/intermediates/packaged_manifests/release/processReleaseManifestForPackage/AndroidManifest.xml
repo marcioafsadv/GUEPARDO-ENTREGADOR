@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="27"
-    android:versionName="Guepardo Entregador V.I" >
+    android:versionCode="30"
+    android:versionName="Guepardo Entregador V.L" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -64,7 +64,6 @@
         android:extractNativeLibs="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/appName"
-        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Translucent.NoTitleBar" >
         <meta-data

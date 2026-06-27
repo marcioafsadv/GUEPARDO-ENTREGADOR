@@ -57,8 +57,8 @@ android {
         applicationId "com.guepardodelivery.entregador"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 27
-        versionName "Guepardo Entregador V.I"
+        versionCode 30
+        versionName "Guepardo Entregador V.L"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
