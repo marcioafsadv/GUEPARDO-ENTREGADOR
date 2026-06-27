@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="24"
-    android:versionName="Guepardo Entregador V.F" >
+    android:versionCode="27"
+    android:versionName="Guepardo Entregador V.I" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -32,9 +32,12 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -90,53 +93,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.guepardodelivery.entregador.LauncherActivity"
+            android:name="com.guepardodelivery.entregador.MainActivity"
             android:alwaysRetainTaskState="true"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true"
             android:label="@string/launcherName" >
-            <meta-data
-                android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="@string/launchUrl" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
-                android:resource="@color/colorPrimary" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR_DARK"
-                android:resource="@color/colorPrimaryDark" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                android:resource="@color/navigationColor" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR_DARK"
-                android:resource="@color/navigationColorDark" />
-            <meta-data
-                android:name="androix.browser.trusted.NAVIGATION_BAR_DIVIDER_COLOR"
-                android:resource="@color/navigationDividerColor" />
-            <meta-data
-                android:name="androix.browser.trusted.NAVIGATION_BAR_DIVIDER_COLOR_DARK"
-                android:resource="@color/navigationDividerColorDark" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                android:resource="@drawable/splash" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
-                android:resource="@color/backgroundColor" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
-                android:value="@integer/splashScreenFadeOutDuration" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
-                android:value="@string/providerAuthority" />
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
-                android:value="@string/fallbackType" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
-                android:value="@string/orientation" />
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -209,6 +170,14 @@
             android:foregroundServiceType="dataSync"
             android:permission="android.permission.FOREGROUND_SERVICE" />
 
+        <activity
+            android:name="com.guepardodelivery.entregador.CallActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:turnScreenOn="true" />
         <activity
             android:name="com.google.android.gms.common.api.GoogleApiActivity"
             android:exported="false"

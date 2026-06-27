@@ -13,9 +13,14 @@ color shortcut_background
 drawable ic_notification_icon
 drawable shortcut_legacy_background
 drawable splash
+id btn_accept
+id webView
 integer splashScreenFadeOutDuration
+layout activity_call
+layout activity_main
 mipmap ic_launcher
 mipmap ic_maskable
+raw rugido_guepardo
 raw web_app_manifest
 string appName
 string assetStatements

@@ -770,6 +770,7 @@ id browser_actions_menu_item_icon
 id browser_actions_menu_item_text
 id browser_actions_menu_items
 id browser_actions_menu_view
+id btn_accept
 id buttonPanel
 id center_vertical
 id checkbox
@@ -887,6 +888,7 @@ id view_tree_on_back_pressed_dispatcher_owner
 id view_tree_saved_state_registry_owner
 id view_tree_view_model_store_owner
 id visible_removing_fragment_view_tag
+id webView
 id wide
 id withText
 id wrap_content
@@ -932,6 +934,8 @@ layout abc_search_dropdown_item_icons_2line
 layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
+layout activity_call
+layout activity_main
 layout browser_actions_context_menu_page
 layout browser_actions_context_menu_row
 layout custom_dialog
@@ -949,6 +953,7 @@ layout select_dialog_singlechoice_material
 layout support_simple_spinner_dropdown_item
 mipmap ic_launcher
 mipmap ic_maskable
+raw rugido_guepardo
 raw web_app_manifest
 string abc_action_bar_home_description
 string abc_action_bar_up_description

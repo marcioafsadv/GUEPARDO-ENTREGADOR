@@ -1,5 +1,9 @@
 [
     {
+        "merged": "com.guepardodelivery.entregador.app-release-4:/raw_rugido_guepardo.mp3.flat",
+        "source": "com.guepardodelivery.entregador.app-main-5:/raw/rugido_guepardo.mp3"
+    },
+    {
         "merged": "com.guepardodelivery.entregador.app-release-4:/drawable-anydpi_shortcut_legacy_background.xml.flat",
         "source": "com.guepardodelivery.entregador.app-main-5:/drawable-anydpi/shortcut_legacy_background.xml"
     },
@@ -84,12 +88,20 @@
         "source": "com.guepardodelivery.entregador.app-main-5:/mipmap-xxhdpi/ic_maskable.png"
     },
     {
+        "merged": "com.guepardodelivery.entregador.app-release-4:/layout_activity_main.xml.flat",
+        "source": "com.guepardodelivery.entregador.app-main-5:/layout/activity_main.xml"
+    },
+    {
         "merged": "com.guepardodelivery.entregador.app-release-4:/mipmap-hdpi_ic_maskable.png.flat",
         "source": "com.guepardodelivery.entregador.app-main-5:/mipmap-hdpi/ic_maskable.png"
     },
     {
         "merged": "com.guepardodelivery.entregador.app-release-4:/xml_filepaths.xml.flat",
         "source": "com.guepardodelivery.entregador.app-main-5:/xml/filepaths.xml"
+    },
+    {
+        "merged": "com.guepardodelivery.entregador.app-release-4:/layout_activity_call.xml.flat",
+        "source": "com.guepardodelivery.entregador.app-main-5:/layout/activity_call.xml"
     },
     {
         "merged": "com.guepardodelivery.entregador.app-release-4:/mipmap-anydpi-v26_ic_launcher.xml.flat",

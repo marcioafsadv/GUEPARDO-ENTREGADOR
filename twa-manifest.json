@@ -20,8 +20,8 @@
     "path": "c:\\Projetos\\GUEPARDO-ENTREGADOR\\android.keystore",
     "alias": "android"
   },
-  "appVersionName": "Guepardo Entregador V.F",
-  "appVersionCode": 24,
+  "appVersionName": "Guepardo Entregador V.G",
+  "appVersionCode": 25,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://guepardodelivery-entregador.com/manifest.webmanifest",
@@ -47,5 +47,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "Guepardo Entregador V.F"
+  "appVersion": "Guepardo Entregador V.G"
 }
