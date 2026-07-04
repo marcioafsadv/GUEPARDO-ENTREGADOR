@@ -1867,13 +1867,13 @@ const App: React.FC = () => {
     switch (type) {
       case 'police': window.location.href = 'tel:190'; break;
       case 'samu': window.location.href = 'tel:192'; break;
-      case 'mechanic': window.open('https://www.google.com/maps/search/borracharia+mecanico+moto', '_blank'); break;
+      case 'mechanic': window.location.href = 'https://www.google.com/maps/search/?api=1&query=borracharia+mecanico+moto'; break;
       case 'share':
         if (!navigator.geolocation) { alert("GPS indisponível."); return; }
         navigator.geolocation.getCurrentPosition((pos) => {
           const { latitude, longitude } = pos.coords;
           const message = `SOS! Preciso de ajuda. Estou aqui: https://maps.google.com/?q=${latitude},${longitude}`;
-          window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+          window.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
           setShowSOSModal(false);
         }, () => alert("Erro ao obter localização."), { enableHighAccuracy: true });
         break;
@@ -1894,15 +1894,19 @@ const App: React.FC = () => {
       // COORDINATE BASED NAVIGATION (Most Accurate)
       const url = provider === 'waze'
         ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
-        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-      window.open(url, '_blank');
+        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
+      window.location.href = url;
     } else if (address) {
       // FALLBACK TO ADDRESS STRING
-      const encodedAddress = encodeURIComponent(address);
+      // Clean address to avoid issues with informal descriptors (e.g. "- Casa", duplicate details)
+      let cleanAddress = address;
+      cleanAddress = cleanAddress.replace(/\s*-\s*(Casa|Apto|Apartamento|Bloco|Sobrado|Fundos)\b/gi, '');
+      
+      const encodedAddress = encodeURIComponent(cleanAddress.trim());
       const url = provider === 'waze'
         ? `https://waze.com/ul?q=${encodedAddress}&navigate=yes`
-        : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
-      window.open(url, '_blank');
+        : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving&dir_action=navigate`;
+      window.location.href = url;
     }
     
     setShowMissionMapPicker(false);
