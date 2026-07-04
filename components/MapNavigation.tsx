@@ -360,6 +360,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     const nextManeuverCoords = useRef<{ lat: number; lng: number } | null>(null);
     const lastFetchTime = useRef<number>(0);
     const lastFetchLocation = useRef<{ lat: number; lng: number } | null>(null);
+    const lastRouteData = useRef<any>(null);
 
 
 
@@ -741,8 +742,15 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             );
         };
 
-        map.current.on('style.load', add3DBuildings);
-        map.current.on('load', add3DBuildings);
+        const handleStyleLoad = () => {
+            add3DBuildings();
+            if (lastRouteData.current && map.current && !map.current.getSource('route')) {
+                addRouteLayersToMap(map.current, lastRouteData.current);
+            }
+        };
+
+        map.current.on('style.load', handleStyleLoad);
+        map.current.on('load', handleStyleLoad);
 
         // Create marker
         const el = document.createElement('div');
@@ -1321,6 +1329,157 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
     // Track distance checkpoints to avoid repetitive announcements
     const lastCheckPoint = useRef<number>(0);
 
+    const addRouteLayersToMap = (mapInstance: mapboxgl.Map, routeData: any) => {
+        if (!mapInstance || mapInstance.getSource('route')) return;
+
+        mapInstance.addSource('route', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: routeData.geometry
+            }
+        });
+
+        // Route Shadow Layer for "Elevated" look
+        mapInstance.addLayer({
+            id: 'route-shadow',
+            type: 'line',
+            source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 
+                'line-color': '#000', 
+                'line-width': 8, 
+                'line-opacity': 0.3,
+                'line-translate': [3, 3] 
+            }
+        });
+
+        mapInstance.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 1.0 }
+        });
+
+        // Maneuver Turn Arrow Sources
+        mapInstance.addSource('maneuver-arrow', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: { type: 'LineString', coordinates: [] }
+            }
+        });
+
+        mapInstance.addSource('maneuver-arrow-head', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: { bearing: 0 },
+                geometry: { type: 'Point', coordinates: [0, 0] }
+            }
+        });
+
+        // Maneuver Turn Arrow Shadow Layer
+        mapInstance.addLayer({
+            id: 'maneuver-arrow-shadow',
+            type: 'line',
+            source: 'maneuver-arrow',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+                'visibility': 'none'
+            },
+            paint: {
+                'line-color': '#000000',
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    12, 16,
+                    18, 24
+                ],
+                'line-opacity': 0.35,
+                'line-translate': [2.5, 2.5]
+            }
+        });
+
+        // Maneuver Turn Arrow Outline Layer (creates a beautiful orange outline)
+        mapInstance.addLayer({
+            id: 'maneuver-arrow-outline',
+            type: 'line',
+            source: 'maneuver-arrow',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+                'visibility': 'none'
+            },
+            paint: {
+                'line-color': '#FF6B00',
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    12, 16,
+                    18, 22
+                ],
+                'line-opacity': 1.0
+            }
+        });
+
+        // Maneuver Turn Arrow White Line Layer
+        mapInstance.addLayer({
+            id: 'maneuver-arrow-line',
+            type: 'line',
+            source: 'maneuver-arrow',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+                'visibility': 'none'
+            },
+            paint: {
+                'line-color': '#FFFFFF',
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    12, 10,
+                    18, 14
+                ],
+                'line-opacity': 1.0
+            }
+        });
+
+        // Maneuver Turn Arrow Head Layer — simple white triangle with orange outline
+        mapInstance.addLayer({
+            id: 'maneuver-arrow-head',
+            type: 'symbol',
+            source: 'maneuver-arrow-head',
+            layout: {
+                'icon-image': 'maneuver-arrow-head-marker',
+                'icon-size': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    12, 0.4,
+                    18, 0.7
+                ],
+                'icon-rotate': ['get', 'bearing'],
+                'icon-rotation-alignment': 'map',
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'visibility': 'none'
+            },
+            paint: {
+                'icon-color': '#FFFFFF',
+                'icon-halo-color': '#FF6B00',
+                'icon-halo-width': 2.5
+            }
+        });
+    };
+
     const fetchRoute = async (start: { lat: number, lng: number }, end: { lat: number, lng: number }) => {
         lastFetchTime.current = Date.now();
         lastFetchLocation.current = start;
@@ -1374,6 +1533,8 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             console.error("Failed to fetch route from both Mapbox and OSRM.");
             return;
         }
+
+        lastRouteData.current = route;
 
         try {
                 const coords = route.geometry.coordinates;
@@ -1480,166 +1641,13 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                         properties: {},
                         geometry: route.geometry
                     });
-                } else {
-                    const addRouteLayers = () => {
-                        if (!map.current || map.current.getSource('route')) return;
-                        
-                        map.current.addSource('route', {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                properties: {},
-                                geometry: route.geometry
-                            }
-                        });
-
-                        // Route Shadow Layer for "Elevated" look
-                        map.current.addLayer({
-                            id: 'route-shadow',
-                            type: 'line',
-                            source: 'route',
-                            layout: { 'line-join': 'round', 'line-cap': 'round' },
-                            paint: { 
-                                'line-color': '#000', 
-                                'line-width': 8, 
-                                'line-opacity': 0.3,
-                                'line-translate': [3, 3] 
-                            }
-                        });
-
-                        map.current.addLayer({
-                            id: 'route',
-                            type: 'line',
-                            source: 'route',
-                            layout: { 'line-join': 'round', 'line-cap': 'round' },
-                            paint: { 'line-color': '#FF6B00', 'line-width': 8, 'line-opacity': 1.0 }
-                        });
-
-                        // (no custom image needed - using text symbol)
-
-                        // Maneuver Turn Arrow Sources
-                        map.current.addSource('maneuver-arrow', {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                properties: {},
-                                geometry: { type: 'LineString', coordinates: [] }
-                            }
-                        });
-
-                        map.current.addSource('maneuver-arrow-head', {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                properties: { bearing: 0 },
-                                geometry: { type: 'Point', coordinates: [0, 0] }
-                            }
-                        });
-
-                        // Maneuver Turn Arrow Shadow Layer
-                        map.current.addLayer({
-                            id: 'maneuver-arrow-shadow',
-                            type: 'line',
-                            source: 'maneuver-arrow',
-                            layout: {
-                                'line-join': 'round',
-                                'line-cap': 'round',
-                                'visibility': 'none'
-                            },
-                            paint: {
-                                'line-color': '#000000',
-                                'line-width': [
-                                    'interpolate',
-                                    ['linear'],
-                                    ['zoom'],
-                                    12, 16,
-                                    18, 24
-                                ],
-                                'line-opacity': 0.35,
-                                'line-translate': [2.5, 2.5]
-                            }
-                        });
-
-                        // Maneuver Turn Arrow Outline Layer (creates a beautiful orange outline)
-                        map.current.addLayer({
-                            id: 'maneuver-arrow-outline',
-                            type: 'line',
-                            source: 'maneuver-arrow',
-                            layout: {
-                                'line-join': 'round',
-                                'line-cap': 'round',
-                                'visibility': 'none'
-                            },
-                            paint: {
-                                'line-color': '#FF6B00',
-                                'line-width': [
-                                    'interpolate',
-                                    ['linear'],
-                                    ['zoom'],
-                                    12, 16,
-                                    18, 22
-                                ],
-                                'line-opacity': 1.0
-                            }
-                        });
-
-                        // Maneuver Turn Arrow White Line Layer
-                        map.current.addLayer({
-                            id: 'maneuver-arrow-line',
-                            type: 'line',
-                            source: 'maneuver-arrow',
-                            layout: {
-                                'line-join': 'round',
-                                'line-cap': 'round',
-                                'visibility': 'none'
-                            },
-                            paint: {
-                                'line-color': '#FFFFFF',
-                                'line-width': [
-                                    'interpolate',
-                                    ['linear'],
-                                    ['zoom'],
-                                    12, 10,
-                                    18, 14
-                                ],
-                                'line-opacity': 1.0
-                            }
-                        });
-
-                        // Maneuver Turn Arrow Head Layer — simple white triangle with orange outline
-                        map.current.addLayer({
-                            id: 'maneuver-arrow-head',
-                            type: 'symbol',
-                            source: 'maneuver-arrow-head',
-                            layout: {
-                                'text-field': '▲',
-                                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-                                'text-size': [
-                                    'interpolate',
-                                    ['linear'],
-                                    ['zoom'],
-                                    14, 16,
-                                    18, 24
-                                ],
-                                'text-rotate': ['get', 'bearing'],
-                                'text-rotation-alignment': 'map',
-                                'text-allow-overlap': true,
-                                'text-ignore-placement': true,
-                                'visibility': 'none',
-                                'text-offset': [0, 0]
-                            },
-                            paint: {
-                                'text-color': '#FFFFFF',
-                                'text-halo-color': '#FF6B00',
-                                'text-halo-width': 2.5
-                            }
-                        });
-                    };
-
-                    if (map.current?.loaded()) {
-                        addRouteLayers();
+                } else if (map.current) {
+                    if (map.current.loaded()) {
+                        addRouteLayersToMap(map.current, route);
                     } else {
-                        map.current?.on('load', addRouteLayers);
+                        map.current.on('load', () => {
+                            if (map.current) addRouteLayersToMap(map.current, route);
+                        });
                     }
                 }
         } catch (e) {
@@ -1791,41 +1799,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                     <i className="fas fa-route text-xl group-hover:scale-110 transition-transform"></i>
                 </button>
 
-                {/* BOTÃO DE REPORTAR ERRO DE ROTA */}
-                <button 
-                    onClick={async () => {
-                        if (!effectiveLocation || !destinationCoords || !driverId || !missionId) {
-                            alert("Não foi possível reportar o erro neste momento. Certifique-se de que a localização e a rota estão ativas.");
-                            return;
-                        }
-                        
-                        try {
-                            playNotificationSound();
-                            const breadcrumbsJson = JSON.stringify(gpsBreadcrumbs.current);
-                            const enrichedComment = `[BREADCRUMBS_TELEMETRY]: ${breadcrumbsJson}\n[VEHICLE_TYPE]: ${vehicleType}\nComentário: Reportado pelo entregador via botão de pânico de rota`;
 
-                            await reportRouteError({
-                                driverId,
-                                deliveryId: missionId,
-                                driverLat: effectiveLocation.lat,
-                                driverLng: effectiveLocation.lng,
-                                destinationLat: destinationCoords.lat,
-                                destinationLng: destinationCoords.lng,
-                                currentInstruction: instruction?.fullText || '',
-                                routeGeojson: { coordinates: routeCoordinates.current },
-                                comment: enrichedComment
-                            });
-                            alert("Obrigado! A coordenada foi registrada e nossa equipe irá auditar este trecho no OpenStreetMap.");
-                        } catch (e) {
-                            console.error("Erro ao enviar relatório de rota:", e);
-                            alert("Erro ao enviar relatório para o servidor. Tente novamente mais tarde.");
-                        }
-                    }}
-                    className="w-14 h-14 rounded-full bg-zinc-950/90 border border-white/5 shadow-2xl flex items-center justify-center text-yellow-500 backdrop-blur-3xl active:scale-90 transition-all hover:bg-black group ring-1 ring-white/5 relative"
-                    title="Reportar Erro de Navegação"
-                >
-                    <i className="fas fa-map-pin text-xl group-hover:scale-110 transition-transform"></i>
-                </button>
 
                 {/* BOTÃO DE CHAT COM NOTIFICAÇÃO */}
                 <button 
