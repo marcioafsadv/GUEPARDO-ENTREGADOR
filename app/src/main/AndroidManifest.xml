@@ -34,11 +34,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    
-
-    
-
-    
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.waze" />
+        <package android:name="com.whatsapp" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="waze" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
 
     <application
         android:name="Application"

@@ -20,10 +20,8 @@
      application, the package attribute will need to reflect the correct path in order to use
      the abbreviated format. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.guepardodelivery.entregador">
 
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -33,20 +31,25 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    
-
-    
-
-    
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.waze" />
+        <package android:name="com.whatsapp" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="waze" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
 
     <application
         android:name="Application"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/appName"
-        
-        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
         
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Translucent.NoTitleBar">
@@ -84,87 +87,24 @@
             </activity>
         
 
-        <activity android:name="LauncherActivity"
+        <activity android:name=".MainActivity"
             android:alwaysRetainTaskState="true"
             android:label="@string/launcherName"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true">
-            <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="@string/launchUrl" />
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
-                android:resource="@color/colorPrimary" />
-
-            
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR_DARK"
-                android:resource="@color/colorPrimaryDark" />
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                android:resource="@color/navigationColor" />
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR_DARK"
-                android:resource="@color/navigationColorDark" />
-
-            <meta-data
-                android:name="androix.browser.trusted.NAVIGATION_BAR_DIVIDER_COLOR"
-                android:resource="@color/navigationDividerColor" />
-
-            <meta-data
-                android:name="androix.browser.trusted.NAVIGATION_BAR_DIVIDER_COLOR_DARK"
-                android:resource="@color/navigationDividerColorDark" />
-
-            <meta-data android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                android:resource="@drawable/splash"/>
-
-            <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
-                android:resource="@color/backgroundColor"/>
-
-            <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
-                android:value="@integer/splashScreenFadeOutDuration"/>
-
-            <meta-data android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
-                android:value="@string/providerAuthority"/>
-
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
-
-            <meta-data android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
-                android:value="@string/fallbackType" />
-
-            
-
-            
-
-            <meta-data android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
-                android:value="@string/orientation"/>
-
-            
-
-            
-
-            
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
+            
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
                     android:host="@string/hostName"
-                
                 />
             </intent-filter>
-
-            
-
-            
         </activity>
 
         <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
