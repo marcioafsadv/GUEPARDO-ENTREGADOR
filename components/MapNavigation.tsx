@@ -1673,23 +1673,29 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             {/* Print 3 style Header Instructions */}
             <div className="absolute top-0 left-0 right-0 z-20">
                 <div className="bg-[#0D0502]/95 backdrop-blur-xl rounded-b-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] pb-4 pt-8 px-6 flex flex-col uppercase border-b border-[#D4AF37]/20">
-                    <div className="flex items-center">
-                        <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-zinc-900/50 rounded-2xl border border-[#D4AF37]/30 shadow-[inset_0_0_15px_rgba(212,175,55,0.1)]">
-                             {instruction?.modifier.includes('left') ? (
-                                <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
-                            ) : instruction?.modifier.includes('right') ? (
-                                <i className="fas fa-arrow-up rotate-[90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
-                            ) : (
-                                <i className="fas fa-arrow-up text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
-                            )}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center flex-1 min-w-0">
+                            <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-zinc-900/50 rounded-2xl border border-[#D4AF37]/30 shadow-[inset_0_0_15px_rgba(212,175,55,0.1)]">
+                                 {instruction?.modifier.includes('left') ? (
+                                    <i className="fas fa-arrow-up rotate-[-90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
+                                ) : instruction?.modifier.includes('right') ? (
+                                    <i className="fas fa-arrow-up rotate-[90deg] text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
+                                ) : (
+                                    <i className="fas fa-arrow-up text-3xl text-[#FF6B00] drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]"></i>
+                                )}
+                            </div>
+                            <div className="flex flex-col flex-1 min-w-0">
+                                <h1 className="text-[#F5E6D3] text-3xl font-[900] leading-none tracking-tighter italic">
+                                    {instruction?.distanceText || '0 M'}
+                                </h1>
+                                <p className="text-[#D4AF37] text-[10px] font-black leading-tight tracking-[0.25em] mt-1.5 line-clamp-1 opacity-90">
+                                    {instruction?.roadName || 'SIGA EM FRENTE'}
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex flex-col flex-1">
-                            <h1 className="text-[#F5E6D3] text-3xl font-[900] leading-none tracking-tighter italic">
-                                {instruction?.distanceText || '0 M'}
-                            </h1>
-                            <p className="text-[#D4AF37] text-[10px] font-black leading-tight tracking-[0.25em] mt-1.5 line-clamp-1 opacity-90">
-                                {instruction?.roadName || 'SIGA EM FRENTE'}
-                            </p>
+
+                        {/* Audio & Voice Controls in the right corner */}
+                        <div className="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
                             {/* Gender Toggle Button */}
                             <button 
                                 onClick={() => {
@@ -1723,7 +1729,6 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
                                 <i className={`fas ${voiceEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-sm`}></i>
                             </button>
                         </div>
-
                     </div>
 
                     {/* Lower bar for secondary instructions - Compacted */}
