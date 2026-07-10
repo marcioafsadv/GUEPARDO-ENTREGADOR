@@ -33,6 +33,8 @@ public class FloatingBubbleService extends Service {
 
     private static final String CHANNEL_ID = "floating_bubble_channel";
     private static final int NOTIFICATION_ID = 1001;
+    private static final String FULL_SCREEN_CHANNEL_ID = "delivery_alert_channel";
+    private static final int FULL_SCREEN_NOTIFICATION_ID = 1002;
 
     private WindowManager windowManager;
     private FrameLayout rootView;
@@ -265,13 +267,11 @@ public class FloatingBubbleService extends Service {
                                 if (lastRingingDeliveryId == null || !lastRingingDeliveryId.equals(deliveryId)) {
                                     lastRingingDeliveryId = deliveryId;
                                     
-                                    // Temos uma nova entrega pendente! Vamos chamar o app direto.
+                                    // Temos uma nova entrega pendente! Vamos disparar a notificação de tela cheia.
                                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Intent intent = new Intent(FloatingBubbleService.this, MainActivity.class);
-                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                            startActivity(intent);
+                                            fireDeliveryNotification();
                                         }
                                     });
                                 }
@@ -636,10 +636,54 @@ public class FloatingBubbleService extends Service {
                     NotificationManager.IMPORTANCE_LOW
             );
             channel.setDescription("Serviço que mantém a bolinha flutuante ativa.");
+            
+            NotificationChannel alertChannel = new NotificationChannel(
+                    FULL_SCREEN_CHANNEL_ID,
+                    "Alertas de Nova Corrida",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            alertChannel.setDescription("Usado para acender a tela quando chega uma nova corrida.");
+            alertChannel.enableVibration(true);
+
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
+                manager.createNotificationChannel(alertChannel);
             }
+        }
+    }
+
+    private void fireDeliveryNotification() {
+        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        
+        PendingIntent fullScreenPendingIntent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            fullScreenPendingIntent = PendingIntent.getActivity(this, 0,
+                    fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        } else {
+            fullScreenPendingIntent = PendingIntent.getActivity(this, 0,
+                    fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, FULL_SCREEN_CHANNEL_ID);
+        } else {
+            builder = new Notification.Builder(this);
+            builder.setPriority(Notification.PRIORITY_MAX);
+            builder.setVibrate(new long[]{0, 500, 500, 500});
+        }
+
+        builder.setSmallIcon(android.R.drawable.sym_def_app_icon)
+               .setContentTitle("Nova Corrida Disponível!")
+               .setContentText("Você tem uma nova entrega aguardando.")
+               .setFullScreenIntent(fullScreenPendingIntent, true)
+               .setAutoCancel(true);
+
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(FULL_SCREEN_NOTIFICATION_ID, builder.build());
         }
     }
 

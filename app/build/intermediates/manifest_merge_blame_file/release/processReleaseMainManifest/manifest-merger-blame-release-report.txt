@@ -23,8 +23,8 @@
 23-->
 24<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 25    package="com.guepardodelivery.entregador"
-26    android:versionCode="32"
-27    android:versionName="Guepardo Entregador V.N" >
+26    android:versionCode="33"
+27    android:versionName="Guepardo Entregador V.O" >
 28
 29    <uses-sdk
 30        android:minSdkVersion="21"
@@ -97,8 +97,8 @@
 59-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:21-62
 60
 61            <category android:name="android.intent.category.BROWSABLE" />
-61-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:17-77
-61-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:27-75
+61-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:17-77
+61-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:27-75
 62
 63            <data android:scheme="https" />
 63-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:13-43
@@ -125,7 +125,7 @@
 74-->[androidx.core:core:1.13.0] C:\Users\User\.gradle\caches\8.11.1\transforms\a5429f7b20c607b890f08b5283ad4ec0\transformed\core-1.13.0\AndroidManifest.xml:26:22-94
 75
 76    <application
-76-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:49:5-174:19
+76-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:49:5-175:19
 77        android:name="com.guepardodelivery.entregador.Application"
 77-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:50:9-35
 78        android:allowBackup="true"
@@ -189,234 +189,236 @@
 108            </intent-filter>
 109        </activity>
 110        <activity
-110-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:91:9-109:20
+110-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:91:9-110:20
 111            android:name="com.guepardodelivery.entregador.MainActivity"
 111-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:91:19-47
 112            android:alwaysRetainTaskState="true"
 112-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:92:13-49
 113            android:configChanges="orientation|keyboardHidden|screenSize"
-113-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:94:13-74
+113-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:95:13-74
 114            android:exported="true"
-114-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:95:13-36
-115            android:label="@string/launcherName" >
-115-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:93:13-49
-116            <intent-filter>
-116-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:96:13-99:29
-117                <action android:name="android.intent.action.MAIN" />
-117-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:97:17-69
-117-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:97:25-66
-118
-119                <category android:name="android.intent.category.LAUNCHER" />
-119-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:98:17-77
-119-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:98:27-74
-120            </intent-filter>
-121            <intent-filter android:autoVerify="true" >
-121-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:101:13-108:29
-121-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:101:28-53
-122                <action android:name="android.intent.action.VIEW" />
-122-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:13-65
-122-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:21-62
-123
-124                <category android:name="android.intent.category.DEFAULT" />
-124-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
-124-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
-125                <category android:name="android.intent.category.BROWSABLE" />
-125-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:17-77
-125-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:27-75
-126
-127                <data
-127-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:13-43
-128                    android:host="@string/hostName"
-128-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:106:21-52
-129                    android:scheme="https" />
-129-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:19-40
-130            </intent-filter>
-131        </activity>
-132        <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
-132-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:111:9-90
-132-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:111:19-87
-133        <activity
-133-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:113:9-114:62
-134            android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"
-134-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:113:19-97
-135            android:configChanges="orientation|screenSize" />
-135-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:114:13-59
-136
-137        <provider
-137-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:116:9-124:20
-138            android:name="androidx.core.content.FileProvider"
-138-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:117:13-62
-139            android:authorities="@string/providerAuthority"
-139-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:118:13-60
-140            android:exported="false"
-140-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:120:13-37
-141            android:grantUriPermissions="true" >
-141-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:119:13-47
-142            <meta-data
-142-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:121:13-123:53
-143                android:name="android.support.FILE_PROVIDER_PATHS"
-143-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:122:17-67
-144                android:resource="@xml/filepaths" />
-144-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:123:17-50
-145        </provider>
-146
-147        <service
-147-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:126:9-141:19
-148            android:name="com.guepardodelivery.entregador.DelegationService"
-148-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:127:13-46
-149            android:enabled="@bool/enableNotification"
-149-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:128:13-55
-150            android:exported="@bool/enableNotification" >
-150-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:129:13-56
-151            <meta-data
-151-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:132:17-134:73
-152                android:name="android.support.customtabs.trusted.SMALL_ICON"
-152-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:133:21-81
-153                android:resource="@drawable/ic_notification_icon" />
-153-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:134:21-70
-154
-155            <intent-filter>
-155-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:137:13-140:29
-156                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
-156-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:138:17-105
-156-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:138:25-103
-157
-158                <category android:name="android.intent.category.DEFAULT" />
-158-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
-158-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
-159            </intent-filter>
-160        </service>
-161
-162        <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity" />
-162-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:144:13-118
-162-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:144:23-115
-163        <activity android:name="com.google.androidbrowserhelper.locationdelegation.PermissionRequestActivity" />
-163-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:148:13-149:89
-163-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:148:23-123
-164
-165        <!-- Floating Bubble Service -->
-166        <activity
-166-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:153:9-163:20
-167            android:name="com.guepardodelivery.entregador.SetDriverActivity"
-167-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:154:13-46
-168            android:exported="true"
-168-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:156:13-36
-169            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
-169-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:155:13-72
-170            <intent-filter>
-170-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:157:13-162:29
-171                <action android:name="android.intent.action.VIEW" />
-171-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:13-65
-171-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:21-62
-172
-173                <category android:name="android.intent.category.DEFAULT" />
-173-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
-173-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
-174                <category android:name="android.intent.category.BROWSABLE" />
-174-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:17-77
-174-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:104:27-75
-175
-176                <data
-176-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:13-43
-177                    android:host="set-driver"
-177-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:106:21-52
-178                    android:scheme="guepardo" />
-178-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:19-40
-179            </intent-filter>
-180        </activity>
-181
-182        <service
-182-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:165:9-169:74
-183            android:name="com.guepardodelivery.entregador.FloatingBubbleService"
-183-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:166:13-50
-184            android:exported="false"
-184-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:167:13-37
-185            android:foregroundServiceType="dataSync"
-185-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:168:13-53
-186            android:permission="android.permission.FOREGROUND_SERVICE" />
-186-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:169:13-71
-187
-188        <activity
-188-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:20:9-22:45
-189            android:name="com.google.android.gms.common.api.GoogleApiActivity"
-189-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:20:19-85
-190            android:exported="false"
-190-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:22:19-43
-191            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-191-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:21:19-78
-192
-193        <meta-data
-193-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:21:9-23:69
-194            android:name="com.google.android.gms.version"
-194-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:22:13-58
-195            android:value="@integer/google_play_services_version" />
-195-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:23:13-66
-196
-197        <provider
-197-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
-198            android:name="androidx.startup.InitializationProvider"
-198-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
-199            android:authorities="com.guepardodelivery.entregador.androidx-startup"
-199-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
-200            android:exported="false" >
-200-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
-201            <meta-data
-201-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
-202                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-202-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
-203                android:value="androidx.startup" />
-203-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
-204            <meta-data
-204-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
-205                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-205-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
-206                android:value="androidx.startup" />
-206-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
-207            <meta-data
-207-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
-208                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-208-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
-209                android:value="androidx.startup" />
-209-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
-210        </provider>
-211
-212        <receiver
-212-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
-213            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-213-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
-214            android:directBootAware="false"
-214-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
-215            android:enabled="true"
-215-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
-216            android:exported="true"
-216-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
-217            android:permission="android.permission.DUMP" >
-217-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
-218            <intent-filter>
-218-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
-219                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-219-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
-219-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
-220            </intent-filter>
-221            <intent-filter>
-221-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
-222                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
-222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
-223            </intent-filter>
-224            <intent-filter>
-224-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
-225                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-225-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
-225-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
-226            </intent-filter>
-227            <intent-filter>
-227-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
-228                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-228-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
-228-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
-229            </intent-filter>
-230        </receiver>
-231    </application>
-232
-233</manifest>
+114-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:96:13-36
+115            android:label="@string/launcherName"
+115-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:94:13-49
+116            android:launchMode="singleTop" >
+116-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:93:13-43
+117            <intent-filter>
+117-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:97:13-100:29
+118                <action android:name="android.intent.action.MAIN" />
+118-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:98:17-69
+118-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:98:25-66
+119
+120                <category android:name="android.intent.category.LAUNCHER" />
+120-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:99:17-77
+120-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:99:27-74
+121            </intent-filter>
+122            <intent-filter android:autoVerify="true" >
+122-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:102:13-109:29
+122-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:102:28-53
+123                <action android:name="android.intent.action.VIEW" />
+123-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:13-65
+123-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:21-62
+124
+125                <category android:name="android.intent.category.DEFAULT" />
+125-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
+125-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
+126                <category android:name="android.intent.category.BROWSABLE" />
+126-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:17-77
+126-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:27-75
+127
+128                <data
+128-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:13-43
+129                    android:host="@string/hostName"
+129-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:107:21-52
+130                    android:scheme="https" />
+130-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:19-40
+131            </intent-filter>
+132        </activity>
+133        <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
+133-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:112:9-90
+133-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:112:19-87
+134        <activity
+134-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:114:9-115:62
+135            android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"
+135-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:114:19-97
+136            android:configChanges="orientation|screenSize" />
+136-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:115:13-59
+137
+138        <provider
+138-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:117:9-125:20
+139            android:name="androidx.core.content.FileProvider"
+139-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:118:13-62
+140            android:authorities="@string/providerAuthority"
+140-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:119:13-60
+141            android:exported="false"
+141-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:121:13-37
+142            android:grantUriPermissions="true" >
+142-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:120:13-47
+143            <meta-data
+143-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:122:13-124:53
+144                android:name="android.support.FILE_PROVIDER_PATHS"
+144-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:123:17-67
+145                android:resource="@xml/filepaths" />
+145-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:124:17-50
+146        </provider>
+147
+148        <service
+148-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:127:9-142:19
+149            android:name="com.guepardodelivery.entregador.DelegationService"
+149-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:128:13-46
+150            android:enabled="@bool/enableNotification"
+150-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:129:13-55
+151            android:exported="@bool/enableNotification" >
+151-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:130:13-56
+152            <meta-data
+152-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:133:17-135:73
+153                android:name="android.support.customtabs.trusted.SMALL_ICON"
+153-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:134:21-81
+154                android:resource="@drawable/ic_notification_icon" />
+154-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:135:21-70
+155
+156            <intent-filter>
+156-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:138:13-141:29
+157                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
+157-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:139:17-105
+157-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:139:25-103
+158
+159                <category android:name="android.intent.category.DEFAULT" />
+159-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
+159-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
+160            </intent-filter>
+161        </service>
+162
+163        <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity" />
+163-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:145:13-118
+163-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:145:23-115
+164        <activity android:name="com.google.androidbrowserhelper.locationdelegation.PermissionRequestActivity" />
+164-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:149:13-150:89
+164-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:149:23-123
+165
+166        <!-- Floating Bubble Service -->
+167        <activity
+167-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:154:9-164:20
+168            android:name="com.guepardodelivery.entregador.SetDriverActivity"
+168-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:155:13-46
+169            android:exported="true"
+169-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:157:13-36
+170            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+170-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:156:13-72
+171            <intent-filter>
+171-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:158:13-163:29
+172                <action android:name="android.intent.action.VIEW" />
+172-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:13-65
+172-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:40:21-62
+173
+174                <category android:name="android.intent.category.DEFAULT" />
+174-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:21-80
+174-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:86:31-77
+175                <category android:name="android.intent.category.BROWSABLE" />
+175-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:17-77
+175-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:105:27-75
+176
+177                <data
+177-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:13-43
+178                    android:host="set-driver"
+178-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:107:21-52
+179                    android:scheme="guepardo" />
+179-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:41:19-40
+180            </intent-filter>
+181        </activity>
+182
+183        <service
+183-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:166:9-170:74
+184            android:name="com.guepardodelivery.entregador.FloatingBubbleService"
+184-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:167:13-50
+185            android:exported="false"
+185-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:168:13-37
+186            android:foregroundServiceType="dataSync"
+186-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:169:13-53
+187            android:permission="android.permission.FOREGROUND_SERVICE" />
+187-->C:\Projetos\GUEPARDO-ENTREGADOR\app\src\main\AndroidManifest.xml:170:13-71
+188
+189        <activity
+189-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:20:9-22:45
+190            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+190-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:20:19-85
+191            android:exported="false"
+191-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:22:19-43
+192            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+192-->[com.google.android.gms:play-services-base:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\02e37f92c71ffadabef41ae6f5feca22\transformed\play-services-base-18.1.0\AndroidManifest.xml:21:19-78
+193
+194        <meta-data
+194-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:21:9-23:69
+195            android:name="com.google.android.gms.version"
+195-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:22:13-58
+196            android:value="@integer/google_play_services_version" />
+196-->[com.google.android.gms:play-services-basement:18.1.0] C:\Users\User\.gradle\caches\8.11.1\transforms\d176d6696a4772b4ce2a6021c61f9202\transformed\play-services-basement-18.1.0\AndroidManifest.xml:23:13-66
+197
+198        <provider
+198-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+199            android:name="androidx.startup.InitializationProvider"
+199-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+200            android:authorities="com.guepardodelivery.entregador.androidx-startup"
+200-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+201            android:exported="false" >
+201-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+202            <meta-data
+202-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+203                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+203-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+204                android:value="androidx.startup" />
+204-->[androidx.emoji2:emoji2:1.3.0] C:\Users\User\.gradle\caches\8.11.1\transforms\5cb7738f5242d8c4e38c8ffa2b265b31\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+205            <meta-data
+205-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+206                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+206-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+207                android:value="androidx.startup" />
+207-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\User\.gradle\caches\8.11.1\transforms\4bc52031417e9743197e36b704fe409f\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+208            <meta-data
+208-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+209                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+209-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+210                android:value="androidx.startup" />
+210-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+211        </provider>
+212
+213        <receiver
+213-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+214            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+214-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+215            android:directBootAware="false"
+215-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+216            android:enabled="true"
+216-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+217            android:exported="true"
+217-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+218            android:permission="android.permission.DUMP" >
+218-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+219            <intent-filter>
+219-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+220                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+221            </intent-filter>
+222            <intent-filter>
+222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+223                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+224            </intent-filter>
+225            <intent-filter>
+225-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+226                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+226-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+226-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+227            </intent-filter>
+228            <intent-filter>
+228-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+229                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\User\.gradle\caches\8.11.1\transforms\bb4a0d32d1b17a1dcea0cf71d2bde5e0\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+230            </intent-filter>
+231        </receiver>
+232    </application>
+233
+234</manifest>

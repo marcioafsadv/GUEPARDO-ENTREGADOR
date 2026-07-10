@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="32"
-    android:versionName="Guepardo Entregador V.N" >
+    android:versionCode="33"
+    android:versionName="Guepardo Entregador V.O" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -112,7 +112,8 @@
             android:alwaysRetainTaskState="true"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true"
-            android:label="@string/launcherName" >
+            android:label="@string/launcherName"
+            android:launchMode="singleTop" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -91,6 +91,8 @@
         <activity android:name=".MainActivity"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:label="@string/launcherName"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true">
