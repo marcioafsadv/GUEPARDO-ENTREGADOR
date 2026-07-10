@@ -6588,9 +6588,11 @@ const App: React.FC = () => {
                         vehicleType={currentVehicleType}
                       />
                     </div>
+                  </div>
 
-                    {/* 5. Footer Actions with Circular Timer */}
-                    <div className="w-full bg-[#1A0C06] border border-white/5 rounded-[28px] p-3 flex items-center justify-between relative shadow-2xl shrink-0 mt-auto">
+                  {/* 5. Footer Actions with Circular Timer (FIXED AT BOTTOM) */}
+                  <div className="p-4 pt-2 border-t border-white/5 bg-black/20 shrink-0 z-20">
+                    <div className="w-full bg-[#1A0C06] border border-white/5 rounded-[28px] p-3 flex items-center justify-between relative shadow-2xl">
                       {/* Left: Decline Button */}
                       <button 
                         onClick={handleRejectMission}
@@ -6637,7 +6639,6 @@ const App: React.FC = () => {
                         <span>Aceitar</span>
                       </button>
                     </div>
-
                   </div>
                 </>
               );

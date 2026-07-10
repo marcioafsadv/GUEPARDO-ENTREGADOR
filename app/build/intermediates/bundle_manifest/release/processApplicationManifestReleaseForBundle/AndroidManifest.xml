@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="35"
-    android:versionName="Guepardo Entregador V.Q" >
+    android:versionCode="36"
+    android:versionName="Guepardo Entregador V.R" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -39,7 +39,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <queries>
         <package android:name="com.google.android.apps.maps" />
