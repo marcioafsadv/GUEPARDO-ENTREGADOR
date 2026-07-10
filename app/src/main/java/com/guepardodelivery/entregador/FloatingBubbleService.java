@@ -685,6 +685,24 @@ public class FloatingBubbleService extends Service {
         if (manager != null) {
             manager.notify(FULL_SCREEN_NOTIFICATION_ID, builder.build());
         }
+
+        // Tenta acender a tela na força bruta
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (pm != null) {
+            @SuppressWarnings("deprecation")
+            android.os.PowerManager.WakeLock screenWakeLock = pm.newWakeLock(
+                    android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK |
+                    android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                    android.os.PowerManager.ON_AFTER_RELEASE, "Guepardo:WakeUp");
+            screenWakeLock.acquire(10 * 1000); // 10 segundos
+        }
+
+        // Dispara a activity manualmente usando a permissão SYSTEM_ALERT_WINDOW
+        try {
+            startActivity(fullScreenIntent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private Notification buildNotification() {

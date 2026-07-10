@@ -11767,6 +11767,8 @@ com.google.thirdparty.publicsuffix.PublicSuffixType
 com.google.thirdparty.publicsuffix.TrieParser
 com.guepardodelivery.entregador.FloatingBubbleService:
     private static final java.lang.String CHANNEL_ID
+    private static final java.lang.String FULL_SCREEN_CHANNEL_ID
+    private static final int FULL_SCREEN_NOTIFICATION_ID
     private static final int NOTIFICATION_ID
 com.guepardodelivery.entregador.LauncherActivity$1
 com.guepardodelivery.entregador.LauncherActivity$2

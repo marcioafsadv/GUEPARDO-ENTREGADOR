@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 4901118
-# pg_map_hash: SHA-256 4901118c00fe3a51fa1ea38755a9ad0ece5ad0748a3a02195efff1f6ad04135b
+# pg_map_id: 4d8828a
+# pg_map_hash: SHA-256 4d8828a340179b3c5bcec90419464787bee40d5f2f39e86d191ab22dc611e8ef
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -34795,219 +34795,240 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     android.os.Handler handler -> u
     java.lang.Runnable checkForegroundRunnable -> v
     1:4:void <init>():32:32 -> <init>
-    5:6:void <init>():58:58 -> <init>
-    7:8:void <init>():59:59 -> <init>
-    9:10:void <init>():62:62 -> <init>
-    11:12:void <init>():63:63 -> <init>
-    13:15:void <init>():64:64 -> <init>
-    16:17:void <init>():65:65 -> <init>
-    18:28:void <init>():67:67 -> <init>
-    29:36:void <init>():68:68 -> <init>
-    1:3:android.widget.TextView access$2400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> A
-    1:4:void access$2500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> B
+    5:6:void <init>():60:60 -> <init>
+    7:8:void <init>():61:61 -> <init>
+    9:10:void <init>():64:64 -> <init>
+    11:12:void <init>():65:65 -> <init>
+    13:15:void <init>():66:66 -> <init>
+    16:17:void <init>():67:67 -> <init>
+    18:28:void <init>():69:69 -> <init>
+    29:36:void <init>():70:70 -> <init>
+    1:5:int access$2400(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> A
+    1:3:android.widget.TextView access$2500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> B
     1:4:void access$2600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> C
     1:4:void access$2700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> D
-    1:4:void access$300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> E
-    1:3:android.os.PowerManager$WakeLock access$400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> F
-    1:3:android.os.PowerManager$WakeLock access$402(com.guepardodelivery.entregador.FloatingBubbleService,android.os.PowerManager$WakeLock):32:32 -> G
-    1:4:void access$500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> H
-    1:3:android.widget.FrameLayout access$600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> I
-    1:4:void access$700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> J
-    1:4:void access$800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> K
-    1:3:android.os.Handler access$900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> L
-    1:9:void bringAppToForeground():622:622 -> M
-    10:12:void bringAppToForeground():623:623 -> M
-    13:16:void bringAppToForeground():624:624 -> M
-    1:7:android.app.Notification buildNotification():647:647 -> N
-    8:16:android.app.Notification buildNotification():649:649 -> N
-    17:23:android.app.Notification buildNotification():650:650 -> N
-    24:31:android.app.Notification buildNotification():653:653 -> N
-    32:38:android.app.Notification buildNotification():659:659 -> N
-    39:43:android.app.Notification buildNotification():661:661 -> N
-    44:51:android.app.Notification buildNotification():664:664 -> N
-    52:58:android.app.Notification buildNotification():665:665 -> N
-    59:62:android.app.Notification buildNotification():666:666 -> N
-    63:67:android.app.Notification buildNotification():667:667 -> N
-    68:70:android.app.Notification buildNotification():668:668 -> N
-    71:75:android.app.Notification buildNotification():670:670 -> N
-    1:7:void checkDriverStatus():171:171 -> O
-    8:17:void checkDriverStatus():172:172 -> O
-    18:27:void checkDriverStatus():177:177 -> O
-    28:31:void checkDriverStatus():227:227 -> O
-    1:10:void checkNewDeliveries():231:231 -> P
-    11:14:void checkNewDeliveries():292:292 -> P
-    1:6:void createDismissView():323:323 -> Q
-    7:12:void createDismissView():324:324 -> Q
-    13:27:void createDismissView():327:327 -> Q
-    28:31:void createDismissView():333:333 -> Q
-    32:46:void createDismissView():335:335 -> Q
-    47:49:void createDismissView():340:340 -> Q
-    50:51:void createDismissView():341:341 -> Q
-    52:53:void createDismissView():342:342 -> Q
-    54:60:void createDismissView():344:344 -> Q
-    61:63:void createDismissView():345:345 -> Q
-    64:68:void createDismissView():348:348 -> Q
-    69:83:void createDismissView():349:349 -> Q
-    84:87:void createDismissView():350:350 -> Q
-    88:93:void createDismissView():351:351 -> Q
-    94:96:void createDismissView():352:352 -> Q
-    97:102:void createDismissView():354:354 -> Q
-    103:105:void createDismissView():355:355 -> Q
-    106:115:void createDismissView():356:356 -> Q
-    116:128:void createDismissView():357:357 -> Q
-    129:131:void createDismissView():358:358 -> Q
-    132:138:void createDismissView():360:360 -> Q
-    139:144:void createDismissView():361:361 -> Q
-    145:149:void createDismissView():365:365 -> Q
-    150:156:void createDismissView():366:366 -> Q
-    157:165:void createDismissView():367:367 -> Q
-    166:172:void createDismissView():368:368 -> Q
-    173:179:void createDismissView():369:369 -> Q
-    180:185:void createDismissView():370:370 -> Q
-    186:190:void createDismissView():371:371 -> Q
-    191:192:void createDismissView():373:373 -> Q
-    193:199:void createDismissView():375:375 -> Q
-    200:205:void createDismissView():376:376 -> Q
-    206:209:void createDismissView():380:380 -> Q
-    210:215:void createDismissView():381:381 -> Q
-    216:220:void createDismissView():382:382 -> Q
-    221:227:void createDismissView():383:383 -> Q
-    228:232:void createDismissView():384:384 -> Q
-    233:239:void createDismissView():385:385 -> Q
-    240:251:void createDismissView():386:386 -> Q
-    252:256:void createDismissView():387:387 -> Q
-    257:263:void createDismissView():389:389 -> Q
-    264:268:void createDismissView():390:390 -> Q
-    269:279:void createDismissView():393:393 -> Q
-    280:283:void createDismissView():395:395 -> Q
-    1:6:void createFloatingBubble():414:414 -> R
-    7:14:void createFloatingBubble():415:415 -> R
-    15:29:void createFloatingBubble():418:418 -> R
-    30:33:void createFloatingBubble():424:424 -> R
-    34:37:void createFloatingBubble():425:425 -> R
-    38:51:void createFloatingBubble():426:426 -> R
-    52:55:void createFloatingBubble():432:432 -> R
-    56:59:void createFloatingBubble():433:433 -> R
-    60:61:void createFloatingBubble():434:434 -> R
-    62:69:void createFloatingBubble():436:436 -> R
-    70:72:void createFloatingBubble():437:437 -> R
-    73:78:void createFloatingBubble():440:440 -> R
-    79:81:void createFloatingBubble():441:441 -> R
-    82:91:void createFloatingBubble():442:442 -> R
-    92:104:void createFloatingBubble():443:443 -> R
-    105:109:void createFloatingBubble():444:444 -> R
-    110:114:void createFloatingBubble():447:447 -> R
-    115:122:void createFloatingBubble():448:448 -> R
-    123:126:void createFloatingBubble():452:452 -> R
-    127:129:void createFloatingBubble():453:453 -> R
-    130:132:void createFloatingBubble():454:454 -> R
-    133:145:void createFloatingBubble():458:458 -> R
-    146:156:void createFloatingBubble():460:460 -> R
-    157:159:void createFloatingBubble():462:462 -> R
-    160:164:void createFloatingBubble():463:463 -> R
-    165:171:void createFloatingBubble():466:466 -> R
-    172:175:void createFloatingBubble():467:467 -> R
-    176:182:void createFloatingBubble():468:468 -> R
-    183:185:void createFloatingBubble():469:469 -> R
-    186:191:void createFloatingBubble():470:470 -> R
-    192:197:void createFloatingBubble():471:471 -> R
-    198:200:void createFloatingBubble():472:472 -> R
-    201:205:void createFloatingBubble():473:473 -> R
-    206:208:void createFloatingBubble():474:474 -> R
-    209:217:void createFloatingBubble():475:475 -> R
-    218:224:void createFloatingBubble():476:476 -> R
-    225:227:void createFloatingBubble():477:477 -> R
-    228:229:void createFloatingBubble():478:478 -> R
-    230:234:void createFloatingBubble():479:479 -> R
-    235:237:void createFloatingBubble():482:482 -> R
-    238:247:void createFloatingBubble():485:485 -> R
-    248:258:void createFloatingBubble():581:581 -> R
-    259:262:void createFloatingBubble():583:583 -> R
-    1:6:void createNotificationChannel():632:632 -> S
-    7:15:void createNotificationChannel():633:633 -> S
-    16:20:void createNotificationChannel():638:638 -> S
-    21:30:void createNotificationChannel():639:639 -> S
-    31:34:void createNotificationChannel():641:641 -> S
-    2:15:int dpToPx(int):628:628 -> T
-    1:3:void promoteToForeground():158:158 -> U
-    4:7:void promoteToForeground():159:159 -> U
-    8:16:void promoteToForeground():160:160 -> U
-    17:22:void promoteToForeground():161:161 -> U
-    23:26:void promoteToForeground():163:163 -> U
-    27:30:void promoteToForeground():166:166 -> U
-    1:4:void removeBubble():296:296 -> V
-    5:11:void removeBubble():298:298 -> V
-    12:15:void removeBubble():300:300 -> V
-    16:17:void removeBubble():302:302 -> V
-    18:20:void removeBubble():303:303 -> V
-    1:4:void removeDismissView():400:400 -> W
-    5:11:void removeDismissView():402:402 -> W
-    12:15:void removeDismissView():404:404 -> W
-    16:17:void removeDismissView():406:406 -> W
-    18:19:void removeDismissView():407:407 -> W
-    20:21:void removeDismissView():408:408 -> W
-    22:24:void removeDismissView():409:409 -> W
-    1:5:void snapToEdge():588:588 -> X
-    6:10:void snapToEdge():589:589 -> X
-    11:19:void snapToEdge():590:590 -> X
-    20:21:void snapToEdge():591:591 -> X
-    22:27:void snapToEdge():593:593 -> X
-    28:31:void snapToEdge():594:594 -> X
-    32:41:void snapToEdge():597:597 -> X
-    42:51:void snapToEdge():603:603 -> X
-    52:54:void snapToEdge():604:604 -> X
-    55:62:void snapToEdge():605:605 -> X
-    63:66:void snapToEdge():618:618 -> X
-    1:5:void updateStatusDot():309:309 -> Y
-    6:11:void updateStatusDot():310:310 -> Y
-    12:14:void updateStatusDot():311:311 -> Y
-    15:18:void updateStatusDot():312:312 -> Y
-    19:28:void updateStatusDot():313:313 -> Y
-    29:32:void updateStatusDot():314:314 -> Y
-    33:42:void updateStatusDot():315:315 -> Y
-    43:51:void updateStatusDot():317:317 -> Y
-    52:57:void updateStatusDot():319:319 -> Y
+    1:4:void access$2800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> E
+    1:4:void access$300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> F
+    1:3:android.os.PowerManager$WakeLock access$400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> G
+    1:3:android.os.PowerManager$WakeLock access$402(com.guepardodelivery.entregador.FloatingBubbleService,android.os.PowerManager$WakeLock):32:32 -> H
+    1:4:void access$500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> I
+    1:3:android.widget.FrameLayout access$600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> J
+    1:4:void access$700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> K
+    1:4:void access$800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> L
+    1:3:android.os.Handler access$900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> M
+    1:9:void bringAppToForeground():622:622 -> N
+    10:12:void bringAppToForeground():623:623 -> N
+    13:16:void bringAppToForeground():624:624 -> N
+    1:7:android.app.Notification buildNotification():691:691 -> O
+    8:16:android.app.Notification buildNotification():693:693 -> O
+    17:23:android.app.Notification buildNotification():694:694 -> O
+    24:31:android.app.Notification buildNotification():697:697 -> O
+    32:38:android.app.Notification buildNotification():703:703 -> O
+    39:43:android.app.Notification buildNotification():705:705 -> O
+    44:51:android.app.Notification buildNotification():708:708 -> O
+    52:58:android.app.Notification buildNotification():709:709 -> O
+    59:62:android.app.Notification buildNotification():710:710 -> O
+    63:67:android.app.Notification buildNotification():711:711 -> O
+    68:70:android.app.Notification buildNotification():712:712 -> O
+    71:75:android.app.Notification buildNotification():714:714 -> O
+    1:7:void checkDriverStatus():173:173 -> P
+    8:17:void checkDriverStatus():174:174 -> P
+    18:27:void checkDriverStatus():179:179 -> P
+    28:31:void checkDriverStatus():229:229 -> P
+    1:10:void checkNewDeliveries():233:233 -> Q
+    11:14:void checkNewDeliveries():292:292 -> Q
+    1:6:void createDismissView():323:323 -> R
+    7:12:void createDismissView():324:324 -> R
+    13:27:void createDismissView():327:327 -> R
+    28:31:void createDismissView():333:333 -> R
+    32:46:void createDismissView():335:335 -> R
+    47:49:void createDismissView():340:340 -> R
+    50:51:void createDismissView():341:341 -> R
+    52:53:void createDismissView():342:342 -> R
+    54:60:void createDismissView():344:344 -> R
+    61:63:void createDismissView():345:345 -> R
+    64:68:void createDismissView():348:348 -> R
+    69:83:void createDismissView():349:349 -> R
+    84:87:void createDismissView():350:350 -> R
+    88:93:void createDismissView():351:351 -> R
+    94:96:void createDismissView():352:352 -> R
+    97:102:void createDismissView():354:354 -> R
+    103:105:void createDismissView():355:355 -> R
+    106:115:void createDismissView():356:356 -> R
+    116:128:void createDismissView():357:357 -> R
+    129:131:void createDismissView():358:358 -> R
+    132:138:void createDismissView():360:360 -> R
+    139:144:void createDismissView():361:361 -> R
+    145:149:void createDismissView():365:365 -> R
+    150:156:void createDismissView():366:366 -> R
+    157:165:void createDismissView():367:367 -> R
+    166:172:void createDismissView():368:368 -> R
+    173:179:void createDismissView():369:369 -> R
+    180:185:void createDismissView():370:370 -> R
+    186:190:void createDismissView():371:371 -> R
+    191:192:void createDismissView():373:373 -> R
+    193:199:void createDismissView():375:375 -> R
+    200:205:void createDismissView():376:376 -> R
+    206:209:void createDismissView():380:380 -> R
+    210:215:void createDismissView():381:381 -> R
+    216:220:void createDismissView():382:382 -> R
+    221:227:void createDismissView():383:383 -> R
+    228:232:void createDismissView():384:384 -> R
+    233:239:void createDismissView():385:385 -> R
+    240:251:void createDismissView():386:386 -> R
+    252:256:void createDismissView():387:387 -> R
+    257:263:void createDismissView():389:389 -> R
+    264:268:void createDismissView():390:390 -> R
+    269:279:void createDismissView():393:393 -> R
+    280:283:void createDismissView():395:395 -> R
+    1:6:void createFloatingBubble():414:414 -> S
+    7:14:void createFloatingBubble():415:415 -> S
+    15:29:void createFloatingBubble():418:418 -> S
+    30:33:void createFloatingBubble():424:424 -> S
+    34:37:void createFloatingBubble():425:425 -> S
+    38:51:void createFloatingBubble():426:426 -> S
+    52:55:void createFloatingBubble():432:432 -> S
+    56:59:void createFloatingBubble():433:433 -> S
+    60:61:void createFloatingBubble():434:434 -> S
+    62:69:void createFloatingBubble():436:436 -> S
+    70:72:void createFloatingBubble():437:437 -> S
+    73:78:void createFloatingBubble():440:440 -> S
+    79:81:void createFloatingBubble():441:441 -> S
+    82:91:void createFloatingBubble():442:442 -> S
+    92:104:void createFloatingBubble():443:443 -> S
+    105:109:void createFloatingBubble():444:444 -> S
+    110:114:void createFloatingBubble():447:447 -> S
+    115:122:void createFloatingBubble():448:448 -> S
+    123:126:void createFloatingBubble():452:452 -> S
+    127:129:void createFloatingBubble():453:453 -> S
+    130:132:void createFloatingBubble():454:454 -> S
+    133:145:void createFloatingBubble():458:458 -> S
+    146:156:void createFloatingBubble():460:460 -> S
+    157:159:void createFloatingBubble():462:462 -> S
+    160:164:void createFloatingBubble():463:463 -> S
+    165:171:void createFloatingBubble():466:466 -> S
+    172:175:void createFloatingBubble():467:467 -> S
+    176:182:void createFloatingBubble():468:468 -> S
+    183:185:void createFloatingBubble():469:469 -> S
+    186:191:void createFloatingBubble():470:470 -> S
+    192:197:void createFloatingBubble():471:471 -> S
+    198:200:void createFloatingBubble():472:472 -> S
+    201:205:void createFloatingBubble():473:473 -> S
+    206:208:void createFloatingBubble():474:474 -> S
+    209:217:void createFloatingBubble():475:475 -> S
+    218:224:void createFloatingBubble():476:476 -> S
+    225:227:void createFloatingBubble():477:477 -> S
+    228:229:void createFloatingBubble():478:478 -> S
+    230:234:void createFloatingBubble():479:479 -> S
+    235:237:void createFloatingBubble():482:482 -> S
+    238:247:void createFloatingBubble():485:485 -> S
+    248:258:void createFloatingBubble():581:581 -> S
+    259:262:void createFloatingBubble():583:583 -> S
+    1:6:void createNotificationChannel():632:632 -> T
+    7:15:void createNotificationChannel():633:633 -> T
+    16:20:void createNotificationChannel():638:638 -> T
+    21:29:void createNotificationChannel():640:640 -> T
+    30:35:void createNotificationChannel():645:645 -> T
+    36:38:void createNotificationChannel():646:646 -> T
+    39:48:void createNotificationChannel():648:648 -> T
+    49:51:void createNotificationChannel():650:650 -> T
+    52:55:void createNotificationChannel():651:651 -> T
+    2:15:int dpToPx(int):628:628 -> U
+    1:9:void fireDeliveryNotification():657:657 -> V
+    10:12:void fireDeliveryNotification():658:658 -> V
+    13:21:void fireDeliveryNotification():661:661 -> V
+    22:28:void fireDeliveryNotification():662:662 -> V
+    29:36:void fireDeliveryNotification():665:665 -> V
+    37:43:void fireDeliveryNotification():671:671 -> V
+    44:49:void fireDeliveryNotification():673:673 -> V
+    50:53:void fireDeliveryNotification():674:674 -> V
+    54:64:void fireDeliveryNotification():675:675 -> V
+    65:70:void fireDeliveryNotification():678:678 -> V
+    71:76:void fireDeliveryNotification():679:679 -> V
+    77:81:void fireDeliveryNotification():680:680 -> V
+    82:85:void fireDeliveryNotification():681:681 -> V
+    86:88:void fireDeliveryNotification():682:682 -> V
+    89:100:void fireDeliveryNotification():684:684 -> V
+    101:108:void fireDeliveryNotification():686:686 -> V
+    1:3:void promoteToForeground():160:160 -> W
+    4:7:void promoteToForeground():161:161 -> W
+    8:16:void promoteToForeground():162:162 -> W
+    17:22:void promoteToForeground():163:163 -> W
+    23:26:void promoteToForeground():165:165 -> W
+    27:30:void promoteToForeground():168:168 -> W
+    1:4:void removeBubble():296:296 -> X
+    5:11:void removeBubble():298:298 -> X
+    12:15:void removeBubble():300:300 -> X
+    16:17:void removeBubble():302:302 -> X
+    18:20:void removeBubble():303:303 -> X
+    1:4:void removeDismissView():400:400 -> Y
+    5:11:void removeDismissView():402:402 -> Y
+    12:15:void removeDismissView():404:404 -> Y
+    16:17:void removeDismissView():406:406 -> Y
+    18:19:void removeDismissView():407:407 -> Y
+    20:21:void removeDismissView():408:408 -> Y
+    22:24:void removeDismissView():409:409 -> Y
+    1:5:void snapToEdge():588:588 -> Z
+    6:10:void snapToEdge():589:589 -> Z
+    11:19:void snapToEdge():590:590 -> Z
+    20:21:void snapToEdge():591:591 -> Z
+    22:27:void snapToEdge():593:593 -> Z
+    28:31:void snapToEdge():594:594 -> Z
+    32:41:void snapToEdge():597:597 -> Z
+    42:51:void snapToEdge():603:603 -> Z
+    52:54:void snapToEdge():604:604 -> Z
+    55:62:void snapToEdge():605:605 -> Z
+    63:66:void snapToEdge():618:618 -> Z
     1:3:int access$000(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> a
+    1:5:void updateStatusDot():309:309 -> a0
+    6:11:void updateStatusDot():310:310 -> a0
+    12:14:void updateStatusDot():311:311 -> a0
+    15:18:void updateStatusDot():312:312 -> a0
+    19:28:void updateStatusDot():313:313 -> a0
+    29:32:void updateStatusDot():314:314 -> a0
+    33:42:void updateStatusDot():315:315 -> a0
+    43:51:void updateStatusDot():317:317 -> a0
+    52:57:void updateStatusDot():319:319 -> a0
     1:7:int access$008(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> b
     1:4:void access$100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> c
     1:3:boolean access$1002(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> d
     1:3:java.lang.String access$1100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> e
     1:3:java.lang.String access$1102(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.String):32:32 -> f
-    1:3:int access$1200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> g
-    1:3:int access$1202(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> h
-    1:3:android.view.WindowManager$LayoutParams access$1300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> i
-    1:3:int access$1400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> j
-    1:3:int access$1402(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> k
-    1:3:float access$1500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> l
-    1:3:float access$1502(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> m
-    1:3:float access$1600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> n
-    1:3:float access$1602(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> o
-    1:3:void onCreate():129:129 -> onCreate
-    4:6:void onCreate():131:131 -> onCreate
-    7:13:void onCreate():134:134 -> onCreate
-    14:22:void onCreate():135:135 -> onCreate
-    23:26:void onCreate():137:137 -> onCreate
-    27:34:void onCreate():142:142 -> onCreate
-    35:44:void onCreate():144:144 -> onCreate
-    45:52:void onCreate():147:147 -> onCreate
-    1:3:void onDestroy():675:675 -> onDestroy
-    4:13:void onDestroy():676:676 -> onDestroy
-    14:18:void onDestroy():677:677 -> onDestroy
-    19:25:void onDestroy():679:679 -> onDestroy
-    26:28:void onDestroy():680:680 -> onDestroy
-    29:32:void onDestroy():681:681 -> onDestroy
-    1:5:int onStartCommand(android.content.Intent,int,int):152:152 -> onStartCommand
-    1:3:boolean access$1700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> p
-    1:3:boolean access$1702(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> q
-    1:3:boolean access$1800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> r
-    1:3:boolean access$1802(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> s
-    1:4:void access$1900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> t
+    1:4:void access$1200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> g
+    1:3:int access$1300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> h
+    1:3:int access$1302(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> i
+    1:3:android.view.WindowManager$LayoutParams access$1400(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> j
+    1:3:int access$1500(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> k
+    1:3:int access$1502(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> l
+    1:3:float access$1600(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> m
+    1:3:float access$1602(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> n
+    1:3:float access$1700(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> o
+    1:3:void onCreate():131:131 -> onCreate
+    4:6:void onCreate():133:133 -> onCreate
+    7:13:void onCreate():136:136 -> onCreate
+    14:22:void onCreate():137:137 -> onCreate
+    23:26:void onCreate():139:139 -> onCreate
+    27:34:void onCreate():144:144 -> onCreate
+    35:44:void onCreate():146:146 -> onCreate
+    45:52:void onCreate():149:149 -> onCreate
+    1:3:void onDestroy():719:719 -> onDestroy
+    4:13:void onDestroy():720:720 -> onDestroy
+    14:18:void onDestroy():721:721 -> onDestroy
+    19:25:void onDestroy():723:723 -> onDestroy
+    26:28:void onDestroy():724:724 -> onDestroy
+    29:32:void onDestroy():725:725 -> onDestroy
+    1:5:int onStartCommand(android.content.Intent,int,int):154:154 -> onStartCommand
+    1:3:float access$1702(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> p
+    1:3:boolean access$1800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> q
+    1:3:boolean access$1802(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> r
+    1:3:boolean access$1900(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> s
+    1:3:boolean access$1902(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> t
     1:3:boolean access$200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> u
-    1:3:android.view.WindowManager access$2000(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> v
+    1:4:void access$2000(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> v
     1:3:boolean access$202(com.guepardodelivery.entregador.FloatingBubbleService,boolean):32:32 -> w
-    1:3:android.view.View access$2100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> x
-    1:3:android.widget.FrameLayout access$2200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> y
-    1:5:int access$2300(com.guepardodelivery.entregador.FloatingBubbleService,int):32:32 -> z
+    1:3:android.view.WindowManager access$2100(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> x
+    1:3:android.view.View access$2200(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> y
+    1:3:android.widget.FrameLayout access$2300(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> z
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline0 -> j0.a:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -35026,103 +35047,108 @@ com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModel
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline3 -> j0.d:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
-    1:1:java.lang.Object j0.FloatingBubbleService$$ExternalSyntheticApiModelOutline3.m(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.Class):0:0 -> a
+    1:1:void j0.FloatingBubbleService$$ExternalSyntheticApiModelOutline3.m(android.app.NotificationChannel,boolean):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
 com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline4 -> j0.e:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
-    1:1:android.app.Notification$Builder j0.FloatingBubbleService$$ExternalSyntheticApiModelOutline4.m(android.content.Context,java.lang.String):0:0 -> a
+    1:1:java.lang.Object j0.FloatingBubbleService$$ExternalSyntheticApiModelOutline4.m(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.Class):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+com.guepardodelivery.entregador.FloatingBubbleService$$ExternalSyntheticApiModelOutline5 -> j0.f:
+# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
+# {"id":"com.android.tools.r8.synthesized"}
+    1:1:android.app.Notification$Builder j0.FloatingBubbleService$$ExternalSyntheticApiModelOutline5.m(android.content.Context,java.lang.String):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
 com.guepardodelivery.entregador.FloatingBubbleService$1 -> com.guepardodelivery.entregador.FloatingBubbleService$a:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):68:68 -> <init>
-    1:10:void run():73:73 -> run
-    11:15:void run():74:74 -> run
-    16:23:void run():75:75 -> run
-    24:32:void run():76:76 -> run
-    33:37:void run():79:79 -> run
-    38:45:void run():82:82 -> run
-    46:53:void run():83:83 -> run
-    54:63:void run():84:84 -> run
-    64:75:void run():85:85 -> run
-    76:87:void run():87:87 -> run
-    88:97:void run():88:88 -> run
-    98:117:void run():91:91 -> run
-    118:126:void run():92:92 -> run
-    127:130:void run():97:97 -> run
-    131:136:void run():101:101 -> run
-    137:144:void run():104:104 -> run
-    145:152:void run():105:105 -> run
-    153:157:void run():106:106 -> run
-    158:163:void run():108:108 -> run
-    164:169:void run():111:111 -> run
-    170:172:void run():116:116 -> run
-    173:184:void run():118:118 -> run
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):70:70 -> <init>
+    1:10:void run():75:75 -> run
+    11:15:void run():76:76 -> run
+    16:23:void run():77:77 -> run
+    24:32:void run():78:78 -> run
+    33:37:void run():81:81 -> run
+    38:45:void run():84:84 -> run
+    46:53:void run():85:85 -> run
+    54:63:void run():86:86 -> run
+    64:75:void run():87:87 -> run
+    76:87:void run():89:89 -> run
+    88:97:void run():90:90 -> run
+    98:117:void run():93:93 -> run
+    118:126:void run():94:94 -> run
+    127:130:void run():99:99 -> run
+    131:136:void run():103:103 -> run
+    137:144:void run():106:106 -> run
+    145:152:void run():107:107 -> run
+    153:157:void run():108:108 -> run
+    158:163:void run():110:110 -> run
+    164:169:void run():113:113 -> run
+    170:172:void run():118:118 -> run
+    173:184:void run():120:120 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$2 -> com.guepardodelivery.entregador.FloatingBubbleService$b:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     java.lang.String val$driverId -> a
     android.content.SharedPreferences val$prefs -> b
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> c
-    1:10:void <init>(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.String,android.content.SharedPreferences):177:177 -> <init>
-    2:30:void run():183:183 -> run
-    31:36:void run():184:184 -> run
-    37:41:void run():185:185 -> run
-    42:48:void run():186:186 -> run
-    49:57:void run():187:187 -> run
-    58:60:void run():188:188 -> run
-    61:63:void run():189:189 -> run
-    64:71:void run():191:191 -> run
-    72:75:void run():193:193 -> run
-    76:87:void run():194:194 -> run
-    88:92:void run():195:195 -> run
-    93:98:void run():197:197 -> run
-    99:107:void run():198:198 -> run
-    108:111:void run():200:200 -> run
-    112:131:void run():201:201 -> run
-    132:146:void run():204:204 -> run
-    147:175:void run():206:206 -> run
-    176:178:void run():220:220 -> run
-    179:191:void run():223:223 -> run
-    192:196:void run():217:217 -> run
-    197:214:void run():220:220 -> run
-    215:217:void run():223:223 -> run
-    218:218:void run():225:225 -> run
+    1:10:void <init>(com.guepardodelivery.entregador.FloatingBubbleService,java.lang.String,android.content.SharedPreferences):179:179 -> <init>
+    2:30:void run():185:185 -> run
+    31:36:void run():186:186 -> run
+    37:41:void run():187:187 -> run
+    42:48:void run():188:188 -> run
+    49:57:void run():189:189 -> run
+    58:60:void run():190:190 -> run
+    61:63:void run():191:191 -> run
+    64:71:void run():193:193 -> run
+    72:75:void run():195:195 -> run
+    76:87:void run():196:196 -> run
+    88:92:void run():197:197 -> run
+    93:98:void run():199:199 -> run
+    99:107:void run():200:200 -> run
+    108:111:void run():202:202 -> run
+    112:131:void run():203:203 -> run
+    132:146:void run():206:206 -> run
+    147:175:void run():208:208 -> run
+    176:178:void run():222:222 -> run
+    179:191:void run():225:225 -> run
+    192:196:void run():219:219 -> run
+    197:214:void run():222:222 -> run
+    215:217:void run():225:225 -> run
+    218:218:void run():227:227 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$2$1 -> com.guepardodelivery.entregador.FloatingBubbleService$b$a:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     boolean val$online -> a
     com.guepardodelivery.entregador.FloatingBubbleService$2 this$1 -> b
       # {"id":"com.android.tools.r8.residualsignature","signature":"Lcom/guepardodelivery/entregador/FloatingBubbleService$b;"}
-    1:8:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$2,boolean):206:206 -> <init>
+    1:8:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$2,boolean):208:208 -> <init>
       # {"id":"com.android.tools.r8.residualsignature","signature":"(Lcom/guepardodelivery/entregador/FloatingBubbleService$b;Z)V"}
-    1:9:void run():209:209 -> run
-    10:17:void run():210:210 -> run
-    18:25:void run():212:212 -> run
+    1:9:void run():211:211 -> run
+    10:17:void run():212:212 -> run
+    18:25:void run():214:214 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$3 -> com.guepardodelivery.entregador.FloatingBubbleService$c:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):231:231 -> <init>
-    2:8:void run():238:238 -> run
-    9:14:void run():239:239 -> run
-    15:19:void run():240:240 -> run
-    20:26:void run():241:241 -> run
-    27:35:void run():242:242 -> run
-    36:38:void run():243:243 -> run
-    39:41:void run():244:244 -> run
-    42:49:void run():246:246 -> run
-    50:53:void run():248:248 -> run
-    54:65:void run():249:249 -> run
-    66:70:void run():250:250 -> run
-    71:76:void run():252:252 -> run
-    77:86:void run():253:253 -> run
-    87:90:void run():255:255 -> run
-    91:106:void run():258:258 -> run
-    107:114:void run():260:260 -> run
-    115:125:void run():261:261 -> run
-    126:129:void run():263:263 -> run
-    130:149:void run():265:265 -> run
-    150:154:void run():266:266 -> run
-    155:183:void run():269:269 -> run
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService):233:233 -> <init>
+    2:8:void run():240:240 -> run
+    9:14:void run():241:241 -> run
+    15:19:void run():242:242 -> run
+    20:26:void run():243:243 -> run
+    27:35:void run():244:244 -> run
+    36:38:void run():245:245 -> run
+    39:41:void run():246:246 -> run
+    42:49:void run():248:248 -> run
+    50:53:void run():250:250 -> run
+    54:65:void run():251:251 -> run
+    66:70:void run():252:252 -> run
+    71:76:void run():254:254 -> run
+    77:86:void run():255:255 -> run
+    87:90:void run():257:257 -> run
+    91:106:void run():260:260 -> run
+    107:114:void run():262:262 -> run
+    115:125:void run():263:263 -> run
+    126:129:void run():265:265 -> run
+    130:149:void run():267:267 -> run
+    150:154:void run():268:268 -> run
+    155:183:void run():271:271 -> run
     184:186:void run():285:285 -> run
     187:199:void run():288:288 -> run
     200:204:void run():282:282 -> run
@@ -35133,11 +35159,9 @@ com.guepardodelivery.entregador.FloatingBubbleService$3$1 -> com.guepardodeliver
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService$3 this$1 -> a
       # {"id":"com.android.tools.r8.residualsignature","signature":"Lcom/guepardodelivery/entregador/FloatingBubbleService$c;"}
-    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$3):269:269 -> <init>
+    1:6:void <init>(com.guepardodelivery.entregador.FloatingBubbleService$3):271:271 -> <init>
       # {"id":"com.android.tools.r8.residualsignature","signature":"(Lcom/guepardodelivery/entregador/FloatingBubbleService$c;)V"}
-    1:13:void run():272:272 -> run
-    14:16:void run():273:273 -> run
-    17:24:void run():274:274 -> run
+    1:8:void run():274:274 -> run
 com.guepardodelivery.entregador.FloatingBubbleService$4 -> com.guepardodelivery.entregador.FloatingBubbleService$d:
 # {"id":"sourceFile","fileName":"FloatingBubbleService.java"}
     com.guepardodelivery.entregador.FloatingBubbleService this$0 -> a
@@ -35206,7 +35230,7 @@ com.guepardodelivery.entregador.FloatingBubbleService$5 -> com.guepardodelivery.
     9:26:void onAnimationUpdate(android.animation.ValueAnimator):609:609 -> onAnimationUpdate
     27:49:void onAnimationUpdate(android.animation.ValueAnimator):611:611 -> onAnimationUpdate
     50:53:void onAnimationUpdate(android.animation.ValueAnimator):613:613 -> onAnimationUpdate
-com.guepardodelivery.entregador.LauncherActivity -> j0.f:
+com.guepardodelivery.entregador.LauncherActivity -> j0.g:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
 com.guepardodelivery.entregador.MainActivity -> com.guepardodelivery.entregador.MainActivity:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
@@ -35285,22 +35309,22 @@ com.guepardodelivery.entregador.MainActivity -> com.guepardodelivery.entregador.
     46:49:void onStart():141:141 -> onStart
     1:4:void onStop():147:147 -> onStop
     5:7:void onStop():148:148 -> onStop
-com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline0 -> j0.g:
+com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline0 -> j0.h:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:android.content.ComponentName j0.MainActivity$$ExternalSyntheticApiModelOutline0.m(com.guepardodelivery.entregador.MainActivity,android.content.Intent):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
-com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline1 -> j0.h:
+com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline1 -> j0.i:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:void j0.MainActivity$$ExternalSyntheticApiModelOutline1.m(com.guepardodelivery.entregador.MainActivity,boolean):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
-com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline2 -> j0.i:
+com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline2 -> j0.j:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:void j0.MainActivity$$ExternalSyntheticApiModelOutline2.m(com.guepardodelivery.entregador.MainActivity,boolean):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
-com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline3 -> j0.j:
+com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline3 -> j0.k:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:void j0.MainActivity$$ExternalSyntheticApiModelOutline3.m(android.app.KeyguardManager,android.app.Activity,android.app.KeyguardManager$KeyguardDismissCallback):0:0 -> a
@@ -35368,9 +35392,9 @@ com.guepardodelivery.entregador.MainActivity$6 -> com.guepardodelivery.entregado
     68:85:void onClick(android.content.DialogInterface,int):205:205 -> onClick
     86:92:void onClick(android.content.DialogInterface,int):206:206 -> onClick
     93:96:void onClick(android.content.DialogInterface,int):208:208 -> onClick
-com.guepardodelivery.entregador.R$id -> j0.k:
+com.guepardodelivery.entregador.R$id -> j0.l:
     int webView -> a
-com.guepardodelivery.entregador.R$layout -> j0.l:
+com.guepardodelivery.entregador.R$layout -> j0.m:
     int activity_main -> a
 com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entregador.SetDriverActivity:
 # {"id":"sourceFile","fileName":"SetDriverActivity.java"}
@@ -35396,7 +35420,7 @@ com.guepardodelivery.entregador.SetDriverActivity -> com.guepardodelivery.entreg
     149:151:void onResume():46:46 -> onResume
     152:159:void onResume():52:52 -> onResume
     160:175:void onResume():58:58 -> onResume
-com.guepardodelivery.entregador.SetDriverActivity$$ExternalSyntheticApiModelOutline0 -> j0.m:
+com.guepardodelivery.entregador.SetDriverActivity$$ExternalSyntheticApiModelOutline0 -> j0.n:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
     1:1:android.content.ComponentName j0.SetDriverActivity$$ExternalSyntheticApiModelOutline0.m(com.guepardodelivery.entregador.SetDriverActivity,android.content.Intent):0:0 -> a
