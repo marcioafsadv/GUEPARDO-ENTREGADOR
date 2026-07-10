@@ -38,6 +38,9 @@ public class FloatingBubbleService extends Service {
     private FrameLayout rootView;
     private WindowManager.LayoutParams windowParams;
 
+    // WakeLock to keep CPU awake while polling
+    private android.os.PowerManager.WakeLock wakeLock;
+
     // Status dot view to indicate online/offline
     private View statusDot;
 
@@ -74,6 +77,21 @@ public class FloatingBubbleService extends Service {
                     }
                 }
                 pollCounter++;
+
+                // Manage wake lock based on driver online status
+                if (isDriverOnline) {
+                    if (wakeLock == null) {
+                        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+                        wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "Guepardo:DeliveryPolling");
+                    }
+                    if (!wakeLock.isHeld()) {
+                        wakeLock.acquire();
+                    }
+                } else {
+                    if (wakeLock != null && wakeLock.isHeld()) {
+                        wakeLock.release();
+                    }
+                }
 
                 // Usa a flag estática confiável da Application para detectar foreground
                 boolean inForeground = Application.isAppInForeground;
@@ -247,12 +265,12 @@ public class FloatingBubbleService extends Service {
                                 if (lastRingingDeliveryId == null || !lastRingingDeliveryId.equals(deliveryId)) {
                                     lastRingingDeliveryId = deliveryId;
                                     
-                                    // Temos uma nova entrega pendente! Vamos chamar a tela nativa.
+                                    // Temos uma nova entrega pendente! Vamos chamar o app direto.
                                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Intent intent = new Intent(FloatingBubbleService.this, CallActivity.class);
-                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                            Intent intent = new Intent(FloatingBubbleService.this, MainActivity.class);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                             startActivity(intent);
                                         }
                                     });
@@ -657,6 +675,9 @@ public class FloatingBubbleService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+        }
         handler.removeCallbacks(checkForegroundRunnable);
         removeBubble();
         removeDismissView();

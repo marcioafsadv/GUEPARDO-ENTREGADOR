@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: f94619b
-# pg_map_hash: SHA-256 f94619bb4fd1575511e0e2b85690c95cf2f4741703c018125a8318e3bc59c6d9
+# pg_map_id: aba71d7
+# pg_map_hash: SHA-256 aba71d7bd8e61c242e60c3d90b665a27920c46b7d1d9faaef41f979d8c861e9c
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -35260,37 +35260,37 @@ com.guepardodelivery.entregador.MainActivity -> com.guepardodelivery.entregador.
     1:3:android.webkit.ValueCallback access$000(com.guepardodelivery.entregador.MainActivity):20:20 -> a
     1:3:android.webkit.ValueCallback access$002(com.guepardodelivery.entregador.MainActivity,android.webkit.ValueCallback):20:20 -> b
     1:3:boolean access$102(com.guepardodelivery.entregador.MainActivity,boolean):20:20 -> c
-    1:6:void checkOverlayPermission():121:121 -> d
-    7:12:void checkOverlayPermission():122:122 -> d
-    13:18:void checkOverlayPermission():123:123 -> d
-    19:20:void checkOverlayPermission():124:124 -> d
-    21:27:void checkOverlayPermission():125:125 -> d
-    28:33:void checkOverlayPermission():126:126 -> d
-    34:38:void checkOverlayPermission():127:127 -> d
-    39:47:void checkOverlayPermission():128:128 -> d
-    48:58:void checkOverlayPermission():129:129 -> d
-    59:64:void checkOverlayPermission():138:138 -> d
-    65:68:void checkOverlayPermission():144:144 -> d
-    69:72:void checkOverlayPermission():146:146 -> d
-    1:4:void checkXiaomiPermissions():152:152 -> e
-    5:28:void checkXiaomiPermissions():153:153 -> e
-    29:35:void checkXiaomiPermissions():154:154 -> e
-    36:43:void checkXiaomiPermissions():155:155 -> e
-    44:50:void checkXiaomiPermissions():157:157 -> e
-    51:56:void checkXiaomiPermissions():158:158 -> e
-    57:60:void checkXiaomiPermissions():159:159 -> e
-    61:69:void checkXiaomiPermissions():160:160 -> e
-    70:80:void checkXiaomiPermissions():161:161 -> e
-    81:86:void checkXiaomiPermissions():182:182 -> e
-    87:90:void checkXiaomiPermissions():188:188 -> e
-    4:15:void onActivityResult(int,int,android.content.Intent):196:196 -> onActivityResult
-    16:26:void onActivityResult(int,int,android.content.Intent):197:197 -> onActivityResult
-    27:31:void onActivityResult(int,int,android.content.Intent):198:198 -> onActivityResult
-    32:34:void onActivityResult(int,int,android.content.Intent):199:199 -> onActivityResult
-    35:38:void onActivityResult(int,int,android.content.Intent):201:201 -> onActivityResult
-    1:8:void onBackPressed():207:207 -> onBackPressed
-    9:14:void onBackPressed():208:208 -> onBackPressed
-    15:18:void onBackPressed():210:210 -> onBackPressed
+    1:6:void checkOverlayPermission():148:148 -> d
+    7:12:void checkOverlayPermission():149:149 -> d
+    13:18:void checkOverlayPermission():150:150 -> d
+    19:20:void checkOverlayPermission():151:151 -> d
+    21:27:void checkOverlayPermission():152:152 -> d
+    28:33:void checkOverlayPermission():153:153 -> d
+    34:38:void checkOverlayPermission():154:154 -> d
+    39:47:void checkOverlayPermission():155:155 -> d
+    48:58:void checkOverlayPermission():156:156 -> d
+    59:64:void checkOverlayPermission():165:165 -> d
+    65:68:void checkOverlayPermission():171:171 -> d
+    69:72:void checkOverlayPermission():173:173 -> d
+    1:4:void checkXiaomiPermissions():179:179 -> e
+    5:28:void checkXiaomiPermissions():180:180 -> e
+    29:35:void checkXiaomiPermissions():181:181 -> e
+    36:43:void checkXiaomiPermissions():182:182 -> e
+    44:50:void checkXiaomiPermissions():184:184 -> e
+    51:56:void checkXiaomiPermissions():185:185 -> e
+    57:60:void checkXiaomiPermissions():186:186 -> e
+    61:69:void checkXiaomiPermissions():187:187 -> e
+    70:80:void checkXiaomiPermissions():188:188 -> e
+    81:86:void checkXiaomiPermissions():209:209 -> e
+    87:90:void checkXiaomiPermissions():215:215 -> e
+    4:15:void onActivityResult(int,int,android.content.Intent):223:223 -> onActivityResult
+    16:26:void onActivityResult(int,int,android.content.Intent):224:224 -> onActivityResult
+    27:31:void onActivityResult(int,int,android.content.Intent):225:225 -> onActivityResult
+    32:34:void onActivityResult(int,int,android.content.Intent):226:226 -> onActivityResult
+    35:38:void onActivityResult(int,int,android.content.Intent):228:228 -> onActivityResult
+    1:8:void onBackPressed():234:234 -> onBackPressed
+    9:14:void onBackPressed():235:235 -> onBackPressed
+    15:18:void onBackPressed():237:237 -> onBackPressed
     1:3:void onCreate(android.os.Bundle):32:32 -> onCreate
     4:8:void onCreate(android.os.Bundle):33:33 -> onCreate
     9:11:void onCreate(android.os.Bundle):35:35 -> onCreate
@@ -35303,19 +35303,19 @@ com.guepardodelivery.entregador.MainActivity -> com.guepardodelivery.entregador.
     40:42:void onCreate(android.os.Bundle):44:44 -> onCreate
     43:45:void onCreate(android.os.Bundle):45:45 -> onCreate
     46:55:void onCreate(android.os.Bundle):47:47 -> onCreate
-    56:65:void onCreate(android.os.Bundle):59:59 -> onCreate
-    66:73:void onCreate(android.os.Bundle):90:90 -> onCreate
-    1:4:void onStart():95:95 -> onStart
-    5:6:void onStart():96:96 -> onStart
-    7:13:void onStart():99:99 -> onStart
-    14:22:void onStart():100:100 -> onStart
-    23:29:void onStart():102:102 -> onStart
-    30:35:void onStart():103:103 -> onStart
-    36:41:void onStart():104:104 -> onStart
-    42:45:void onStart():106:106 -> onStart
-    46:49:void onStart():110:110 -> onStart
-    1:4:void onStop():116:116 -> onStop
-    5:7:void onStop():117:117 -> onStop
+    56:65:void onCreate(android.os.Bundle):86:86 -> onCreate
+    66:73:void onCreate(android.os.Bundle):117:117 -> onCreate
+    1:4:void onStart():122:122 -> onStart
+    5:6:void onStart():123:123 -> onStart
+    7:13:void onStart():126:126 -> onStart
+    14:22:void onStart():127:127 -> onStart
+    23:29:void onStart():129:129 -> onStart
+    30:35:void onStart():130:130 -> onStart
+    36:41:void onStart():131:131 -> onStart
+    42:45:void onStart():133:133 -> onStart
+    46:49:void onStart():137:137 -> onStart
+    1:4:void onStop():143:143 -> onStop
+    5:7:void onStop():144:144 -> onStop
 com.guepardodelivery.entregador.MainActivity$$ExternalSyntheticApiModelOutline0 -> j0.k:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -35325,56 +35325,65 @@ com.guepardodelivery.entregador.MainActivity$1 -> com.guepardodelivery.entregado
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     com.guepardodelivery.entregador.MainActivity this$0 -> a
     1:6:void <init>(com.guepardodelivery.entregador.MainActivity):47:47 -> <init>
-    1:35:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):50:50 -> shouldOverrideUrlLoading
-    36:46:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):51:51 -> shouldOverrideUrlLoading
-    47:53:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):52:52 -> shouldOverrideUrlLoading
+    1:50:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):50:50 -> shouldOverrideUrlLoading
+    51:58:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):60:60 -> shouldOverrideUrlLoading
+    59:64:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):62:62 -> shouldOverrideUrlLoading
+    65:73:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):64:64 -> shouldOverrideUrlLoading
+    74:76:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):68:68 -> shouldOverrideUrlLoading
+    77:80:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):70:70 -> shouldOverrideUrlLoading
+    81:88:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):71:71 -> shouldOverrideUrlLoading
+    89:93:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):73:73 -> shouldOverrideUrlLoading
+    94:99:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):77:77 -> shouldOverrideUrlLoading
+    100:110:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):52:52 -> shouldOverrideUrlLoading
+    111:117:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):53:53 -> shouldOverrideUrlLoading
+    118:121:boolean shouldOverrideUrlLoading(android.webkit.WebView,java.lang.String):56:56 -> shouldOverrideUrlLoading
 com.guepardodelivery.entregador.MainActivity$2 -> com.guepardodelivery.entregador.MainActivity$b:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     com.guepardodelivery.entregador.MainActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):59:59 -> <init>
-    3:6:void onGeolocationPermissionsShowPrompt(java.lang.String,android.webkit.GeolocationPermissions$Callback):62:62 -> onGeolocationPermissionsShowPrompt
-    1:8:void onPermissionRequest(android.webkit.PermissionRequest):67:67 -> onPermissionRequest
-    1:9:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):72:72 -> onShowFileChooser
-    10:18:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):73:73 -> onShowFileChooser
-    19:23:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):74:74 -> onShowFileChooser
-    24:28:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):76:76 -> onShowFileChooser
-    29:32:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):78:78 -> onShowFileChooser
-    33:39:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):80:80 -> onShowFileChooser
-    40:46:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):82:82 -> onShowFileChooser
+    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):86:86 -> <init>
+    3:6:void onGeolocationPermissionsShowPrompt(java.lang.String,android.webkit.GeolocationPermissions$Callback):89:89 -> onGeolocationPermissionsShowPrompt
+    1:8:void onPermissionRequest(android.webkit.PermissionRequest):94:94 -> onPermissionRequest
+    1:9:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):99:99 -> onShowFileChooser
+    10:18:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):100:100 -> onShowFileChooser
+    19:23:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):101:101 -> onShowFileChooser
+    24:28:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):103:103 -> onShowFileChooser
+    29:32:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):105:105 -> onShowFileChooser
+    33:39:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):107:107 -> onShowFileChooser
+    40:46:boolean onShowFileChooser(android.webkit.WebView,android.webkit.ValueCallback,android.webkit.WebChromeClient$FileChooserParams):109:109 -> onShowFileChooser
 com.guepardodelivery.entregador.MainActivity$3 -> com.guepardodelivery.entregador.MainActivity$c:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     com.guepardodelivery.entregador.MainActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):138:138 -> <init>
-    1:7:void onClick(android.content.DialogInterface,int):141:141 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):165:165 -> <init>
+    1:7:void onClick(android.content.DialogInterface,int):168:168 -> onClick
 com.guepardodelivery.entregador.MainActivity$4 -> com.guepardodelivery.entregador.MainActivity$d:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     com.guepardodelivery.entregador.MainActivity this$0 -> a
-    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):129:129 -> <init>
-    1:6:void onClick(android.content.DialogInterface,int):132:132 -> onClick
-    7:20:void onClick(android.content.DialogInterface,int):133:133 -> onClick
-    21:40:void onClick(android.content.DialogInterface,int):134:134 -> onClick
-    41:48:void onClick(android.content.DialogInterface,int):135:135 -> onClick
+    1:6:void <init>(com.guepardodelivery.entregador.MainActivity):156:156 -> <init>
+    1:6:void onClick(android.content.DialogInterface,int):159:159 -> onClick
+    7:20:void onClick(android.content.DialogInterface,int):160:160 -> onClick
+    21:40:void onClick(android.content.DialogInterface,int):161:161 -> onClick
+    41:48:void onClick(android.content.DialogInterface,int):162:162 -> onClick
 com.guepardodelivery.entregador.MainActivity$5 -> com.guepardodelivery.entregador.MainActivity$e:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     android.content.SharedPreferences val$prefs -> a
     com.guepardodelivery.entregador.MainActivity this$0 -> b
-    1:8:void <init>(com.guepardodelivery.entregador.MainActivity,android.content.SharedPreferences):182:182 -> <init>
-    1:17:void onClick(android.content.DialogInterface,int):185:185 -> onClick
+    1:8:void <init>(com.guepardodelivery.entregador.MainActivity,android.content.SharedPreferences):209:209 -> <init>
+    1:17:void onClick(android.content.DialogInterface,int):212:212 -> onClick
 com.guepardodelivery.entregador.MainActivity$6 -> com.guepardodelivery.entregador.MainActivity$f:
 # {"id":"sourceFile","fileName":"MainActivity.java"}
     android.content.SharedPreferences val$prefs -> a
     com.guepardodelivery.entregador.MainActivity this$0 -> b
-    1:8:void <init>(com.guepardodelivery.entregador.MainActivity,android.content.SharedPreferences):161:161 -> <init>
-    1:16:void onClick(android.content.DialogInterface,int):164:164 -> onClick
-    17:23:void onClick(android.content.DialogInterface,int):166:166 -> onClick
-    24:30:void onClick(android.content.DialogInterface,int):167:167 -> onClick
-    31:41:void onClick(android.content.DialogInterface,int):168:168 -> onClick
-    42:48:void onClick(android.content.DialogInterface,int):169:169 -> onClick
-    49:51:void onClick(android.content.DialogInterface,int):171:171 -> onClick
-    52:67:void onClick(android.content.DialogInterface,int):173:173 -> onClick
-    68:85:void onClick(android.content.DialogInterface,int):174:174 -> onClick
-    86:92:void onClick(android.content.DialogInterface,int):175:175 -> onClick
-    93:96:void onClick(android.content.DialogInterface,int):177:177 -> onClick
+    1:8:void <init>(com.guepardodelivery.entregador.MainActivity,android.content.SharedPreferences):188:188 -> <init>
+    1:16:void onClick(android.content.DialogInterface,int):191:191 -> onClick
+    17:23:void onClick(android.content.DialogInterface,int):193:193 -> onClick
+    24:30:void onClick(android.content.DialogInterface,int):194:194 -> onClick
+    31:41:void onClick(android.content.DialogInterface,int):195:195 -> onClick
+    42:48:void onClick(android.content.DialogInterface,int):196:196 -> onClick
+    49:51:void onClick(android.content.DialogInterface,int):198:198 -> onClick
+    52:67:void onClick(android.content.DialogInterface,int):200:200 -> onClick
+    68:85:void onClick(android.content.DialogInterface,int):201:201 -> onClick
+    86:92:void onClick(android.content.DialogInterface,int):202:202 -> onClick
+    93:96:void onClick(android.content.DialogInterface,int):204:204 -> onClick
 com.guepardodelivery.entregador.R$id -> j0.l:
     int btn_accept -> a
     int webView -> b

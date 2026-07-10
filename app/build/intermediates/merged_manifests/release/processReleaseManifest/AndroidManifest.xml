@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="30"
-    android:versionName="Guepardo Entregador V.L" >
+    android:versionCode="31"
+    android:versionName="Guepardo Entregador V.M" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -38,10 +38,22 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <queries>
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.waze" />
+        <package android:name="com.whatsapp" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:scheme="waze" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:scheme="geo" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
 
@@ -50,6 +62,9 @@
             <data android:scheme="https" />
         </intent>
     </queries>
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <permission
         android:name="com.guepardodelivery.entregador.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
