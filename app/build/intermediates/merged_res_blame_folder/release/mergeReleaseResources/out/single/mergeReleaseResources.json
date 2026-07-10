@@ -100,10 +100,6 @@
         "source": "com.guepardodelivery.entregador.app-main-5:/xml/filepaths.xml"
     },
     {
-        "merged": "com.guepardodelivery.entregador.app-release-4:/layout_activity_call.xml.flat",
-        "source": "com.guepardodelivery.entregador.app-main-5:/layout/activity_call.xml"
-    },
-    {
         "merged": "com.guepardodelivery.entregador.app-release-4:/mipmap-anydpi-v26_ic_launcher.xml.flat",
         "source": "com.guepardodelivery.entregador.app-main-5:/mipmap-anydpi-v26/ic_launcher.xml"
     },

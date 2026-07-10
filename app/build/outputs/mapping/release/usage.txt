@@ -11796,9 +11796,7 @@ com.guepardodelivery.entregador.R$integer
 com.guepardodelivery.entregador.R$layout:
     private void <init>()
 com.guepardodelivery.entregador.R$mipmap
-com.guepardodelivery.entregador.R$raw:
-    public static int web_app_manifest
-    private void <init>()
+com.guepardodelivery.entregador.R$raw
 com.guepardodelivery.entregador.R$string
 com.guepardodelivery.entregador.R$xml
 com.guepardodelivery.entregador.R

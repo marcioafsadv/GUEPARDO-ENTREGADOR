@@ -23,8 +23,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guepardodelivery.entregador"
-    android:versionCode="31"
-    android:versionName="Guepardo Entregador V.M" >
+    android:versionCode="32"
+    android:versionName="Guepardo Entregador V.N" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -38,6 +38,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <queries>
         <package android:name="com.google.android.apps.maps" />
@@ -184,14 +185,6 @@
             android:foregroundServiceType="dataSync"
             android:permission="android.permission.FOREGROUND_SERVICE" />
 
-        <activity
-            android:name="com.guepardodelivery.entregador.CallActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:showWhenLocked="true"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:turnScreenOn="true" />
         <activity
             android:name="com.google.android.gms.common.api.GoogleApiActivity"
             android:exported="false"

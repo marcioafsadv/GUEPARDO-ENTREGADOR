@@ -770,7 +770,6 @@ id browser_actions_menu_item_icon
 id browser_actions_menu_item_text
 id browser_actions_menu_items
 id browser_actions_menu_view
-id btn_accept
 id buttonPanel
 id center_vertical
 id checkbox
@@ -934,7 +933,6 @@ layout abc_search_dropdown_item_icons_2line
 layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
-layout activity_call
 layout activity_main
 layout browser_actions_context_menu_page
 layout browser_actions_context_menu_row
