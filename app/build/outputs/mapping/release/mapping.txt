@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 4d8828a
-# pg_map_hash: SHA-256 4d8828a340179b3c5bcec90419464787bee40d5f2f39e86d191ab22dc611e8ef
+# pg_map_id: 0debe56
+# pg_map_hash: SHA-256 0debe562d0964a541f21cef9a07e882c222d0454d175290a28d896cce6212ab3
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -34819,18 +34819,18 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     1:9:void bringAppToForeground():622:622 -> N
     10:12:void bringAppToForeground():623:623 -> N
     13:16:void bringAppToForeground():624:624 -> N
-    1:7:android.app.Notification buildNotification():691:691 -> O
-    8:16:android.app.Notification buildNotification():693:693 -> O
-    17:23:android.app.Notification buildNotification():694:694 -> O
-    24:31:android.app.Notification buildNotification():697:697 -> O
-    32:38:android.app.Notification buildNotification():703:703 -> O
-    39:43:android.app.Notification buildNotification():705:705 -> O
-    44:51:android.app.Notification buildNotification():708:708 -> O
-    52:58:android.app.Notification buildNotification():709:709 -> O
-    59:62:android.app.Notification buildNotification():710:710 -> O
-    63:67:android.app.Notification buildNotification():711:711 -> O
-    68:70:android.app.Notification buildNotification():712:712 -> O
-    71:75:android.app.Notification buildNotification():714:714 -> O
+    1:7:android.app.Notification buildNotification():709:709 -> O
+    8:16:android.app.Notification buildNotification():711:711 -> O
+    17:23:android.app.Notification buildNotification():712:712 -> O
+    24:31:android.app.Notification buildNotification():715:715 -> O
+    32:38:android.app.Notification buildNotification():721:721 -> O
+    39:43:android.app.Notification buildNotification():723:723 -> O
+    44:51:android.app.Notification buildNotification():726:726 -> O
+    52:58:android.app.Notification buildNotification():727:727 -> O
+    59:62:android.app.Notification buildNotification():728:728 -> O
+    63:67:android.app.Notification buildNotification():729:729 -> O
+    68:70:android.app.Notification buildNotification():730:730 -> O
+    71:75:android.app.Notification buildNotification():732:732 -> O
     1:7:void checkDriverStatus():173:173 -> P
     8:17:void checkDriverStatus():174:174 -> P
     18:27:void checkDriverStatus():179:179 -> P
@@ -34949,7 +34949,12 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     82:85:void fireDeliveryNotification():681:681 -> V
     86:88:void fireDeliveryNotification():682:682 -> V
     89:100:void fireDeliveryNotification():684:684 -> V
-    101:108:void fireDeliveryNotification():686:686 -> V
+    101:107:void fireDeliveryNotification():686:686 -> V
+    108:120:void fireDeliveryNotification():690:690 -> V
+    121:128:void fireDeliveryNotification():693:693 -> V
+    129:131:void fireDeliveryNotification():697:697 -> V
+    132:136:void fireDeliveryNotification():702:702 -> V
+    137:140:void fireDeliveryNotification():704:704 -> V
     1:3:void promoteToForeground():160:160 -> W
     4:7:void promoteToForeground():161:161 -> W
     8:16:void promoteToForeground():162:162 -> W
@@ -35011,12 +35016,12 @@ com.guepardodelivery.entregador.FloatingBubbleService -> com.guepardodelivery.en
     27:34:void onCreate():144:144 -> onCreate
     35:44:void onCreate():146:146 -> onCreate
     45:52:void onCreate():149:149 -> onCreate
-    1:3:void onDestroy():719:719 -> onDestroy
-    4:13:void onDestroy():720:720 -> onDestroy
-    14:18:void onDestroy():721:721 -> onDestroy
-    19:25:void onDestroy():723:723 -> onDestroy
-    26:28:void onDestroy():724:724 -> onDestroy
-    29:32:void onDestroy():725:725 -> onDestroy
+    1:3:void onDestroy():737:737 -> onDestroy
+    4:13:void onDestroy():738:738 -> onDestroy
+    14:18:void onDestroy():739:739 -> onDestroy
+    19:25:void onDestroy():741:741 -> onDestroy
+    26:28:void onDestroy():742:742 -> onDestroy
+    29:32:void onDestroy():743:743 -> onDestroy
     1:5:int onStartCommand(android.content.Intent,int,int):154:154 -> onStartCommand
     1:3:float access$1702(com.guepardodelivery.entregador.FloatingBubbleService,float):32:32 -> p
     1:3:boolean access$1800(com.guepardodelivery.entregador.FloatingBubbleService):32:32 -> q

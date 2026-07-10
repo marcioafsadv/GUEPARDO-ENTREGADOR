@@ -678,7 +678,7 @@ public class FloatingBubbleService extends Service {
         builder.setSmallIcon(android.R.drawable.sym_def_app_icon)
                .setContentTitle("Nova Corrida Disponível!")
                .setContentText("Você tem uma nova entrega aguardando.")
-               .setFullScreenIntent(fullScreenPendingIntent, true)
+               .setContentIntent(fullScreenPendingIntent)
                .setAutoCancel(true);
 
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
