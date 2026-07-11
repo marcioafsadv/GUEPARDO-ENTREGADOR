@@ -1893,8 +1893,8 @@ const App: React.FC = () => {
     if (lat && lng) {
       // COORDINATE BASED NAVIGATION (Most Accurate)
       const url = provider === 'waze'
-        ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
-        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
+        ? `waze://?ll=${lat},${lng}&navigate=yes`
+        : `google.navigation:q=${lat},${lng}`;
       window.open(url, '_blank');
     } else if (address) {
       // FALLBACK TO ADDRESS STRING
@@ -1904,8 +1904,8 @@ const App: React.FC = () => {
       
       const encodedAddress = encodeURIComponent(cleanAddress.trim());
       const url = provider === 'waze'
-        ? `https://waze.com/ul?q=${encodedAddress}&navigate=yes`
-        : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving&dir_action=navigate`;
+        ? `waze://?q=${encodedAddress}&navigate=yes`
+        : `google.navigation:q=${encodedAddress}`;
       window.open(url, '_blank');
     }
     
