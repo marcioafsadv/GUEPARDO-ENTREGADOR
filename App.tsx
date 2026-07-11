@@ -1890,23 +1890,41 @@ const App: React.FC = () => {
     const lng = isGoingToStore ? mission?.storeLng : mission?.destinationLng;
     const address = forcedAddress || (isGoingToStore ? mission?.storeAddress : mission?.customerAddress);
 
+    const isAndroid = /android/i.test(navigator.userAgent || '');
+    
+    let url = '';
+    
     if (lat && lng) {
-      // COORDINATE BASED NAVIGATION (Most Accurate)
-      const url = provider === 'waze'
-        ? `waze://?ll=${lat},${lng}&navigate=yes`
-        : `google.navigation:q=${lat},${lng}`;
-      window.open(url, '_blank');
+      if (provider === 'waze') {
+        url = isAndroid 
+          ? `intent://waze.com/ul?ll=${lat},${lng}&navigate=yes#Intent;scheme=https;package=com.waze;end;`
+          : `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+      } else {
+        url = isAndroid
+          ? `intent://maps.google.com/maps?daddr=${lat},${lng}&nav=1#Intent;scheme=http;package=com.google.android.apps.maps;end;`
+          : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
+      }
     } else if (address) {
-      // FALLBACK TO ADDRESS STRING
-      // Clean address to avoid issues with informal descriptors (e.g. "- Casa", duplicate details)
-      let cleanAddress = address;
-      cleanAddress = cleanAddress.replace(/\s*-\s*(Casa|Apto|Apartamento|Bloco|Sobrado|Fundos)\b/gi, '');
+      let cleanAddress = address.replace(/\s*-\s*(Casa|Apto|Apartamento|Bloco|Sobrado|Fundos)\b/gi, '').trim();
+      const encodedAddress = encodeURIComponent(cleanAddress);
       
-      const encodedAddress = encodeURIComponent(cleanAddress.trim());
-      const url = provider === 'waze'
-        ? `waze://?q=${encodedAddress}&navigate=yes`
-        : `google.navigation:q=${encodedAddress}`;
-      window.open(url, '_blank');
+      if (provider === 'waze') {
+        url = isAndroid
+          ? `intent://waze.com/ul?q=${encodedAddress}&navigate=yes#Intent;scheme=https;package=com.waze;end;`
+          : `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
+      } else {
+        url = isAndroid
+          ? `intent://maps.google.com/maps?daddr=${encodedAddress}&nav=1#Intent;scheme=http;package=com.google.android.apps.maps;end;`
+          : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving&dir_action=navigate`;
+      }
+    }
+
+    if (url) {
+      if (isAndroid) {
+        window.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
     }
     
     setShowMissionMapPicker(false);
