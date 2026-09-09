@@ -794,6 +794,27 @@ const App: React.FC = () => {
   /* Delivery Help States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
   const [isMissionOverlayExpanded, setIsMissionOverlayExpanded] = useState(false);
+  const missionSheetTouchStartYRef = useRef<number | null>(null);
+
+  const handleMissionSheetTouchStart = (e: React.TouchEvent) => {
+    missionSheetTouchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleMissionSheetTouchEnd = (e: React.TouchEvent) => {
+    if (missionSheetTouchStartYRef.current === null) return;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaY = touchEndY - missionSheetTouchStartYRef.current;
+    missionSheetTouchStartYRef.current = null;
+
+    // Arrastou para cima mais de 35px -> expande
+    if (deltaY < -35 && !isMissionOverlayExpanded) {
+      setIsMissionOverlayExpanded(true);
+    }
+    // Arrastou para baixo mais de 35px -> recolhe
+    else if (deltaY > 35 && isMissionOverlayExpanded) {
+      setIsMissionOverlayExpanded(false);
+    }
+  };
   const [showChatModal, setShowChatModal] = useState(false);
   const [historicalOrder, setHistoricalOrder] = useState<DeliveryMission | null>(null);
   const [chatTab, setChatTab] = useState<ChatRoomType>('STORE_COURIER');
@@ -1089,12 +1110,8 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Auto-expand mission overlay when arriving (within 100m)
-  useEffect(() => {
-    if (navMetrics?.distanceValue && navMetrics.distanceValue < 100 && !isMissionOverlayExpanded) {
-      setIsMissionOverlayExpanded(true);
-    }
-  }, [navMetrics?.distanceValue, isMissionOverlayExpanded]);
+  // Mantém overlay recolhido durante a rota para não cobrir o mapa;
+  // O entregador tem controle total via gesto de arrastar para cima (Swipe Up) ou toque.
 
   useEffect(() => {
     // Reset expansion state when status changes to navigation phases
@@ -4132,27 +4149,60 @@ const App: React.FC = () => {
                   {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
                     /* Exact Screenshot Replica Mode - Simplified for GOING_TO_CUSTOMER */
-                    <div onClick={() => setIsMissionOverlayExpanded(true)} className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center">
-                      <div className="w-12 h-1 bg-zinc-700/60 rounded-full mb-3" />
+                    <div 
+                      onClick={() => setIsMissionOverlayExpanded(true)} 
+                      onTouchStart={handleMissionSheetTouchStart}
+                      onTouchEnd={handleMissionSheetTouchEnd}
+                      className="flex flex-col items-center justify-center py-2 cursor-pointer active:scale-95 transition-all text-center select-none"
+                    >
+                      <div className="w-14 h-1.5 bg-zinc-600/70 rounded-full mb-2.5 shadow-sm" />
                       
-                      <h3 className="text-[#F5E6D3] text-sm font-[900] uppercase tracking-[0.3em] mb-1.5 italic transform -skew-x-6">
-                        {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em Rota'}
-                      </h3>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="text-[#F5E6D3] text-sm font-[900] uppercase tracking-[0.3em] italic transform -skew-x-6">
+                          {status === DriverStatus.GOING_TO_STORE ? 'Coleta em curso' : 'Entrega em Rota'}
+                        </h3>
+                        {navMetrics?.distanceValue && navMetrics.distanceValue <= 60 && (
+                          <span className="bg-[#00FF94]/20 text-[#00FF94] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#00FF94]/30 animate-pulse">
+                            No Local
+                          </span>
+                        )}
+                      </div>
                       
                       <div className="flex items-center justify-center space-x-3 text-[#FF6B00] text-[11px] font-black uppercase tracking-widest">
                         <i className="far fa-clock text-[10px] opacity-80"></i>
                         <span className="drop-shadow-[0_0_8px_rgba(255,107,0,0.4)]">Chegada em {navMetrics?.time || '-- min'}</span>
+                        {navMetrics?.distance && (
+                          <>
+                            <span className="text-zinc-600">•</span>
+                            <span className="text-zinc-400">{navMetrics.distance}</span>
+                          </>
+                        )}
                       </div>
                       
-                      <div className="mt-2 text-[8px] font-bold text-zinc-600 uppercase tracking-[0.3em] animate-pulse">
-                        Arraste para Detalhes
+                      <div className="mt-2 text-[9px] font-bold text-[#FF6B00]/90 uppercase tracking-[0.25em] flex items-center gap-1.5 animate-pulse">
+                        <i className="fas fa-angles-up text-[9px]"></i>
+                        <span>Arraste para cima para detalhes</span>
                       </div>
                     </div>
                   ) : (
                     <>
+                      {/* Top Drag Handle for Expanded Sheet */}
+                      <div 
+                        onClick={() => setIsMissionOverlayExpanded(false)}
+                        onTouchStart={handleMissionSheetTouchStart}
+                        onTouchEnd={handleMissionSheetTouchEnd}
+                        className="w-full flex flex-col items-center pt-0.5 pb-2 cursor-pointer select-none"
+                      >
+                        <div className="w-14 h-1.5 bg-zinc-600/60 rounded-full hover:bg-zinc-400 transition-colors shadow-sm" />
+                      </div>
+
                       {/* Detailed Header for GOING_TO_CUSTOMER */}
                       {status === DriverStatus.GOING_TO_CUSTOMER ? (
-                        <div className="flex flex-col space-y-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div 
+                          onTouchStart={handleMissionSheetTouchStart}
+                          onTouchEnd={handleMissionSheetTouchEnd}
+                          className="flex flex-col space-y-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-500"
+                        >
                            {/* Stop Counter & Close Icon */}
                            <div className="flex items-center justify-between px-2">
                               <div className="flex items-center space-x-4 bg-[#FF6B00]/10 px-6 py-3 rounded-full border border-[#FF6B00]/30 shadow-[0_0_20px_rgba(255,107,0,0.1)]">
