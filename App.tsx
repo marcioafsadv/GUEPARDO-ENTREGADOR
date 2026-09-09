@@ -255,6 +255,18 @@ const getBestStatus = (missions: DeliveryMission[]) => {
 };
 
 const mapDbDeliveryToMission = (d: any): DeliveryMission => {
+  const isReturn = Boolean(
+    d.is_return_required === true ||
+    d.isReturnRequired === true ||
+    d.items?.isReturnRequired === true ||
+    d.items?.is_return_required === true ||
+    (Array.isArray(d.items) && d.items.some((i: any) => i?.isReturnRequired === true || i?.is_return_required === true || ['DINHEIRO', 'CASH'].includes(i?.paymentMethod?.toString().toUpperCase()))) ||
+    ['DINHEIRO', 'CASH'].includes(d.payment_method?.toString().toUpperCase()) ||
+    ['DINHEIRO', 'CASH'].includes(d.paymentMethod?.toString().toUpperCase()) ||
+    ['DINHEIRO', 'CASH'].includes(d.items?.paymentMethod?.toString().toUpperCase()) ||
+    ['DINHEIRO', 'CASH'].includes(d.items?.payment_method?.toString().toUpperCase())
+  );
+
   return {
     id: d.id,
     storeName: d.store_name || 'Loja',
@@ -270,7 +282,7 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     earnings: parseFloat(d.earnings || '0'),
     timeLimit: 25,
     status: d.status || 'pending',
-    isReturnRequired: d.is_return_required || (d.items?.isReturnRequired) || ['DINHEIRO', 'CASH'].includes(d.payment_method?.toUpperCase()) || false,
+    isReturnRequired: isReturn,
     displayId: getDisplayId(d.items),
     batch_id: d.batch_id,
     destinationLat: d.destination_lat || d.items?.destinationLat,
@@ -279,9 +291,9 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     storeLng: d.stores?.lng,
     stopNumber: d.stop_number || d.items?.stopNumber || 1,
     storePhone: d.store_phone || '',
-    customerPhone: d.customer_phone || '',
+    customerPhone: d.customer_phone || (d.customer_phone_suffix ? `+55${d.customer_phone_suffix}` : ''),
     deliveryValue: parseFloat(d.delivery_value || '0'),
-    paymentMethod: d.payment_method || 'PIX',
+    paymentMethod: d.payment_method || d.items?.paymentMethod || 'PIX',
     storeLogoUrl: d.stores?.logo_url || null,
     storeFacadeUrl: d.stores?.location_photo_url || null,
     isOpenMode: d.items?.is_open_mode === true
@@ -2475,28 +2487,7 @@ const App: React.FC = () => {
                       .sort((a, b) => (a.stopNumber || 1) - (b.stopNumber || 1));
                   }
                 } else {
-                  missionsToAlert = [{
-                    id: firstPending.id,
-                    storeName: firstPending.store_name || 'Loja',
-                    storeAddress: firstPending.store_address || '',
-                    customerName: firstPending.customer_name || 'Cliente',
-                    customerAddress: firstPending.customer_address || '',
-                    customerPhoneSuffix: firstPending.customer_phone_suffix || '',
-                    items: firstPending.items || [],
-                    collectionCode: firstPending.collection_code || '0000',
-                    distanceToStore: firstPending.distance_to_store || 0,
-                    deliveryDistance: firstPending.delivery_distance || 0,
-                    totalDistance: firstPending.total_distance || 0,
-                    earnings: parseFloat(firstPending.earnings || '0'),
-                    timeLimit: 25,
-                    status: firstPending.status || 'pending',
-                    isReturnRequired: firstPending.is_return_required || (firstPending.items?.isReturnRequired) || false,
-                    storePhone: '',
-                    customerPhone: firstPending.customer_phone_suffix ? `+55${firstPending.customer_phone_suffix}` : '',
-                    destinationLat: firstPending.destination_lat,
-                    destinationLng: firstPending.destination_lng,
-                    displayId: getDisplayId(firstPending.items)
-                  }];
+                  missionsToAlert = [mapDbDeliveryToMission(firstPending)];
                 }
 
                 setActiveMissions(missionsToAlert);
@@ -4703,7 +4694,15 @@ const App: React.FC = () => {
                       
                       <div className="flex justify-between items-start mb-6">
                         <div className="flex-1 pr-4">
-                          <p className="text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.3em] mb-1.5 italic">LOJA</p>
+                          <div className="flex items-center space-x-2 mb-1.5">
+                            <p className="text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.3em] italic">LOJA</p>
+                            {missionData.isReturnRequired && (
+                              <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <i className="fas fa-arrows-rotate text-[7px]"></i>
+                                Com Retorno
+                              </span>
+                            )}
+                          </div>
                           <h3 className="text-xl font-black text-white truncate italic transform -skew-x-3">{missionData.storeName}</h3>
                         </div>
                         <div className="text-right">
@@ -6547,15 +6546,31 @@ const App: React.FC = () => {
               const totalD = mToShow[0]?.totalDistance || (distToStore + totalDeliveryDist);
               const totalStops = mToShow.length;
               const currentVehicleType = currentUser?.vehicle || 'moto';
+              const hasReturn = batchHasReturn || mToShow.some(m => Boolean(m?.isReturnRequired));
 
               return (
                 <>
                   {/* Header: Estimated Earnings banner */}
-                  <div className="p-6 pb-3 text-center relative z-10 border-b border-white/5 shrink-0 bg-black/10">
+                  <div className="p-6 pb-4 text-center relative z-10 border-b border-white/5 shrink-0 bg-black/10 flex flex-col items-center">
                     <span className="text-[10px] font-black uppercase text-[#D4AF37] tracking-[0.3em] mb-1 block opacity-95 drop-shadow-[0_0_8px_rgba(212,175,55,0.35)]">Ganhos Estimados</span>
                     <h2 className="text-5xl font-[900] text-white drop-shadow-[0_0_20px_rgba(255,107,0,0.5)] leading-none tracking-tighter italic transform -skew-x-6">
                        {formatCurrency(totalE)}
                     </h2>
+                    {hasReturn ? (
+                      <div className="mt-3 inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FF6B00]/25 via-amber-500/20 to-[#FF6B00]/25 border-2 border-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.35)] animate-pulse">
+                        <i className="fas fa-arrows-rotate text-[#FF6B00] text-xs"></i>
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[#FF6B00] drop-shadow-sm">
+                          Taxa com Retorno Obrigatório
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400">
+                        <i className="fas fa-arrow-right text-[9px] opacity-60"></i>
+                        <span className="text-[9px] font-bold uppercase tracking-widest">
+                          Sem Retorno à Loja
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Scrollable container for modal elements */}
@@ -6563,10 +6578,16 @@ const App: React.FC = () => {
                     
                     {/* 1. Top Section: Points of Collection and Destination/Stops */}
                     <div className="flex items-start space-x-3 mb-4 shrink-0">
-                      <div className="flex flex-col items-center justify-between h-20 py-1.5 shrink-0">
+                      <div className={`flex flex-col items-center justify-between ${hasReturn ? 'h-32' : 'h-20'} py-1.5 shrink-0 transition-all`}>
                         <div className="w-3.5 h-3.5 rounded-full bg-[#FF6B00] border-2 border-white shadow-[0_0_8px_#FF6B00]"></div>
                         <div className="w-0.5 flex-1 border-l-2 border-dashed border-white/20 my-1"></div>
                         <div className="w-3.5 h-3.5 rounded-full bg-[#D4AF37] border-2 border-white shadow-[0_0_8px_#D4AF37]"></div>
+                        {hasReturn && (
+                          <>
+                            <div className="w-0.5 flex-1 border-l-2 border-dashed border-amber-500/40 my-1"></div>
+                            <div className="w-3.5 h-3.5 rounded-full bg-amber-500 border-2 border-white shadow-[0_0_8px_#F59E0B]"></div>
+                          </>
+                        )}
                       </div>
                       <div className="flex-1 space-y-2 min-w-0">
                         {/* Top Pill - Coleta */}
@@ -6587,6 +6608,19 @@ const App: React.FC = () => {
                             <p className="text-xs font-black text-white truncate leading-none">{mission.customerAddress}</p>
                           </div>
                         </div>
+                        {/* Retorno Pill (se aplicável) */}
+                        {hasReturn && (
+                          <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl p-3 flex items-center space-x-3 shadow-inner animate-in fade-in slide-in-from-top-2 duration-300">
+                            <i className="fas fa-arrows-rotate text-amber-400 text-sm shrink-0"></i>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[8px] font-black uppercase text-amber-400 tracking-widest leading-none mb-1 flex items-center gap-1">
+                                <span>Retorno Obrigatório</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                              </p>
+                              <p className="text-xs font-black text-white truncate leading-none">Voltar para {mission.storeName}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -6597,9 +6631,17 @@ const App: React.FC = () => {
                           <i className="fas fa-shop text-[#FF6B00] text-xs"></i>
                           <h3 className="text-xs font-black text-white uppercase tracking-wider">{mission.storeName}</h3>
                         </div>
-                        <span className="text-[8px] font-black uppercase text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20">
-                          #{mission.displayId || mission.id.slice(-4).toUpperCase()}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          {hasReturn && (
+                            <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse">
+                              <i className="fas fa-arrows-rotate text-[7px]"></i>
+                              Com Retorno
+                            </span>
+                          )}
+                          <span className="text-[8px] font-black uppercase text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20">
+                            #{mission.displayId || mission.id.slice(-4).toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-2 text-center border-t border-white/5 pt-3">
