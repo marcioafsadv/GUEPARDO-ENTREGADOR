@@ -640,7 +640,7 @@ const App: React.FC = () => {
     customer: { lat: number; lng: number } | null;
   }>({ store: null, customer: null });
 
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null; accuracy?: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; speed?: number | null; accuracy?: number; heading?: number | null } | null>(null);
 
   /**
    * Regra de Chamada Progressiva (Raio/Tempo)
@@ -1770,7 +1770,8 @@ const App: React.FC = () => {
             lat: latitude, 
             lng: longitude,
             speed: pos.coords.speed, // m/s
-            accuracy: pos.coords.accuracy
+            accuracy: pos.coords.accuracy,
+            heading: pos.coords.heading
           });
         },
         (err) => {

@@ -219,7 +219,7 @@ interface Instruction {
 interface MapNavigationProps {
     status: string;
     destinationAddress: string | null;
-    currentLocation: { lat: number; lng: number; speed?: number | null; accuracy?: number } | null;
+    currentLocation: { lat: number; lng: number; speed?: number | null; accuracy?: number; heading?: number | null } | null;
     routeProgress?: number; // 0 to 100 percentage
     onArrived?: () => void;
     onUpdateMetrics?: (metrics: { time: string; distance: string, progress: number, distanceValue?: number }) => void;
@@ -1106,68 +1106,143 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
             destinationMarker.current.addTo(map.current);
         }
 
-        // Calculate Bearing (Direction) with Smoothing, Heading-Up and fallback to Route segment
-        let targetBearing = lastSmoothedBearing.current || 0;
-        let hasNewBearing = false;
-
+        // Calculate Bearing (Direction) with Calibrated Stabilization, Deadband and Road-Lock
         const distMoved = lastLocation.current ? getDistance(
             lastLocation.current.lat, lastLocation.current.lng,
             displayLocation.lat, displayLocation.lng
         ) * 1000 : 0; // in meters
 
         // Speed in km/h
-        const speedKmh = effectiveLocation.speed != null ? effectiveLocation.speed * 3.6 : (distMoved / 1) * 3.6;
+        const speedKmh = effectiveLocation.speed != null 
+            ? effectiveLocation.speed * 3.6 
+            : (distMoved / 1) * 3.6;
 
-        if (distMoved > 1.5 && speedKmh > 1.5 && lastLocation.current) {
-            const rawBearing = getBearing(
-                lastLocation.current.lat, lastLocation.current.lng,
-                displayLocation.lat, displayLocation.lng
-            );
-            targetBearing = rawBearing;
-            hasNewBearing = true;
-        } else if (routeCoordinates.current.length > 1) {
-            // Stationary/Initial alignment: orient towards the route segment ahead
-            let nextCoordIndex = 1;
-            for (let i = 1; i < routeCoordinates.current.length; i++) {
-                const ptLng = routeCoordinates.current[i][0];
-                const ptLat = routeCoordinates.current[i][1];
-                const dist = getDistance(displayLocation.lat, displayLocation.lng, ptLat, ptLng) * 1000;
-                if (dist > 8) {
-                    nextCoordIndex = i;
+        // Vehicle motion guard: speeds below 3.5 km/h or negligible movement are considered stationary
+        const isVehicleMoving = speedKmh >= 3.5 && distMoved >= 1.0;
+
+        // 1. Calculate Route Lookahead Direction (~18m ahead on active route)
+        // Streets are straight and smooth, giving a completely jitter-free reference heading.
+        let routeLookaheadBearing: number | null = null;
+        if (routeCoordinates.current.length > 1) {
+            let closestIdx = 0;
+            let minD = Infinity;
+            for (let i = 0; i < routeCoordinates.current.length - 1; i++) {
+                const d = getDistance(displayLocation.lat, displayLocation.lng, routeCoordinates.current[i][1], routeCoordinates.current[i][0]) * 1000;
+                if (d < minD) {
+                    minD = d;
+                    closestIdx = i;
+                }
+            }
+            let forwardIdx = closestIdx + 1;
+            for (let i = closestIdx + 1; i < routeCoordinates.current.length; i++) {
+                const d = getDistance(displayLocation.lat, displayLocation.lng, routeCoordinates.current[i][1], routeCoordinates.current[i][0]) * 1000;
+                if (d >= 18) {
+                    forwardIdx = i;
                     break;
                 }
             }
-            const nextPt = routeCoordinates.current[nextCoordIndex];
-            targetBearing = getBearing(displayLocation.lat, displayLocation.lng, nextPt[1], nextPt[0]);
-            hasNewBearing = true;
+            const forwardPt = routeCoordinates.current[Math.min(forwardIdx, routeCoordinates.current.length - 1)];
+            routeLookaheadBearing = getBearing(displayLocation.lat, displayLocation.lng, forwardPt[1], forwardPt[0]);
         }
 
-        if (hasNewBearing) {
-            // Smooth the bearing using EMA (Exponential Moving Average)
+        // 2. Accumulated Distance Motion Vector (Samples over >= 5 meters to filter out noise)
+        let motionBearing: number | null = null;
+        if (!lastBearingPos.current) {
+            lastBearingPos.current = { lat: displayLocation.lat, lng: displayLocation.lng };
+        } else {
+            const distFromBaseline = getDistance(
+                lastBearingPos.current.lat, lastBearingPos.current.lng,
+                displayLocation.lat, displayLocation.lng
+            ) * 1000;
+
+            if (distFromBaseline >= 5) {
+                motionBearing = getBearing(
+                    lastBearingPos.current.lat, lastBearingPos.current.lng,
+                    displayLocation.lat, displayLocation.lng
+                );
+                lastBearingPos.current = { lat: displayLocation.lat, lng: displayLocation.lng };
+            }
+        }
+
+        // 3. Native Device Heading (Compass/Gyro/GPS fused heading from mobile browser if available)
+        const deviceHeading = (effectiveLocation.heading != null && !isNaN(effectiveLocation.heading) && effectiveLocation.heading >= 0)
+            ? effectiveLocation.heading
+            : null;
+
+        // 4. Determine Target Direction
+        let targetBearing = lastSmoothedBearing.current || 0;
+        let candidateBearing: number | null = null;
+
+        if (!isVehicleMoving) {
+            // STOPPED / CRAWLING: Freeze bearing! Never rotate the map when stopped at semaphores/gates.
             if (lastSmoothedBearing.current !== null) {
-                let diff = targetBearing - lastSmoothedBearing.current;
-                
-                // Handle 0/360 wrap-around
+                candidateBearing = lastSmoothedBearing.current;
+            } else if (routeLookaheadBearing !== null) {
+                candidateBearing = routeLookaheadBearing;
+            }
+        } else if (!snapped.isOffRoute && routeLookaheadBearing !== null) {
+            // ON-ROUTE IN MOTION:
+            // Lock firmly to the road direction. This eliminates 100% of the lateral GPS wobbling!
+            // If motion or device heading diverges significantly (> 50°), allow turn/maneuver.
+            const primaryMovementHeading = motionBearing ?? deviceHeading;
+            if (primaryMovementHeading !== null) {
+                let diffWithRoute = Math.abs(primaryMovementHeading - routeLookaheadBearing);
+                if (diffWithRoute > 180) diffWithRoute = 360 - diffWithRoute;
+
+                if (diffWithRoute <= 45) {
+                    // Fully aligned with road
+                    candidateBearing = routeLookaheadBearing;
+                } else {
+                    // Executing curve or turn
+                    candidateBearing = primaryMovementHeading;
+                }
+            } else {
+                candidateBearing = routeLookaheadBearing;
+            }
+        } else {
+            // OFF-ROUTE IN MOTION:
+            candidateBearing = motionBearing ?? deviceHeading ?? (lastLocation.current && distMoved >= 2 ? getBearing(lastLocation.current.lat, lastLocation.current.lng, displayLocation.lat, displayLocation.lng) : null);
+        }
+
+        // 5. Deadband (Zona Morta) and Adaptive EMA Smoothing
+        if (candidateBearing !== null) {
+            if (lastSmoothedBearing.current === null) {
+                lastSmoothedBearing.current = candidateBearing;
+                targetBearing = candidateBearing;
+            } else {
+                let diff = candidateBearing - lastSmoothedBearing.current;
                 if (diff > 180) diff -= 360;
                 if (diff < -180) diff += 360;
-                
-                // alpha = 0.6
-                targetBearing = (lastSmoothedBearing.current + diff * 0.6 + 360) % 360;
+
+                const absDiff = Math.abs(diff);
+
+                // DEADBAND: Changes below 3.5 degrees are treated as noise/imperceptible.
+                // This keeps the camera rock-solid and stable in straight lines.
+                if (absDiff >= 3.5) {
+                    // Adaptive Smoothing (EMA):
+                    // - Small angle changes (3.5° - 20°): alpha = 0.16 (glides smoothly, zero jitter)
+                    // - Medium curves (20° - 45°): alpha = 0.28
+                    // - Sharp turns (> 45°): alpha = 0.40 (turns promptly with vehicle)
+                    const alpha = absDiff > 45 ? 0.40 : (absDiff > 20 ? 0.28 : 0.16);
+                    targetBearing = (lastSmoothedBearing.current + diff * alpha + 360) % 360;
+                    lastSmoothedBearing.current = targetBearing;
+                } else {
+                    targetBearing = lastSmoothedBearing.current;
+                }
             }
-            lastSmoothedBearing.current = targetBearing;
         }
 
-        // Apply constant Heading-Up map orientation
+        // Apply constant Heading-Up map orientation with smooth easing
         const containerHeight = map.current.getContainer().getBoundingClientRect().height;
         const dynamicTopPadding = containerHeight * (isMissionOverlayExpanded ? 0.52 : 0.38);
 
         map.current.easeTo({
             center: [displayLocation.lng, displayLocation.lat],
             bearing: navigationMode === 'heading_up' ? targetBearing : 0,
-            duration: distMoved > 1.5 ? 500 : 1000,
+            duration: isVehicleMoving ? 800 : 400,
             padding: { top: dynamicTopPadding, bottom: 80 },
             pitch: isArriving ? 0 : 55,
-            easing: (t) => t
+            easing: (t) => t * (2 - t) // Quadratic ease-out for fluid settling
         });
 
         // Apply dynamic rotation to navigation marker container (farol + arrow)
