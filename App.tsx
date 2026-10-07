@@ -296,7 +296,12 @@ const mapDbDeliveryToMission = (d: any): DeliveryMission => {
     paymentMethod: d.payment_method || d.items?.paymentMethod || 'PIX',
     storeLogoUrl: d.stores?.logo_url || null,
     storeFacadeUrl: d.stores?.location_photo_url || null,
-    isOpenMode: d.items?.is_open_mode === true
+    isOpenMode: d.items?.is_open_mode === true,
+    waitingStartedAt: d.items?.waitingStartedAt || null,
+    waitingExpired: d.items?.waitingExpired === true,
+    customerMissingAction: d.items?.customerMissingAction || null,
+    waitingStatus: d.items?.waitingStatus || null,
+    rawItems: d.items || {}
   };
 };
 
@@ -803,8 +808,13 @@ const App: React.FC = () => {
   const [autoAccept, setAutoAccept] = useState(false);
 
   // Settings
-  /* Delivery Help States */
+  /* Delivery Help & 5-Minute Waiting States */
   const [showDeliveryHelpModal, setShowDeliveryHelpModal] = useState(false);
+  const [showCustomerWaitHelpModal, setShowCustomerWaitHelpModal] = useState(false);
+  const [isWaitingActive, setIsWaitingActive] = useState(false);
+  const [waitingTimeRemaining, setWaitingTimeRemaining] = useState(300);
+  const [showCustomerMissingDecisionModal, setShowCustomerMissingDecisionModal] = useState(false);
+  const [isReportingMissing, setIsReportingMissing] = useState(false);
   const [isMissionOverlayExpanded, setIsMissionOverlayExpanded] = useState(false);
   const missionSheetTouchStartYRef = useRef<number | null>(null);
 
@@ -928,6 +938,148 @@ const App: React.FC = () => {
   const handleCallStore = () => {
     if (!mission) return;
     window.location.href = `tel:${mission.storePhone}`;
+  };
+
+  // --- PROTOCOLO DE ESPERA DE 5 MINUTOS & CLIENTE AUSENTE ---
+  useEffect(() => {
+    if (mission?.waitingStartedAt) {
+      const started = new Date(mission.waitingStartedAt).getTime();
+      const elapsed = Math.floor((Date.now() - started) / 1000);
+      const remaining = Math.max(0, 300 - elapsed);
+      setWaitingTimeRemaining(remaining);
+      setIsWaitingActive(true);
+      if (remaining === 0 && !mission.waitingExpired && !mission.waitingStatus) {
+        setShowCustomerMissingDecisionModal(true);
+      }
+    } else {
+      setIsWaitingActive(false);
+      setWaitingTimeRemaining(300);
+    }
+  }, [mission?.id, mission?.waitingStartedAt, mission?.waitingExpired, mission?.waitingStatus]);
+
+  useEffect(() => {
+    if (!isWaitingActive || waitingTimeRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setWaitingTimeRemaining(prev => {
+        if (prev <= 1) {
+          if (navigator.vibrate) {
+            navigator.vibrate([500, 200, 500, 200, 1000]);
+          }
+          try {
+            const beepSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 0.9 });
+            beepSound.play();
+          } catch (e) {
+            console.error('Audio play error:', e);
+          }
+          setShowCustomerMissingDecisionModal(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isWaitingActive, waitingTimeRemaining]);
+
+  const formatSecondsToMMSS = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const handleStartWaitingTimer = async () => {
+    if (!mission || !userId) return;
+    const nowIso = new Date().toISOString();
+    try {
+      const updatedItems = {
+        ...(mission.rawItems || {}),
+        waitingStartedAt: nowIso,
+        waitingExpired: false,
+        waitingStatus: 'waiting_active',
+        customer_missing: false
+      };
+      const { error } = await supabaseClient.supabase
+        .from('deliveries')
+        .update({ items: updatedItems })
+        .eq('id', mission.id);
+
+      if (error) throw error;
+
+      setMission(prev => prev ? {
+        ...prev,
+        waitingStartedAt: nowIso,
+        waitingExpired: false,
+        waitingStatus: 'waiting_active',
+        rawItems: updatedItems
+      } : null);
+
+      setIsWaitingActive(true);
+      setWaitingTimeRemaining(300);
+      setShowCustomerWaitHelpModal(false);
+
+      if (navigator.vibrate) navigator.vibrate(300);
+      try {
+        const startSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 0.7 });
+        startSound.play();
+      } catch (e) {}
+    } catch (err) {
+      console.error('Erro ao iniciar contagem de espera:', err);
+      alert('Não foi possível iniciar a contagem. Verifique sua conexão.');
+    }
+  };
+
+  const handleContactCustomerWhatsApp = () => {
+    if (!mission) return;
+    const phone = mission.customerPhone || mission.customerPhoneSuffix;
+    if (!phone) {
+      alert('Telefone do cliente não disponível neste pedido.');
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fullPhone = cleanPhone.length <= 9 ? `11${cleanPhone}` : cleanPhone;
+    const internationalPhone = fullPhone.startsWith('55') ? fullPhone : `55${fullPhone}`;
+    const text = encodeURIComponent(`Olá ${mission.customerName || 'Cliente'}! Aqui é o entregador do Guepardo Delivery. Cheguei na sua portaria com seu pedido #${mission.displayId || mission.id.slice(-4).toUpperCase()} e estou aguardando para entregar. Por favor, venha retirar!`);
+    window.open(`https://wa.me/${internationalPhone}?text=${text}`, '_blank');
+  };
+
+  const handleExtendWaitingTimer = () => {
+    setWaitingTimeRemaining(180); // +3 min
+    setShowCustomerMissingDecisionModal(false);
+  };
+
+  const handleReportCustomerMissing = async () => {
+    if (!mission || !userId) return;
+    setIsReportingMissing(true);
+    try {
+      const updatedItems = {
+        ...(mission.rawItems || {}),
+        customer_missing: true,
+        waiting_expired: true,
+        waiting_status: 'awaiting_store_decision',
+        missing_reported_at: new Date().toISOString()
+      };
+
+      const { error } = await supabaseClient.supabase
+        .from('deliveries')
+        .update({ items: updatedItems })
+        .eq('id', mission.id);
+
+      if (error) throw error;
+
+      setMission(prev => prev ? {
+        ...prev,
+        waitingExpired: true,
+        waitingStatus: 'awaiting_store_decision',
+        rawItems: updatedItems
+      } : null);
+
+      setShowCustomerMissingDecisionModal(false);
+      alert('Aviso enviado para a loja! O lojista foi notificado para decidir entre Devolução ou Descarte. Sua taxa de entrega está 100% garantida.');
+    } catch (err) {
+      console.error('Erro ao reportar cliente ausente:', err);
+      alert('Erro ao enviar notificação para a loja. Tente novamente.');
+    } finally {
+      setIsReportingMissing(false);
+    }
   };
 
   const handleOpenHistoricalChat = (transaction: Transaction) => {
@@ -4464,6 +4616,104 @@ const App: React.FC = () => {
                           ))}
                           </div>
                         </div>
+
+                        {/* 5-Minute Waiting Protocol Card & Assistance */}
+                        {mission.waitingStatus === 'awaiting_store_decision' ? (
+                          <div className="mt-4 p-5 rounded-[28px] bg-blue-950/40 border border-blue-500/40 text-center animate-in zoom-in-95 duration-200">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center text-xl mb-2 animate-pulse">
+                              <i className="fas fa-hourglass-half"></i>
+                            </div>
+                            <h4 className="text-xs font-black uppercase text-white tracking-wider">Aguardando Lojista</h4>
+                            <p className="text-[10px] text-zinc-300 font-medium mt-1 leading-snug">
+                              Aviso de cliente ausente enviado para a loja. O lojista está decidindo entre Devolução ou Descarte.
+                            </p>
+                            <div className="mt-3 py-2 px-3 rounded-xl bg-green-500/10 border border-green-500/20 text-[9px] font-black uppercase tracking-widest text-green-400">
+                              ✓ Sua taxa de entrega está 100% garantida
+                            </div>
+                          </div>
+                        ) : isWaitingActive ? (
+                          <div className="mt-4 p-5 rounded-[28px] bg-red-950/40 border-2 border-red-500/40 shadow-[0_0_25px_rgba(239,68,68,0.25)] animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Protocolo de Espera Ativo</span>
+                              </div>
+                              <span className="text-[9px] font-bold text-zinc-400">Notificado via Link</span>
+                            </div>
+
+                            <div className="flex items-center justify-center py-2 space-x-3">
+                              <i className="fas fa-stopwatch text-3xl text-red-500 animate-pulse"></i>
+                              <div className="text-4xl font-black text-white tracking-tighter tabular-nums font-mono drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                                {formatSecondsToMMSS(waitingTimeRemaining)}
+                              </div>
+                            </div>
+
+                            <p className="text-[10px] text-zinc-300 text-center font-bold mt-1 mb-3 leading-tight">
+                              {waitingTimeRemaining > 0 
+                                ? "O morador foi alertado no link. Aguarde até o fim dos 5 minutos regulamentares."
+                                : "Tempo regulamentar esgotado! Você já pode acionar a loja."}
+                            </p>
+
+                            {waitingTimeRemaining > 0 ? (
+                              <div className="grid grid-cols-2 gap-2 mt-2">
+                                <button
+                                  type="button"
+                                  onClick={handleCallStore}
+                                  className="h-11 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center space-x-2 text-white text-[10px] font-black uppercase tracking-wider active:scale-95 transition-transform"
+                                >
+                                  <i className="fas fa-phone text-xs text-[#FFD700]"></i>
+                                  <span>Ligar Loja</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleContactCustomerWhatsApp}
+                                  className="h-11 rounded-2xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 flex items-center justify-center space-x-2 text-green-400 text-[10px] font-black uppercase tracking-wider active:scale-95 transition-transform"
+                                >
+                                  <i className="fab fa-whatsapp text-sm text-green-400"></i>
+                                  <span>WhatsApp</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 mt-2">
+                                <button
+                                  type="button"
+                                  disabled={isReportingMissing}
+                                  onClick={handleReportCustomerMissing}
+                                  className="w-full h-12 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2"
+                                >
+                                  <i className="fas fa-ban"></i>
+                                  <span>{isReportingMissing ? "Enviando..." : "Cliente Não Compareceu (Acionar Loja)"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleExtendWaitingTimer}
+                                  className="w-full h-10 rounded-xl bg-white/10 text-zinc-300 font-bold text-[10px] uppercase tracking-wider active:scale-95 transition-transform"
+                                >
+                                  Aguardar +3 Minutos
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-4 p-4 rounded-[28px] bg-amber-500/10 border border-amber-500/25 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                                <i className="fas fa-user-clock text-base"></i>
+                              </div>
+                              <div className="text-left">
+                                <p className="text-xs font-black uppercase text-amber-400 tracking-tight">Cliente demorando?</p>
+                                <p className="text-[10px] text-zinc-400 font-semibold leading-tight">Inicie os 5 min ou ligue para a loja</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowCustomerWaitHelpModal(true)}
+                              className="px-4 py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#FF8533] text-white text-[11px] font-black uppercase tracking-wider shadow-lg active:scale-95 transition-transform shrink-0"
+                            >
+                              Ajuda
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -4492,6 +4742,159 @@ const App: React.FC = () => {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Customer Wait Help Modal */}
+        {showCustomerWaitHelpModal && mission && (
+          <div className="fixed inset-0 z-[9000] flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-300 pointer-events-auto">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCustomerWaitHelpModal(false)}></div>
+            <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-6 sm:p-8 border-t sm:border border-white/10 shadow-2xl relative z-10 animate-in slide-in-from-bottom duration-300 ${cardBg}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00]"></span>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-[#FF6B00]">Problemas na Entrega</h3>
+                  </div>
+                  <h2 className="text-2xl font-black text-white italic tracking-tight mt-0.5">Cliente não atende?</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerWaitHelpModal(false)}
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 transition-transform"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Option 1: Start 5 min countdown */}
+                <button
+                  type="button"
+                  onClick={handleStartWaitingTimer}
+                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white flex items-center space-x-4 shadow-xl active:scale-95 transition-transform text-left"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl shrink-0">
+                    <i className="fas fa-stopwatch"></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider">Iniciar Espera de 5 Minutos</p>
+                    <p className="text-[10px] text-white/80 font-semibold leading-tight mt-0.5">
+                      Alerta o cliente no link de rastreio e inicia a contagem oficial.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 2: Call store */}
+                <button
+                  type="button"
+                  onClick={() => { setShowCustomerWaitHelpModal(false); handleCallStore(); }}
+                  className="w-full p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center space-x-4 active:scale-95 transition-transform text-left"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl shrink-0">
+                    <i className="fas fa-phone"></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-amber-400">Ligar para o Estabelecimento</p>
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-tight mt-0.5">
+                      {mission.storePhone ? `Discar para ${mission.storePhone}` : 'Ligar para a loja cadastrada'}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 3: WhatsApp customer */}
+                <button
+                  type="button"
+                  onClick={() => { setShowCustomerWaitHelpModal(false); handleContactCustomerWhatsApp(); }}
+                  className="w-full p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center space-x-4 active:scale-95 transition-transform text-left"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-green-500/10 text-green-400 flex items-center justify-center text-xl shrink-0">
+                    <i className="fab fa-whatsapp"></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-green-400">Chamar Cliente no WhatsApp</p>
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-tight mt-0.5">
+                      Enviar mensagem direta avisando que chegou na portaria.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 4: Central Support */}
+                <button
+                  type="button"
+                  onClick={() => { setShowCustomerWaitHelpModal(false); handleSendCentralMessage(); }}
+                  className="w-full p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center space-x-4 active:scale-95 transition-transform text-left"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl shrink-0">
+                    <i className="fas fa-headset"></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider text-blue-400">Guepardo Central</p>
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-tight mt-0.5">
+                      Abrir chat com o suporte operacional.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Customer Missing Post-Timer Decision Modal */}
+        {showCustomerMissingDecisionModal && mission && (
+          <div className="fixed inset-0 z-[9500] flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-300 pointer-events-auto">
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={() => setShowCustomerMissingDecisionModal(false)}></div>
+            <div className={`w-full max-w-sm rounded-t-[40px] sm:rounded-[40px] p-6 sm:p-8 border-t sm:border border-red-500/30 shadow-[0_0_60px_rgba(239,68,68,0.3)] relative z-10 animate-in slide-in-from-bottom duration-300 ${cardBg}`}>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-3xl bg-red-500/20 text-red-500 border border-red-500/30 mx-auto flex items-center justify-center text-3xl mb-3 animate-bounce">
+                  <i className="fas fa-clock-rotate-left"></i>
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-red-400 mb-1">Prazo de 5 Minutos Esgotado</h3>
+                <h2 className="text-2xl font-black text-white italic tracking-tight">O cliente compareceu?</h2>
+                <p className="text-[11px] text-zinc-300 mt-2 leading-relaxed">
+                  Você cumpriu o tempo regulamentar no endereço. Sua taxa de entrega está <strong>100% garantida</strong>. Escolha o procedimento:
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Decision 1: Customer Missing -> Notify Store */}
+                <button
+                  type="button"
+                  disabled={isReportingMissing}
+                  onClick={handleReportCustomerMissing}
+                  className="w-full p-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white flex items-center space-x-3 shadow-xl active:scale-95 transition-transform text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+                    <i className="fas fa-ban"></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wider">Cliente Não Apareceu (Acionar Loja)</p>
+                    <p className="text-[10px] text-white/80 font-semibold leading-tight mt-0.5">
+                      Notifica o lojista para decidir entre Devolução ou Descarte.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Decision 2: Wait more */}
+                <button
+                  type="button"
+                  onClick={handleExtendWaitingTimer}
+                  className="w-full p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-zinc-200 flex items-center justify-center space-x-2 text-xs font-black uppercase tracking-wider active:scale-95 transition-transform"
+                >
+                  <i className="fas fa-hourglass-half text-amber-400"></i>
+                  <span>Aguardar Mais 3 Minutos</span>
+                </button>
+
+                {/* Decision 3: Client arrived (close modal to enter code) */}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerMissingDecisionModal(false)}
+                  className="w-full py-2.5 text-zinc-400 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-colors"
+                >
+                  Cliente apareceu! Digitar código de entrega
+                </button>
+              </div>
             </div>
           </div>
         )}

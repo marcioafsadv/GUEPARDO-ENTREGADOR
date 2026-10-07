@@ -43,6 +43,11 @@ export interface DeliveryMission {
   storeLogoUrl?: string;
   storeFacadeUrl?: string;
   isOpenMode?: boolean;
+  waitingStartedAt?: string;
+  waitingExpired?: boolean;
+  customerMissingAction?: 'waiting' | 'store_return' | 'discard_delivered' | null;
+  waitingStatus?: string;
+  rawItems?: any;
 }
 
 export interface DailySummary {
