@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Howl } from 'howler';
+import { Howl, Howler } from 'howler';
 import { DriverStatus, DeliveryMission, Transaction, NotificationModel, NotificationType, ChatRoomType } from './types';
 import { COLORS, calculateEarnings, MOCK_NOTIFICATIONS, DEFAULT_AVATAR } from './constants';
 import { MapLeaflet } from './components/MapLeaflet';
@@ -155,20 +155,69 @@ const generateTimeline = (endTime: string) => {
 };
 
 
-// --- CLICK SOUND: Estalo Lento (Web Audio API) ---
+// --- AUDIO UNLOCKER & CLICK SOUND (Web Audio API + Howler) ---
 let _audioCtx: AudioContext | null = null;
 
-const getAudioCtx = (): AudioContext => {
+export const getAudioCtx = (): AudioContext => {
   if (!_audioCtx) {
     _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  if (_audioCtx.state === 'suspended') {
+    _audioCtx.resume().catch(() => {});
+  }
   return _audioCtx;
 };
+
+// Desbloqueador de Áudio Universal para Mobile / TWA / Chrome
+export const unlockAudio = () => {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    // Dispara 1 sample silencioso para autorizar a saída de áudio no motor Chrome/Android
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+
+    // Destrava também o contexto interno do Howler
+    if (typeof Howler !== 'undefined' && Howler.ctx && Howler.ctx.state === 'suspended') {
+      Howler.ctx.resume().catch(() => {});
+    }
+  } catch (e) {
+    /* silencioso */
+  }
+};
+
+// Registrar listeners automáticos no primeiro gesto do usuário
+if (typeof window !== 'undefined') {
+  const handleFirstInteraction = () => {
+    unlockAudio();
+    ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach(ev => {
+      window.removeEventListener(ev, handleFirstInteraction);
+      document.removeEventListener(ev, handleFirstInteraction);
+    });
+  };
+
+  ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach(ev => {
+    window.addEventListener(ev, handleFirstInteraction, { passive: true });
+    document.addEventListener(ev, handleFirstInteraction, { passive: true });
+  });
+
+  // Reativar áudio ao retornar de segundo plano
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      unlockAudio();
+    }
+  });
+}
 
 // Estalo Lento: dois estalos secos separados por 180ms
 const playClick = () => {
   try {
+    unlockAudio();
     const ctx = getAudioCtx();
     const t = ctx.currentTime;
     const snap = (delay: number) => {
@@ -624,12 +673,18 @@ const App: React.FC = () => {
             };
           });
 
-          // Play notification sound (one-shot)
-          const beep = new Howl({
-            src: ['/sounds/beep-notification.mp3'],
-            volume: 0.5
-          });
-          beep.play();
+          // Play notification sound (one-shot) with unlock and vibration
+          try {
+            unlockAudio();
+            if (navigator.vibrate) {
+              navigator.vibrate([200, 100, 200]);
+            }
+            const beep = new Howl({
+              src: ['/sounds/beep-notification.mp3'],
+              volume: 0.8
+            });
+            beep.play();
+          } catch (e) {}
         }
       )
       .subscribe();
@@ -963,10 +1018,11 @@ const App: React.FC = () => {
       setWaitingTimeRemaining(prev => {
         if (prev <= 1) {
           if (navigator.vibrate) {
-            navigator.vibrate([500, 200, 500, 200, 1000]);
+            navigator.vibrate([1000, 300, 1000, 300, 1500]);
           }
           try {
-            const beepSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 0.9 });
+            unlockAudio();
+            const beepSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 1.0, html5: false });
             beepSound.play();
           } catch (e) {
             console.error('Audio play error:', e);
@@ -1018,7 +1074,8 @@ const App: React.FC = () => {
 
       if (navigator.vibrate) navigator.vibrate(300);
       try {
-        const startSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 0.7 });
+        unlockAudio();
+        const startSound = new Howl({ src: ['/sounds/beep-notification.mp3'], volume: 0.8, html5: false });
         startSound.play();
       } catch (e) {}
     } catch (err) {
@@ -1661,6 +1718,8 @@ const App: React.FC = () => {
   };
 
   const toggleOnlineStatus = () => {
+    unlockAudio();
+    playClick();
     // Sincroniza nativamente no clique do botão (gesto do usuário)
     const isMobile = /Android/i.test(navigator.userAgent);
     const isTwa = sessionStorage.getItem('is_twa_app') === 'true';
@@ -2123,8 +2182,8 @@ const App: React.FC = () => {
     const howl = new Howl({
       src: [soundUrl],
       loop: true,
-      volume: 0.8,
-      html5: true, // Use HTML5 Audio for better mobile support with long files
+      volume: 1.0,
+      html5: false, // Web Audio API evita bloqueio de autoplay de tag audio no Android
       preload: true
     });
 
@@ -2138,8 +2197,21 @@ const App: React.FC = () => {
   }, [selectedSoundId]);
 
   useEffect(() => {
+    let vibrateInterval: any = null;
+
     if (status === DriverStatus.ALERTING && soundEnabled && alertAudioRef.current) {
       console.log("🔊 Playing alert sound...");
+      unlockAudio();
+
+      if (navigator.vibrate) {
+        navigator.vibrate([1000, 500, 1000, 500, 1000, 500, 2000]);
+        vibrateInterval = setInterval(() => {
+          if (navigator.vibrate) {
+            navigator.vibrate([1000, 500, 1000, 500, 1000, 500, 2000]);
+          }
+        }, 6500);
+      }
+
       if (!alertAudioRef.current.playing()) {
         alertAudioRef.current.play();
       }
@@ -2147,6 +2219,10 @@ const App: React.FC = () => {
         setTimeout(() => setStatus(DriverStatus.GOING_TO_STORE), 1500);
       }
     } else {
+      if (vibrateInterval) clearInterval(vibrateInterval);
+      if (navigator.vibrate) {
+        try { navigator.vibrate(0); } catch (e) { }
+      }
       if (alertAudioRef.current) {
         console.log("🔇 Stopping alert sound (Status: " + status + ")");
         alertAudioRef.current.stop();
@@ -2154,6 +2230,10 @@ const App: React.FC = () => {
         try { alertAudioRef.current.pause(); } catch (e) { }
       }
     }
+
+    return () => {
+      if (vibrateInterval) clearInterval(vibrateInterval);
+    };
   }, [status, soundEnabled, autoAccept]);
 
   // Fix Bug #2: Monitorar o status 'ready_for_pickup' no banco de dados via Realtime
@@ -2713,7 +2793,11 @@ const App: React.FC = () => {
 
   const playRugido = () => {
     try {
-      const sound = new Howl({ src: ['/sounds/rugido-guepardo.mp3'], volume: 1.0 });
+      unlockAudio();
+      if (navigator.vibrate) {
+        navigator.vibrate([400, 150, 400, 150, 800]);
+      }
+      const sound = new Howl({ src: ['/sounds/rugido-guepardo.mp3'], volume: 1.0, html5: false });
       sound.play();
     } catch (e) { console.error('Audio error:', e); }
   };
