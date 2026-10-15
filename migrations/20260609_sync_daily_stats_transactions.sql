@@ -40,7 +40,7 @@ BEGIN
         SELECT 1 FROM public.transactions 
         WHERE user_id = NEW.user_id 
           AND amount = diff 
-          AND created_at >= NOW() - INTERVAL '60 seconds'
+          AND created_at >= NOW() - INTERVAL '15 minutes'
     ) THEN
         -- Já existe transação recente com este valor → é uma entrega avulsa normal, pular.
         RETURN NEW;

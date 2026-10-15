@@ -500,10 +500,22 @@ export const deleteNotification = async (notificationId: string) => {
   if (error) throw error;
 };
 
+// Helper: Retorna a data no formato YYYY-MM-DD considerando o fuso horário de Brasília (UTC-3)
+export const getLocalDateString = (d: Date = new Date()): string => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(d);
+  } catch (e) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+};
+
 // ============ DAILY STATS ============
 
 export const getDailyStats = async (userId: string, date?: string) => {
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  const targetDate = date || getLocalDateString();
 
   const { data, error } = await supabase
     .from('daily_stats')
@@ -517,7 +529,7 @@ export const getDailyStats = async (userId: string, date?: string) => {
 };
 
 export const upsertDailyStats = async (userId: string, stats: any, date?: string) => {
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  const targetDate = date || getLocalDateString();
 
   const { data, error } = await supabase
     .from('daily_stats')
@@ -536,7 +548,7 @@ export const upsertDailyStats = async (userId: string, stats: any, date?: string
 };
 
 export const updateDailyStats = async (userId: string, updates: any) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   // Primeiro, tenta obter as estatísticas do dia
   const current = await getDailyStats(userId, today);

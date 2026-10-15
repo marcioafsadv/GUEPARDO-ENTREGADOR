@@ -2967,6 +2967,7 @@ const App: React.FC = () => {
 
     const getNumericId = (m: any) => {
       if (m.displayId) return m.displayId;
+      if (m.items?.displayId) return m.items.displayId;
       // Fallback robusto e numérico: usa o final do UUID convertido para número se displayId falhar
       const suffix = m.id.slice(-4);
       const numeric = parseInt(suffix, 16);
@@ -2984,9 +2985,10 @@ const App: React.FC = () => {
         const earned = mission.earnings;
         const isFixedShift = mission.isOpenMode === true || earned === 0;
 
-        // 2. Prepare transaction data
+        // 2. Prepare transaction data com UUID padrão
+        const txUuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substr(2, 9));
         const newTransaction: Transaction = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: txUuid,
           type: missionId,
           amount: earned,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -3001,30 +3003,38 @@ const App: React.FC = () => {
           } as any
         };
 
-        // 3. Save to Supabase (Transaction & Stats)
+        // 3. Save to Supabase (Transaction & Stats) com proteção contra falha de RLS do cliente
         console.log('💰 Creating transaction...', newTransaction);
-        await supabaseClient.createTransaction({
-          id: newTransaction.id,
-          type: newTransaction.type,
-          amount: newTransaction.amount,
-          status: newTransaction.status,
-          week_id: newTransaction.weekId,
-          user_id: userId,
-          details: { ...newTransaction.details, isOpenMode: isFixedShift }
-        });
+        try {
+          await supabaseClient.createTransaction({
+            id: newTransaction.id,
+            type: newTransaction.type,
+            amount: newTransaction.amount,
+            status: newTransaction.status,
+            week_id: newTransaction.weekId,
+            user_id: userId,
+            details: { ...newTransaction.details, isOpenMode: isFixedShift }
+          });
+        } catch (txErr) {
+          console.warn('⚠️ Falha ao criar transação via cliente (o trigger do banco processará):', txErr);
+        }
 
-        console.log('📊 Updating daily stats...', { userId, earnings: earned });
-        await supabaseClient.updateDailyStats(userId, {
-          finished: 1,
-          earnings: earned
-        });
+        try {
+          console.log('📊 Updating daily stats...', { userId, earnings: earned });
+          await supabaseClient.updateDailyStats(userId, {
+            finished: 1,
+            earnings: earned
+          });
+        } catch (statErr) {
+          console.warn('⚠️ Falha ao atualizar daily stats via cliente (o trigger do banco processará):', statErr);
+        }
 
         // 4. Update local earnings state
         setBalance(prev => prev + earned);
         setDailyEarnings(prev => prev + earned);
         setLastEarnings(earned);
         setBatchEarnings(prev => prev + earned);
-        setDailyStats(prev => ({ ...prev, finished: prev.finished + 1 }));
+        setDailyStats(prev => ({ ...prev, finished: prev.finished + 1, earnings: prev.earnings + earned }));
         setHistory(prev => [newTransaction, ...prev]);
         console.log('✅ Transaction and Earnings recorded.');
       } else {
@@ -3137,6 +3147,9 @@ const App: React.FC = () => {
         details: error?.details,
         hint: error?.hint
       });
+
+      // Liberar o lock de ganhos para permitir que uma nova tentativa funcione
+      processedEarningsIdsRef.current.delete(earningsLockId);
 
       // Show more specific error message
       const errorMsg = error?.message || 'Erro desconhecido';
@@ -4298,14 +4311,25 @@ const App: React.FC = () => {
                     <button 
                       onClick={async () => {
                         setCurrentScreen('WALLET');
-                        // Refresh balance and history from DB to capture shift payments (Turno Fixo)
+                        // Refresh balance, history and daily stats from DB
                         try {
                           if (!userId) return;
-                          const [freshBalance, freshTransactions] = await Promise.all([
+                          const [freshBalance, freshTransactions, freshStats] = await Promise.all([
                             supabaseClient.getBalance(userId as string),
-                            supabaseClient.getTransactions(userId as string)
+                            supabaseClient.getTransactions(userId as string),
+                            supabaseClient.getDailyStats(userId as string)
                           ]);
                           setBalance(freshBalance);
+                          if (freshStats) {
+                            setDailyStats({
+                              accepted: freshStats.accepted || 0,
+                              finished: freshStats.finished || 0,
+                              rejected: freshStats.rejected || 0,
+                              onlineTime: freshStats.onlineTime || 0,
+                              earnings: freshStats.earnings || 0
+                            });
+                            setDailyEarnings(freshStats.earnings || 0);
+                          }
                           if (freshTransactions) {
                             const uniqueTxs = new Map<string, any>();
                             freshTransactions.forEach((t: any) => {
@@ -6575,14 +6599,25 @@ const App: React.FC = () => {
           <button onClick={async () => {
             playClick();
             setCurrentScreen('WALLET');
-            // Refresh balance and history from DB to capture shift payments (Turno Fixo)
+            // Refresh balance, history and daily stats from DB
             try {
               if (!userId) return;
-              const [freshBalance, freshTransactions] = await Promise.all([
+              const [freshBalance, freshTransactions, freshStats] = await Promise.all([
                 supabaseClient.getBalance(userId as string),
-                supabaseClient.getTransactions(userId as string)
+                supabaseClient.getTransactions(userId as string),
+                supabaseClient.getDailyStats(userId as string)
               ]);
               setBalance(freshBalance);
+              if (freshStats) {
+                setDailyStats({
+                  accepted: freshStats.accepted || 0,
+                  finished: freshStats.finished || 0,
+                  rejected: freshStats.rejected || 0,
+                  onlineTime: freshStats.onlineTime || 0,
+                  earnings: freshStats.earnings || 0
+                });
+                setDailyEarnings(freshStats.earnings || 0);
+              }
               if (freshTransactions) {
                 const uniqueTxs = new Map<string, any>();
                 freshTransactions.forEach((t: any) => {
