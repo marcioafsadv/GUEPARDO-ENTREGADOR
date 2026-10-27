@@ -274,11 +274,49 @@ const DRIVER_STATUS_RANK: Record<string, number> = {
   [DriverStatus.RETURNING]: 7
 };
 
-const mapDbStatusToDriverStatus = (dbStatus: string): DriverStatus => {
+const hasArrivedAtStore = (missionId?: string): boolean => {
+  if (!missionId || typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(`arrived_store_${missionId}`) === 'true';
+  } catch (e) {
+    return false;
+  }
+};
+
+const markArrivedAtStore = (missionId?: string) => {
+  if (!missionId || typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`arrived_store_${missionId}`, 'true');
+  } catch (e) { }
+};
+
+const clearArrivedAtStore = (missionId?: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (missionId) {
+      localStorage.removeItem(`arrived_store_${missionId}`);
+    } else {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('arrived_store_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  } catch (e) { }
+};
+
+const mapDbStatusToDriverStatus = (dbStatus: string, missionId?: string): DriverStatus => {
   switch (dbStatus) {
     case 'accepted': return DriverStatus.GOING_TO_STORE;
     case 'arrived_pickup': return DriverStatus.ARRIVED_AT_STORE;
-    case 'ready_for_pickup': return DriverStatus.READY_FOR_PICKUP;
+    case 'ready_for_pickup': {
+      // Se o lojista marcou como pronto, mas o entregador ainda NÃO deu chegada na loja,
+      // ele DEVE continuar em GOING_TO_STORE para manter o mapa e a rota até a loja visíveis!
+      if (missionId && hasArrivedAtStore(missionId)) {
+        return DriverStatus.READY_FOR_PICKUP;
+      }
+      return DriverStatus.GOING_TO_STORE;
+    }
     case 'picking_up': return DriverStatus.PICKING_UP;
     case 'in_transit': return DriverStatus.GOING_TO_CUSTOMER;
     case 'arrived_at_customer': return DriverStatus.ARRIVED_AT_CUSTOMER;
@@ -293,7 +331,7 @@ const getBestStatus = (missions: DeliveryMission[]) => {
   // Priority 1: Any mission that is pending or in delivery
   const activeDelivery = missions.find(m => m.status !== 'returning');
   if (activeDelivery) {
-    return mapDbStatusToDriverStatus(activeDelivery.status);
+    return mapDbStatusToDriverStatus(activeDelivery.status, activeDelivery.id);
   }
   
   // Priority 2: Return phase
@@ -1199,6 +1237,8 @@ const App: React.FC = () => {
   // Estados para Alerta de Nova Missão na Rota (Batching)
   const [showBatchAlert, setShowBatchAlert] = useState(false);
   const [newBatchEarnings, setNewBatchEarnings] = useState(0);
+  // Estado para Alerta de Pedido Pronto pelo Lojista enquanto a caminho da loja
+  const [showOrderReadyAlert, setShowOrderReadyAlert] = useState(false);
   const isCompletingMission = useRef(false);
 
   // Auth Inputs
@@ -1519,6 +1559,9 @@ const App: React.FC = () => {
             
             setActiveMissions(missionsToSet);
             setMission(bestMission);
+            if (bestMission.status === 'ready_for_pickup') {
+              setIsOrderReady(true);
+            }
             
             // State Protection: Only revert if we are NOT in an active delivery
             // OR if the recovered status is actually MORE advanced than our local state.
@@ -2237,14 +2280,11 @@ const App: React.FC = () => {
   }, [status, soundEnabled, autoAccept]);
 
   // Fix Bug #2: Monitorar o status 'ready_for_pickup' no banco de dados via Realtime
-  // em vez de usar um timeout local de 10s que ignora o Lojista.
   useEffect(() => {
-    if (status !== DriverStatus.ARRIVED_AT_STORE || !mission) {
+    if (!mission) {
       setIsOrderReady(false);
       return;
     }
-
-    setIsOrderReady(false);
 
     // Ouvir mudanças de status para esta entrega específica (Pronto, Cancelado, etc)
     const missionUpdateChannel = supabaseClient.supabase
@@ -2266,12 +2306,18 @@ const App: React.FC = () => {
           if (newStatus === 'ready_for_pickup') {
             console.log('✅ [MISSION_UPDATE] Lojista marcou pedido como pronto!');
             setIsOrderReady(true);
+            if (statusRef.current === DriverStatus.GOING_TO_STORE) {
+              setShowOrderReadyAlert(true);
+              setTimeout(() => setShowOrderReadyAlert(false), 8000);
+            }
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            playSuccess();
           }
 
           // Handle Cancellation/Rejection/Closing
           if (['canceled', 'rejected', 'closed', 'cancelled'].includes(newStatus)) {
             console.log(`🚀 [MISSION_UPDATE] Entrega foi ${newStatus}. Limpando sessão...`);
+            clearArrivedAtStore(mission.id);
             triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
             setActiveMissions([]);
             setStatus(DriverStatus.ONLINE);
@@ -2290,6 +2336,7 @@ const App: React.FC = () => {
       .then(({ data }) => {
           if (['canceled', 'rejected', 'closed'].includes(data?.status as string)) {
              console.log(`🚀 [READY_CHECK] Entrega já estava em estado terminal: ${data?.status}`);
+             clearArrivedAtStore(mission.id);
              setActiveMissions([]);
              setStatus(DriverStatus.ONLINE);
              setIsNavigating(false);
@@ -2304,7 +2351,7 @@ const App: React.FC = () => {
     return () => {
       supabaseClient.supabase.removeChannel(missionUpdateChannel);
     };
-  }, [status, mission?.id]);
+  }, [mission?.id]);
 
   useEffect(() => {
     if (status === DriverStatus.ONLINE || status === DriverStatus.OFFLINE) {
@@ -2561,6 +2608,7 @@ const App: React.FC = () => {
                   if (['completed', 'closed', 'returned'].includes(mainServerMission.status)) {
                     // If already in RETURNING state, the merchant just finalized the return.
                     // Earnings were already recorded at delivery-complete time — just show victory screen.
+                    clearArrivedAtStore(mainServerMission.id);
                     if (statusRef.current === DriverStatus.RETURNING) {
                       console.log('🎉 [RANK-ADVANCE] Merchant finalized return. Showing post-delivery modal.');
                       setStatus(DriverStatus.ONLINE);
@@ -2574,13 +2622,24 @@ const App: React.FC = () => {
                       processDeliverySuccess();
                     }
                   } else if (['cancelled', 'canceled'].includes(mainServerMission.status)) {
+                    clearArrivedAtStore(mainServerMission.id);
                     triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
                     setMission(null);
                     setStatus(DriverStatus.ONLINE);
                     setIsNavigating(false);
                     setActiveMissions([]);
                   } else {
-                    const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status);
+                    if (mainServerMission.status === 'ready_for_pickup') {
+                      setIsOrderReady(true);
+                      const hasArrived = hasArrivedAtStore(mainServerMission.id);
+                      if (!hasArrived && (status === DriverStatus.GOING_TO_STORE || statusRef.current === DriverStatus.GOING_TO_STORE)) {
+                        console.log(`🛡️ [POLLING] Pedido está pronto na loja, mas entregador ainda a caminho (mantendo rota e GOING_TO_STORE).`);
+                        setMission(mainServerMission);
+                        return;
+                      }
+                    }
+
+                    const nextStatus = mapDbStatusToDriverStatus(mainServerMission.status, mainServerMission.id);
                     setStatus(nextStatus);
                     setMission(mainServerMission);
                   }
@@ -2596,7 +2655,10 @@ const App: React.FC = () => {
                   setMission(bestActive);
                   setStatus(DriverStatus.ALERTING);
                 } else {
-                  const nextStatus = mapDbStatusToDriverStatus(bestActive.status);
+                  if (bestActive.status === 'ready_for_pickup') {
+                    setIsOrderReady(true);
+                  }
+                  const nextStatus = mapDbStatusToDriverStatus(bestActive.status, bestActive.id);
                   setStatus(nextStatus);
                   setMission(bestActive);
                 }
@@ -2897,22 +2959,28 @@ const App: React.FC = () => {
         // CASE 2: Active delivery — handle cancellation, completion and merchant validation
         else if (currentStatus !== DriverStatus.ONLINE && currentStatus !== DriverStatus.OFFLINE && currentStatus !== DriverStatus.BUSY) {
           if (['cancelled', 'canceled'].includes(newStatus)) {
+            clearArrivedAtStore(mission.id);
             triggerCancellationAlert('Sua corrida foi cancelada pelo lojista.');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
             setIsNavigating(false);
             setActiveMissions([]);
           } else if (['completed', 'closed', 'returned'].includes(newStatus)) {
+            clearArrivedAtStore(mission.id);
             console.log(`✅ [REALTIME] Mission finalized externally (Status: ${newStatus})`);
             processDeliverySuccess();
           } else if (newStatus === 'ready_for_pickup') {
             console.log("✅ [REALTIME] Store marked order as READY!");
             setIsOrderReady(true);
-            // Also force status update to READY_FOR_PICKUP if we were waiting at store
-            if (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.PICKING_UP) {
+            // Só força avanço de status para READY_FOR_PICKUP se o entregador já estava na loja
+            if (statusRef.current === DriverStatus.ARRIVED_AT_STORE || statusRef.current === DriverStatus.PICKING_UP) {
                setStatus(DriverStatus.READY_FOR_PICKUP);
+            } else if (statusRef.current === DriverStatus.GOING_TO_STORE) {
+               setShowOrderReadyAlert(true);
+               setTimeout(() => setShowOrderReadyAlert(false), 8000);
             }
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            playSuccess();
           } else if (
             newStatus === 'in_transit' &&
             (
@@ -3104,6 +3172,8 @@ const App: React.FC = () => {
 
       console.log('🧐 Flow Decision:', { pendingOrTransit: pendingOrTransit.length, hasReturnMissions });
 
+      clearArrivedAtStore(mission.id);
+
       // The driver ONLY returns to store if there are ABSOLUTELY NO MORE pending/transit deliveries in the WHOLE batch/session
       if (pendingOrTransit.length > 0) {
         const nextToMove = pendingOrTransit[0];
@@ -3127,6 +3197,7 @@ const App: React.FC = () => {
         setShowPostDeliveryModal(false);
       } else {
         console.log('✨ All missions including returns finished. Returning to ONLINE.');
+        clearArrivedAtStore();
         setStatus(DriverStatus.ONLINE);
         setMission(null);
         setBatchHasReturn(false);
@@ -3491,10 +3562,17 @@ const App: React.FC = () => {
           if (fetchError) throw fetchError;
 
           if (currentDelivery.status === 'cancelled') {
+            clearArrivedAtStore(mission.id);
             alert('❌ Este pedido foi cancelado pela loja!');
             setMission(null);
             setStatus(DriverStatus.ONLINE);
             return;
+          }
+
+          markArrivedAtStore(mission.id);
+
+          if (currentDelivery.status === 'ready_for_pickup') {
+            setIsOrderReady(true);
           }
 
           // Update database when courier arrives at store
@@ -4122,7 +4200,7 @@ const App: React.FC = () => {
           <div className="flex flex-col h-full relative overflow-hidden">
             <div className="flex-1 relative">
               {isNavigating ? (
-                (status === DriverStatus.ARRIVED_AT_STORE || status === DriverStatus.READY_FOR_PICKUP || status === DriverStatus.PICKING_UP) ? (
+                (status === DriverStatus.ARRIVED_AT_STORE || (status === DriverStatus.READY_FOR_PICKUP && hasArrivedAtStore(mission?.id)) || status === DriverStatus.PICKING_UP) ? (
                   <div className="absolute inset-0 w-full h-full bg-[#0A0503] flex flex-col justify-start">
                      <div className="relative w-full h-[55vh] sm:h-[65vh]">
                         {/* Imagem da Fachada (Imagem Real Dinâmica) */}
@@ -4416,6 +4494,12 @@ const App: React.FC = () => {
                         {navMetrics?.distanceValue && navMetrics.distanceValue <= 60 && (
                           <span className="bg-[#00FF94]/20 text-[#00FF94] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#00FF94]/30 animate-pulse">
                             No Local
+                          </span>
+                        )}
+                        {status === DriverStatus.GOING_TO_STORE && isOrderReady && (
+                          <span className="bg-[#FFD700]/20 text-[#FFD700] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#FFD700]/30 animate-pulse flex items-center gap-1 shadow-[0_0_10px_rgba(255,215,0,0.3)]">
+                            <i className="fas fa-check text-[8px]"></i>
+                            Pronto na Loja
                           </span>
                         )}
                       </div>
@@ -6557,6 +6641,33 @@ const App: React.FC = () => {
           </div>
         )}
       </header>
+
+      {showOrderReadyAlert && (
+        <div className="absolute top-24 left-6 right-6 z-[1006] animate-in slide-in-from-top duration-500">
+          <div className="bg-[#1A0C06]/95 backdrop-blur-2xl rounded-[28px] p-4 sm:p-5 shadow-2xl border-2 border-[#FFD700]/60 flex items-center justify-between">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFD700]/20 border border-[#FFD700]/40 flex items-center justify-center text-[#FFD700] shadow-[0_0_20px_rgba(255,215,0,0.25)] shrink-0">
+                <i className="fas fa-bag-shopping text-xl animate-bounce"></i>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[#FFD700] text-[10px] font-black uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
+                  <span>Pedido Pronto na Loja!</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                </p>
+                <p className="text-white text-xs font-bold leading-tight">
+                  O lojista marcou o pedido como pronto. Siga na rota até a loja!
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowOrderReadyAlert(false)} 
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition-transform shrink-0 ml-2"
+            >
+              <i className="fas fa-times text-xs"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
       {showBatchAlert && (
         <div className="absolute top-24 left-6 right-6 z-[1005] animate-in slide-in-from-top duration-500">
