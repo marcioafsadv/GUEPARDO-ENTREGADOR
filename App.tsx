@@ -3330,15 +3330,23 @@ const App: React.FC = () => {
     if (!mission) return false;
     
     if (status === DriverStatus.ARRIVED_AT_CUSTOMER) {
-      // Validação do código de entrega (4 últimos dígitos do telefone do cliente)
+      // Validação do código de entrega: aceita tanto os 4 últimos dígitos do telefone do cliente
+      // quanto o código de entrega gerado/rastreio (collectionCode / pickupCode)
       const codeStr = typedCode.join('');
-      const cleanedSuffix = String(mission.customerPhoneSuffix || '').replace(/\D/g, '').slice(-4);
-      const isMatch = codeStr === cleanedSuffix;
+      if (codeStr.length !== 4) return false;
 
-      if (codeStr.length === 4 && !isMatch) {
-        console.log("Validation mismatch:", { entered: codeStr, expected: cleanedSuffix, raw: mission.customerPhoneSuffix });
+      const cleanedSuffix = String(mission.customerPhoneSuffix || '').replace(/\D/g, '').slice(-4);
+      const cleanedCollection = String(mission.collectionCode || '').replace(/\D/g, '').slice(-4);
+      const cleanedPickup = String((mission as any).items?.pickupCode || '').replace(/\D/g, '').slice(-4);
+
+      const isMatch = (cleanedSuffix && codeStr === cleanedSuffix) ||
+                      (cleanedCollection && codeStr === cleanedCollection) ||
+                      (cleanedPickup && codeStr === cleanedPickup);
+
+      if (!isMatch) {
+        console.log("Validation mismatch:", { entered: codeStr, expectedPhone: cleanedSuffix, expectedCollection: cleanedCollection, expectedPickup: cleanedPickup });
       }
-      return isMatch;
+      return Boolean(isMatch);
     }
     
     return true; // Para os demais estados (como PICKING_UP), o código é apenas exibido
@@ -4789,8 +4797,11 @@ const App: React.FC = () => {
                         )}
 
                         <div className={`p-6 rounded-[32px] border transition-all ${isCodeValid() ? 'bg-green-500/10 border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'bg-white/5 border-white/10'}`}>
-                          <p className={`text-[10px] font-black uppercase text-center mb-5 tracking-[0.2em] ${isCodeValid() ? 'text-green-500' : textMuted}`}>
+                          <p className={`text-[10px] font-black uppercase text-center mb-1 tracking-[0.2em] ${isCodeValid() ? 'text-green-500' : textMuted}`}>
                             CÓDIGO DE ENTREGA (4 DÍGITOS):
+                          </p>
+                          <p className="text-[9px] text-white/40 text-center mb-4 font-bold">
+                            Peça o código de rastreio ou os 4 últimos dígitos do telefone
                           </p>
                         <div className="flex justify-center space-x-3">
                           {[0, 1, 2, 3].map(i => (
