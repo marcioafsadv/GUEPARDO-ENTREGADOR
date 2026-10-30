@@ -1755,7 +1755,7 @@ export const MapNavigation: React.FC<MapNavigationProps> = ({
 
             {/* Print 3 style Header Instructions */}
             <div className="absolute top-0 left-0 right-0 z-20">
-                <div className="bg-[#0D0502]/95 backdrop-blur-xl rounded-b-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] pb-4 pt-8 px-6 flex flex-col uppercase border-b border-[#D4AF37]/20">
+                <div className="bg-[#0D0502]/95 backdrop-blur-xl rounded-b-[32px] pb-4 pt-8 px-6 flex flex-col uppercase border-b border-[#D4AF37]/20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center flex-1 min-w-0">
                             <div className="mr-5 text-white flex-shrink-0 flex items-center justify-center relative w-12 h-12 bg-zinc-900/50 rounded-2xl border border-[#D4AF37]/30 shadow-[inset_0_0_15px_rgba(212,175,55,0.1)]">

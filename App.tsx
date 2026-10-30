@@ -4482,7 +4482,7 @@ const App: React.FC = () => {
             )}
             {mission && status !== DriverStatus.ALERTING && (
               <div className="absolute bottom-0 left-0 right-0 z-[1001] flex transition-all duration-500">
-                <div className={`w-full rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.9)] border-t border-[#D4AF37]/30 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-3 pb-8' : 'p-4 pb-8 sm:p-6 sm:pb-12'} bg-[#0D0502]/95 backdrop-blur-3xl`}>
+                <div className={`w-full rounded-t-[40px] border-t border-[#D4AF37]/30 transition-all flex flex-col overflow-hidden ${((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? 'p-3 pb-8' : 'p-4 pb-8 sm:p-6 sm:pb-12'} bg-[#0D0502]/95 backdrop-blur-3xl`}>
                   
                   {/* Original Print 3 style Compact Header - Ultra Compacted */}
                   {((status === DriverStatus.GOING_TO_STORE || status === DriverStatus.GOING_TO_CUSTOMER) && !isMissionOverlayExpanded) ? (
